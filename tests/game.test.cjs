@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const FILES = ['js/cards.js', 'js/card-art.js', 'js/rules.js', 'js/animations.js', 'js/scene3d.js', 'js/engine.js', 'js/app.js'];
+const FILES = ['js/cards.js', 'js/card-art.js', 'js/rules.js', 'js/worlds.js', 'js/avatars.js', 'js/animations.js', 'js/scene3d.js', 'js/engine.js', 'js/app.js'];
 const source = Object.fromEntries(FILES.map(file => [file, fs.readFileSync(file, 'utf8')]));
 
 /** Minimaler Browser-Ersatz: Timer, Math und ein leerer DOM-Stub. */
@@ -52,11 +52,11 @@ const context = {
 vm.createContext(context);
 vm.runInContext(
   FILES.map(file => source[file]).join('\n') +
-  '\nthis.api = { Cards: ArcanumCards, Art: ArcanumCardArt, Rules: ArcanumRules, Fx: ArcanumFx, Game: GameEngine, Scene: GameEngine3D };',
+  '\nthis.api = { Cards: ArcanumCards, Art: ArcanumCardArt, Rules: ArcanumRules, Fx: ArcanumFx, Game: GameEngine, Scene: GameEngine3D, Worlds: ArcanumWorlds, Avatars: ArcanumAvatars };',
   context
 );
 
-const { Cards, Art, Rules, Fx, Game, Scene } = context.api;
+const { Cards, Art, Rules, Fx, Game, Scene, Worlds, Avatars } = context.api;
 const MAJOR = n => Cards.DECK_BY_UID[`major-${n}`];
 const MINOR = (suit, rank) => Cards.DECK_BY_UID[`minor-${suit}-${rank}`];
 const mode = value => { context.currentActiveMode = value; };
@@ -634,7 +634,7 @@ const html = fs.readFileSync('arcanum_tarot_browsergame_codex.html', 'utf8');
 const css = fs.readFileSync('css/arcanum.css', 'utf8');
 
 test('HTML lädt alle Module in Abhängigkeitsreihenfolge', () => {
-  const order = ['js/cards.js', 'js/card-art.js', 'js/rules.js', 'js/animations.js', 'js/scene3d.js', 'js/engine.js', 'js/app.js'];
+  const order = ['js/cards.js', 'js/card-art.js', 'js/rules.js', 'js/worlds.js', 'js/avatars.js', 'js/animations.js', 'js/scene3d.js', 'js/engine.js', 'js/app.js'];
   const positions = order.map(file => html.indexOf(`src="${file}"`));
   assert.ok(positions.every(position => position > -1), 'alle Skripte müssen eingebunden sein');
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -689,7 +689,7 @@ test('Handsortierung: Trümpfe zuerst, dann Farben, jeweils absteigend', () => {
 });
 
 test('HTML bietet die zehn Orte des 3D-Manifests und semantische Grundstruktur', () => {
-  const selector = html.match(/<select id="env-select">([\s\S]*?)<\/select>/);
+  const selector = html.match(/<select id="env-select"[^>]*>([\s\S]*?)<\/select>/);
   assert.ok(selector, 'Ortsauswahl fehlt');
   const optionIds = Array.from(selector[1].matchAll(/<option value="([^"]+)"/g), match => match[1]);
   assert.deepEqual(optionIds, Array.from(Scene.environments, room => room.id));
@@ -732,4 +732,177 @@ test('Dokumentation beschreibt den Regelkern und die Kartenkunst', () => {
   ['js/rules.js', 'js/card-art.js', 'js/animations.js', 'js/engine.js', 'resolveTrick',
     'Hofkarten-Segen', 'RULESET_VERSION', 'STATE_SCHEMA_VERSION'].forEach(needle =>
     assert.ok(architecture.includes(needle), `ARCHITECTURE.md muss ${needle} erwähnen`));
+});
+
+/* ================================================================ */
+/* Welten, Räume, Avatare und Hinweise                              */
+/* ================================================================ */
+
+test('Zehn Ritualorte mit vollständiger WebGL- und UI-Palette', () => {
+  assert.equal(Worlds.ROOMS.length, 10);
+  assert.equal(new Set(Worlds.ROOMS.map(room => room.id)).size, 10);
+  const numericScene = ['background', 'fog', 'stone', 'trim', 'accent', 'glass', 'floor', 'wood', 'seat',
+    'keyLight', 'fillLight', 'tableShape'];
+  Worlds.ROOMS.forEach(room => {
+    numericScene.forEach(key =>
+      assert.equal(typeof room.scene[key], 'number', `${room.id}.scene.${key} muss eine Farbe/Zahl sein`));
+    assert.equal(typeof room.scene.floorPattern, 'string', `${room.id}.floorPattern`);
+    assert.equal(typeof room.scene.particles, 'string', `${room.id}.particles`);
+    ['accent', 'glow', 'deep'].forEach(key =>
+      assert.match(room.ui[key], /^#[0-9a-f]{6}$/i, `${room.id}.ui.${key} muss CSS-Hex sein`));
+    assert.ok(room.label.length > 3 && room.description.length > 20, `${room.id} braucht Namen und Beschreibung`);
+    assert.ok(Worlds.WORLD_BY_ID[room.world], `${room.id} verweist auf eine unbekannte Welt`);
+    assert.ok(room.camera.distance >= 20 && room.camera.distance <= 60, `${room.id}: Kameraabstand plausibel`);
+  });
+});
+
+test('Drei begehbare Welten decken alle Orte ab', () => {
+  assert.equal(Worlds.WORLDS.length, 3);
+  const used = new Set(Worlds.ROOMS.map(room => room.world));
+  Worlds.WORLDS.forEach(world => {
+    assert.equal(typeof world.sky, 'number');
+    assert.equal(typeof world.horizon, 'number');
+    assert.ok(world.starDensity >= 300, `${world.id} braucht ein sichtbares Sternenfeld`);
+    assert.ok(world.cameraPath && typeof world.cameraPath.orbit === 'number');
+  });
+  used.forEach(id => assert.ok(Worlds.WORLD_BY_ID[id], `Welt ${id} fehlt im Manifest`));
+  // Jede Welt wird von mindestens einem Ort bespielt.
+  Worlds.WORLDS.forEach(world =>
+    assert.ok(Worlds.ROOMS.some(room => room.world === world.id), `${world.id} hat keinen Ort`));
+});
+
+test('12 Avatar-Identitäten mit Palette, Sigill und Kopfbedeckung', () => {
+  assert.equal(Worlds.AVATARS.length, 12);
+  assert.equal(new Set(Worlds.AVATARS.map(a => a.id)).size, 12);
+  assert.equal(new Set(Worlds.AVATARS.map(a => a.sigil)).size, 12, 'jedes Sigill ist einmalig');
+  Worlds.AVATARS.forEach(avatar => {
+    ['skin', 'hair', 'robe', 'robeDeep', 'trim', 'accent', 'glow'].forEach(key =>
+      assert.match(avatar.ui[key], /^#[0-9a-f]{6}$/i, `${avatar.id}.ui.${key}`));
+    const wear = Avatars.HEADWEAR[avatar.headwear] || Avatars.HOODS[avatar.headwear];
+    assert.ok(wear, `${avatar.id}: unbekannte Kopfbedeckung ${avatar.headwear}`);
+    assert.ok(Avatars.SIGILS[avatar.sigil], `${avatar.id}: unbekanntes Sigill ${avatar.sigil}`);
+  });
+});
+
+test('Avatar-Sitzordnung: Mensch behält den Adepten, Bots sind verschieden', () => {
+  assert.equal(Worlds.avatarForPlayer(0, false).id, 'adept');
+  const bots = [1, 2, 3, 4, 5].map(index => Worlds.avatarForPlayer(index, true).id);
+  assert.equal(new Set(bots).size, 5, 'fünf Bots erhalten fünf unterschiedliche Gesichter');
+  bots.forEach(id => assert.notEqual(id, 'adept', 'Bots tragen nicht die Krone des Menschen'));
+  // Außerhalb des Sitzbereichs bleibt die Funktion stabil.
+  assert.ok(Worlds.avatarForPlayer(-2, true).id);
+  assert.ok(Worlds.avatarForPlayer(99, true).id);
+});
+
+test('Jedes Avatar-Porträt ist ein vollständiges, eindeutiges SVG', () => {
+  const motifs = new Set();
+  Worlds.AVATARS.forEach((avatar, index) => {
+    const svg = Avatars.portrait(avatar, { suffix: `test-${index}` });
+    assert.match(svg, /^<svg /);
+    assert.match(svg, /<\/svg>$/);
+    assert.ok(svg.includes(`id="clip-av-${avatar.id}-test${index}"`), `${avatar.id}: eindeutige IDs (Suffix im ID-Namen)`);
+    // Gesicht, Augen und Sigill müssen vorhanden sein.
+    assert.ok(svg.includes('stop-color'), 'Verläufe fehlen');
+    assert.ok((svg.match(/<circle /g) || []).length >= 4, 'Augen und Sigill brauchen Kreise');
+    assert.match(svg, /class="arc-portrait[^"]*"/, 'die Klasse arc-portrait fehlt');
+    motifs.add(svg.replace(/id="[^"]*"/g, '').replace(/test-\d+/g, ''));
+  });
+  assert.equal(motifs.size, Worlds.AVATARS.length, 'jedes Porträt ist eigenständig');
+  // Unbekannte Avatar-IDs werfen einen klaren Fehler.
+  assert.throws(() => Avatars.portrait('gibt-es-nicht'), /unbekannter Avatar/);
+});
+
+test('Porträt-Palette löst CSS- und Zahlenwerte ohne undefined auf', () => {
+  Worlds.AVATARS.forEach(avatar => {
+    const palette = Avatars.paletteOf(avatar);
+    Object.entries(palette).forEach(([key, value]) => {
+      assert.equal(typeof value, 'string', `${avatar.id}.${key} muss ein String sein`);
+      assert.doesNotMatch(value, /undefined|NaN/, `${avatar.id}.${key} ist kaputt: ${value}`);
+    });
+  });
+  const numeric = Avatars.paletteOf({ ui: { skin: 0x112233, hair: 0x445566, robe: 0x778899, robeDeep: 0x000000, trim: 0xffffff, accent: 0x123456 } });
+  Object.values(numeric).forEach(value => {
+    assert.equal(typeof value, 'string');
+    assert.match(value, /^#[0-9a-f]{6}$/i, `numerische Palette muss zu CSS werden: ${value}`);
+  });
+  // Auch ein Avatar ohne jede Palette bleibt zeichenbar.
+  const empty = Avatars.paletteOf({});
+  assert.match(empty.skin, /^#[0-9a-f]{6}$/i);
+});
+
+test('Sigille sind einbettbar und skalierbar', () => {
+  const group = Avatars.sigilGroup('moon', { x: 3, y: 4, size: 18, color: '#abcdef' });
+  assert.match(group, /^<g transform="translate\(3 4\) scale\(0\.7500\)"/);
+  assert.ok(group.includes('#abcdef'));
+  const standalone = Avatars.sigil('eye', { size: 32 });
+  assert.match(standalone, /width="32" height="32"/);
+  assert.ok(standalone.includes('viewBox="0 0 24 24"'));
+});
+
+test('Hinweiskarte kennt Kurzbeschreibung und Funktion für jedes Element', () => {
+  const keys = ['mode-turbo', 'mode-standard', 'env-select', 'player-count', 'start-ritual', 'restart',
+    'round-tile', 'oracle-tile', 'mode-tile', 'phase', 'karma', 'bid', 'won', 'hand-count', 'opponents',
+    'tally', 'stage', 'world-switch', 'camera-reset', 'trick', 'hand', 'bid-button', 'log', 'summary',
+    'codex-card', 'chart', 'calc', 'nav'];
+  keys.forEach(key => {
+    const hint = Worlds.hoverHint(key);
+    assert.ok(hint, `${key}: kein Hinweis`);
+    assert.ok(hint.title.length > 2, `${key}: Titel fehlt`);
+    assert.ok(hint.short.length > 10, `${key}: Kurzbeschreibung zu knapp`);
+    assert.ok(hint.action.length > 12, `${key}: Funktion fehlt`);
+  });
+  // Unbekannte Schlüssel liefern einen neutralen, aber vollständigen Hinweis.
+  const fallback = Worlds.hoverHint('unbekannt');
+  assert.ok(fallback.title && fallback.short && fallback.action);
+  assert.equal(Worlds.hoverHint(''), null);
+});
+
+test('HTML markiert die interaktiven Flächen für die Hinweiskarte', () => {
+  const hinted = Array.from(html.matchAll(/data-hint="([^"]+)"/g), match => match[1]);
+  assert.ok(hinted.length >= 18, `zu wenige Hinweisflächen: ${hinted.length}`);
+  // Zwei Schlüssel sind dynamisch: Orte und Karten werden aus dem
+  // Manifest abgeleitet, nicht als fester Text gepflegt.
+  const dynamic = new Set(['room', 'card']);
+  hinted.forEach(key => assert.ok(dynamic.has(key) || Worlds.HOVER_HINTS[key], `data-hint="${key}" hat keinen Text`));
+  const roomKeys = Array.from(html.matchAll(/data-hint="room" data-room="([^"]+)"/g), match => match[1]);
+  assert.equal(roomKeys.length, 10, 'alle zehn Orte brauchen einen Hinweis');
+  assert.equal(new Set(roomKeys).size, 10);
+  roomKeys.forEach(id => {
+    const hint = Worlds.roomHint(id);
+    assert.ok(hint && hint.short && hint.action, `${id}: Ortshinweis unvollständig`);
+  });
+  ['arc-hint-card', 'hud-avatar', 'user-avatar-badge', 'arena-room-note', 'camera-reset',
+    'world-cathedral', 'world-island', 'world-orbit', 'podium-1-avatar', 'podium-2-avatar', 'podium-3-avatar']
+    .forEach(id => assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `id=${id}`));
+});
+
+test('3D-Manifest wird ohne WebGL aus den Weltdaten gefüllt', () => {
+  assert.equal(Scene.environments.length, 10);
+  assert.deepEqual(Scene.environments.map(room => room.id), Worlds.ROOMS.map(room => room.id));
+  assert.deepEqual(Scene.worlds.map(world => world.id), Worlds.WORLDS.map(world => world.id));
+  assert.equal(typeof Scene.hydrateManifests, 'function');
+  assert.equal(typeof Scene.changeWorld, 'function');
+  assert.equal(typeof Scene.resetCamera, 'function');
+  assert.equal(typeof Scene.buildWorld, 'function');
+  // Der Kameraabstand bleibt in allen Seitenverhältnissen im Rahmen.
+  [0.4, 0.56, 1, 1.78, 3, 5].forEach(aspect => {
+    const distance = Scene.cameraDistanceForAspect(aspect);
+    assert.ok(distance >= 19 && distance <= 58, `Aspect ${aspect}: ${distance}`);
+  });
+});
+
+test('Kartenhand-Layout bleibt in jeder Breite nutzbar', () => {
+  for (const width of [240, 360, 640, 900, 1440]) {
+    for (const count of [1, 3, 7, 13]) {
+      const layout = Scene.handLayout(width, count);
+      assert.ok(layout.cardWidth >= 60 && layout.cardWidth <= 124);
+      assert.ok(layout.overlap >= 0);
+      assert.ok(layout.cardWidth >= 60, `${width}/${count}: Karte zu schmal`);
+      // Bei sehr schmalen Geräten scrollt die Hand horizontal – die
+      // Karten dürfen dann über die Breite hinausragen, aber nie
+      // schrumpfen (Lesbarkeit vor Vollständigkeit).
+      if (layout.totalWidth > width) assert.ok(count > 3, `${width}/${count}: unerwartet breit`);
+    }
+  }
+  assert.deepEqual(JSON.parse(JSON.stringify(Scene.handLayout(400, 0))), { cardWidth: 0, overlap: 0, totalWidth: 0 });
 });

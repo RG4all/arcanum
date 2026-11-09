@@ -26,10 +26,12 @@ js/app.js        → (IIFE)         UI: Modus, Kodex, Diagramm, Rechner, Events
 | `js/cards.js` | nein | nein | ja |
 | `js/card-art.js` | nein | erzeugt SVG-String | ja |
 | `js/rules.js` | nein | nein | ja |
+| `js/worlds.js` | nein | nein | ja |
+| `js/avatars.js` | nein | erzeugt SVG-String | ja |
 | `js/animations.js` | optional | Canvas/Transform | Mathematik ja |
 | `js/engine.js` | ja | indirekt | ja (DOM-Stub) |
 | `js/app.js` | ja | ja | nein |
-| `js/scene3d.js` | ja | WebGL | Manifest ja Layout ja |
+| `js/scene3d.js` | ja | WebGL | Manifest, Layout und Kamera ja |
 
 ### Namenskonventionen
 
@@ -176,9 +178,9 @@ Das HUD besteht aus vier Blöcken und liest ausschließlich Zustand, den die Eng
 1. **Kachelband** – Runde mit Fortschrittsbalken, Weltgesetz (Orakel), Regelwerk.
 2. **Phasenband** – aktueller Zugstatus mit Farbcodierung je Phase.
 3. **Karmakarte** – Karmawert in `clamp(52px, 6,4vw, 86px)` mit Tabellenziffern, Kennzahlen Vision/Stiche/Hand, Zielhinweis.
-4. **Seitenleiste** – Gegnerkarma und Stichbilanz mit Fortschrittsbalken.
+4. **Seitenleiste** – Gegnerliste mit Porträt, Karma und Stichbilanz, dazu dieselben Figuren kompakt in den Bot-Chips.
 
-`renderHud()` schreibt in feste IDs, `renderUI()` erzeugt Hand- und Stichkarten über `cardMarkup()`. Kartenmarkup und SVG-Kunst sind getrennt: `ArcanumCardArt` liefert das Motiv, das Markup nur Rahmen, Besitzerlabel und Tooltip.
+`renderHud()` schreibt in feste IDs, `renderUI()` erzeugt Hand- und Stichkarten über `cardMarkup()`. Porträts kommen als SVG-String aus `ArcanumAvatars.portrait()`; die Engine hält nur die Avatar-ID am Spieler (`player.avatar`), nie das Bild. Kartenmarkup und SVG-Kunst sind getrennt: `ArcanumCardArt` liefert das Motiv, das Markup nur Rahmen, Besitzerlabel und Tooltip.
 
 ## 7 · Animationsschicht
 
@@ -208,28 +210,98 @@ Alle Animationen prüfen `prefers-reduced-motion` und springen dann sofort ans Z
 
 Es gibt weiterhin **kein** `localStorage` und keine serverseitige Speicherung: Ein Neuladen verwirft die Partie. Das Schema ist die Grundlage für spätere Persistenz und Netzwerksnapshots; `schema` muss dafür bei Formatänderungen erhöht und migriert werden.
 
-## 9 · Zehn individuelle 3D-Orte
+## 9 · Weltmanifest, Orte und Figuren
 
-`GameEngine3D.environments` bleibt die alleinige Datenquelle für Kennungen, Namen, Kurzbeschreibungen, Materialfamilien, Beleuchtungsfarben und je einen unterschiedlichen Architekturbauer. `buildEnvironment()` verwirft die Ressourcen des alten Szenen-Wurzelknotens, setzt Atmosphäre und Grundfläche neu auf und ruft genau einen dieser eigenständigen Räume auf:
+Die Bühne ist in drei Schichten getrennt: **Daten** (`worlds.js`), **Figuren** (`avatars.js`) und **Renderpipeline** (`scene3d.js`). Keine dieser Schichten entscheidet über Spielregeln.
 
-| Kennung | Architekturbauer | Kompositorischer Schwerpunkt |
+### 9.1 · Manifest (`js/worlds.js`)
+
+`ArcanumWorlds` ist eingefroren und die einzige Quelle für alle sichtbaren Namen und Farben. Jeder Eintrag der zehn Orte hat zwei Paletten:
+
+- `scene` – **numerische** WebGL-Farben (`background`, `fog`, `stone`, `trim`, `accent`, `glass`, `floor`, `wood`, `seat`, `keyLight`, `fillLight`, `tableShape`) plus Materialfamilie (`floorPattern`) und Partikelart (`particles`).
+- `ui` – **CSS-Hex** für HTML und SVG (`accent`, `glow`, `deep`).
+
+Zusätzlich: `label`, `tagline`, `mood`, `description`, `world` (Verweis auf eine der drei Welten) und `camera` (empfohlener Abstand, Höhe, Blickziel). Drei Welten liefern Himmel, Horizont, Sternendichte, Nebelfarbe und Kamerapfad; jeder Ort gehört genau einer Welt, jede Welt ist bespielt (per Test geprüft).
+
+`avatarForPlayer(index, isBot)` verteilt die zwölf Identitäten: Der Mensch erhält immer den **Adepten** (Krone), Bots bekommen paarweise verschiedene Gesichter, außerhalb des Sitzbereichs wird zyklisch weitergezählt. `roomPalette(id)` liefert die numerische Palette, `roomOptions()` die Auswahlliste.
+
+### 9.2 · Hinweiskarte
+
+`HOVER_HINTS` ist ein Wörterbuch aus Titel, Kurzbeschreibung (`short`) und Funktion (`action`) für jedes bedienbare Element – Kacheln, Phasenband, Gebot, Stich, Hand, Gegner, Podium, Kamera, Welten, Kodex, Diagramm, Rechner, Navigation. Zwei Ableitungen ergänzen es dynamisch:
+
+- `roomHint(id)` – Kurzbeschreibung und Wirkung eines Ortes aus dem Manifest (die Orte stehen nicht im Wörterbuch, weil sie Daten sind).
+- `cardHint(card, effect)` – Kurzbeschreibung aus dem Effekttext und die konkrete Funktion im Stich; ohne Effekt entscheidet `court` über den Hofkarten-Segen, sonst über den Rangwert.
+
+`js/app.js` liest beim Überfahren oder Fokussieren `data-hint` (bzw. `data-hint="room"` plus `data-room`), füllt `#arc-hint-card` und verknüpft sie per `aria-describedby`. Fehlt ein Schlüssel, zeigt `hoverHint` einen neutralen Text – die Oberfläche steht nie ohne Beschriftung da.
+
+### 9.3 · Figuren (`js/avatars.js`)
+
+`ArcanumAvatars.portrait(avatar, { suffix })` zeichnet ein 120 × 120-Porträt als geschichtetes SVG. Die Geometrie ist fest, nur Farben und Frisuren wechseln:
+
+| Baustein | Koordinaten / Umfang |
+| --- | --- |
+| Kopf | Mitte (60, 62), Breite 38–40 (x 40–80, y 38–78) |
+| Hals und Schultern | y 78–87 bzw. 82–120 |
+| Augen | y 63,4 (x 52,2 und 67,8), Brauen y 55,4 |
+| Mund | y 73,4 |
+| Sigill-Anhänger | `translate(85 85)`, Radius 12,6 |
+| Beschnitt | Kreis mit Radius 58 |
+
+Sechs Frisuren (`short`, `long`, `waves`, `braid`, `bun`, `curls`), zwei Draperien (`hood` als Rahmung mit Brauennaht, `veil` als Stirnband mit Gemme), sechs Kopfbedeckungen (`none`, `circlet`, `crown`, `helm`, `laurel`, `horns`), 13 Sigille. **Kapuze und Schleier rahmen nur** – sie füllen nie das Gesicht, sonst wirkt das Porträt in HUD-Größe wie eine Maske.
+
+`paletteOf(avatar)` normalisiert jede Farbe zu CSS-Hex: Es liest ausschließlich `ui.*`, akzeptiert aber auch numerische WebGL-Werte (`0x123456` → `#123456`) und füllt fehlende Töne über `mix()`/`shade()` auf (Hautschatten, Robentiefe, Iris, Glanz). Ohne diese Schicht landeten WebGL-Zahlen als Hex-Fragmente im SVG – der Fehler, der die erste Porträt-Generation unbrauchbar machte.
+
+`sigilGroup(name, { x, y, size, color })` liefert ein `<g>` zum Einbetten; `sigil(name)` ein eigenständiges SVG. **Niemals** ein komplettes `<svg>` in ein anderes SVG einbetten – librsvg (und damit `sharp`) lehnt doppelte `width`/`height`-Attribute ab.
+
+IDs im SVG tragen den übergebenen `suffix` (`clip-av-<id>-<suffix>`), damit mehrere Porträts derselben Figur auf einer Seite kollisionsfrei bleiben.
+
+### 9.4 · Renderpipeline (`js/scene3d.js`)
+
+```
+Manifest hydrieren (ROOMS → environments, WORLDS → worlds)
+        │
+        ▼
+Bühne aufbauen:  buildWorld(world)      Himmel, Horizonte, Sternenfeld
+                 buildAtmosphere(room)  Nebel, Licht, Partikel
+                 buildEnvironment(id)   genau ein Raumbauer
+                 spawnRitualTable()     Tisch, Sitzkreis, Kartenfächer
+                 spawnHumanoidAvatars() sechs Figuren, Krone beim Menschen
+        │
+        ▼
+Frame:  Controls → Kamera → Lichtflackern → Partikel → Renderer
+        │
+        ▼
+Wechsel: clearEnvironment() gibt Geometrie, Material und Textur frei,
+         danach Aufbau des neuen Ortes (kein Neuladen der Seite)
+```
+
+| Kennung | Baubauer | Kompositorischer Schwerpunkt |
 | --- | --- | --- |
-| `temple` | `buildSanctum()` | Marmor-Apsis, Säulenarkaden, Treppen und Sternrosette |
-| `druid` | `buildGrove()` | Baumchronik, verästelte Stämme, Wurzelkreis und Runensteine |
-| `mountain` | `buildPeak()` | offene Gipfelkulisse, Armillarsphäre, Fernrohr und Cairns |
-| `library` | `buildLibrary()` | Bücherwände, Galerien, Leitern, Spitzbögen und farbige Buchrücken |
-| `undersea` | `buildUndersea()` | Korallenpfeiler, Glasfenster, Kelp und Meereslichtstrahlen |
-| `desert` | `buildDesert()` | Hufeisenarkaden, Gitter, Sonnenrosette, Palmen und Wasserbecken |
-| `moon` | `buildMoon()` | Mondtor, Torii, Kiesgarten, Laternen und Spiegelfläche |
-| `forge` | `buildForge()` | Glutofen, Basaltrippen, Ketten, Ambosse und Lavaadern |
-| `ice` | `buildIce()` | Eisnave, prismatische Stützen, Spitzbögen und Nordlichtbänder |
-| `sky` | `buildSky()` | schwebendes Felsbett, Seiteninseln, Hängebrücken, Pergola und Wolken |
+| `temple` | `buildSanctum()` | Marmor-Apsis, Säulenarkaden, Treppen, Sternrosette |
+| `druid` | `buildGrove()` | Baumchronik, verästelte Stämme, Wurzelkreis, Runensteine |
+| `mountain` | `buildPeak()` | offener Gipfel, Armillarsphäre, Fernrohr, Cairns |
+| `library` | `buildLibrary()` | Bücherwände, Galerien, Leitern, Spitzbögen |
+| `undersea` | `buildUndersea()` | Korallenpfeiler, Glasfenster, Kelp, Lichtstrahlen |
+| `desert` | `buildDesert()` | Hufeisenarkaden, Gitter, Sonnenrosette, Palmen, Becken |
+| `moon` | `buildMoon()` | Mondtor, Torii, Kiesgarten, Laternen, Spiegelfläche |
+| `forge` | `buildForge()` | Glutofen, Basaltrippen, Ketten, Ambosse, Lavaadern |
+| `ice` | `buildIce()` | Eisnave, prismatische Stützen, Spitzbögen, Nordlicht |
+| `sky` | `buildSky()` | schwebendes Felsbett, Seiteninseln, Brücken, Pergola, Wolken |
 
-Die Räume teilen nur Bühne, Ritualtisch, Sitzkreis und Avatar-Grundmodell – nicht ihre architektonische Silhouette. `clearEnvironment()` entsorgt Geometrien, Materialien und Texturen beim Ortswechsel. Die Renderer-Pixeldichte ist auf 1,75 begrenzt (1,25 auf leistungsschwachen Geräten); die Kamera rechnet bei jeder Größenänderung ihr Seitenverhältnis neu (`cameraDistanceForAspect`), damit Tisch und Sitzkreis auch im Hochformat im Bild bleiben.
+Technische Leitplanken:
+
+- **Three.js r128** (lokal unter `vendor/three/three.min.js`). r128 kennt kein `CapsuleGeometry` und kein `OrbitControls` im Global-Build – Figuren entstehen deshalb aus Kugel, Zylinder, Kegel, Box, Oktaeder und Dodekaeder, die Kamera aus eigenen Pointer-Handlern (Ziehen, Scrollen, Doppelklick) mit `resetCamera()`.
+- **Texturen zur Laufzeit**: `marble`, `moss`, `sand`, `ice`, `water` werden als Canvas-Muster erzeugt; kein Bild wird nachgeladen.
+- **Pixeldichte** ist auf 1,75 begrenzt (1,25 auf schwachen Geräten); `trackPerformance()` senkt sie bei anhaltend langsamen Frames weiter.
+- **Seitenverhältnis**: `cameraDistanceForAspect(aspect)` hält den Abstand zwischen 19 und 58 Einheiten, `handLayout(width, count)` berechnet Kartenbreite, Überlappung und Gesamtbreite der Hand – beides ohne WebGL testbar.
+- **`prefers-reduced-motion`** hält Partikel und Schwankungen an.
+- **Ressourcen**: `disposeObject()` gibt Geometrien, Materialien und Texturen rekursiv frei; Ortswechsel leckt nicht.
+
+Figuren bestehen aus Kopf, Hals, Schultern, Robe, Kapuze, Kopfbedeckung und Sigill-Anhänger (`buildHeadwear()` je Typ). `setActivePlayer(index)` hebt die aktive Figur über Emissive-Wert und Ring hervor, ohne die Geometrie neu zu bauen.
 
 ## 10 · Responsives Verhalten und Barrierefreiheit
 
-Fluide Abstände, Typografie und Bühnenhöhe (`clamp()`), ein Klappmenü ab 900 px und umfließende Steuerleisten. Breakpoints: 1180 px (HUD zweispaltig), 900 px (Mobile-Navigation), 700 px (kompaktes HUD, einspaltige Steuerung), 430 px (HUD einspaltig), plus Querformat-Sonderfälle. Alle interaktiven Ziele sind mindestens 44 px groß, Zahlen verwenden Tabellenziffern, Fokus ist sichtbar (`:focus-visible` mit doppeltem Ring), Dialoge fangen den Fokus ein und schließen mit `Escape`, Statusänderungen laufen über `aria-live`-Regionen, und `prefers-reduced-motion` schaltet alle Animationen ab.
+Fluide Abstände, Typografie und Bühnenhöhe (`clamp()`), ein Klappmenü ab 900 px und umfließende Steuerleisten. Breakpoints: 1180 px (HUD zweispaltig), 900 px (Mobile-Navigation), 700 px (kompaktes HUD, einspaltige Steuerung), 430 px (HUD einspaltig), plus Querformat-Sonderfälle. Alle interaktiven Ziele sind mindestens 44 px groß, Zahlen verwenden Tabellenziffern, Fokus ist sichtbar (`:focus-visible` mit doppeltem Ring), Dialoge fangen den Fokus ein und schließen mit `Escape`, die Hinweiskarte erscheint bei Fokus genauso wie bei Mausberührung und ist über `aria-describedby` mit ihrem Auslöser verbunden, Statusänderungen laufen über `aria-live`-Regionen, und `prefers-reduced-motion` schaltet alle Animationen ab.
 
 ## 11 · Grenzen der Beta und Weg zum MMO
 
@@ -251,4 +323,8 @@ Neue UI- und Renderfunktionen sollen die Regeln nicht duplizieren: Regeln änder
 - Determinismus (gleicher Seed, gleiche Partie) und eine komplette Runde, die regelkonform terminiert.
 - Hypergeometrische Wahrscheinlichkeit und Monotonie.
 - Animationsmathematik (Federkonvergenz, Bézier-Endpunkte, Fächersymmetrie).
+- Manifest der zehn Orte und drei Welten: Farbtypen, Beschreibungen, Kameraabstände, Weltzuordnung.
+- Alle zwölf Avatar-Porträts: gültiges SVG, eindeutige IDs je Suffix, einmalige Motive, aufgelöste Palette ohne `undefined`.
+- Hinweiskarte: jeder Schlüssel hat Titel, Kurzbeschreibung und Funktion; jedes `data-hint` im HTML existiert im Wörterbuch.
+- 3D-Manifeste ohne WebGL (`Scene.environments`, `Scene.worlds`), Kameraabstand über sechs Seitenverhältnisse, Kartenhand-Layout in fünf Breiten.
 - Konsistenz von HTML-IDs, Skriptreihenfolge, CSS-Breakpoints und Versionsangaben.

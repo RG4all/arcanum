@@ -2,6 +2,27 @@
 
 Alle nennenswerten Änderungen werden hier dokumentiert. Die Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
 
+## 0.5.0-beta.1 – 2026-11-09
+
+Schwerpunkt dieser Version ist die Bühne: Räume, Figuren, Licht und die Erklärung der Oberfläche beim Darüberfahren.
+
+### Hinzugefügt
+- **Drei Himmelswelten, zehn Ritualorte.** Jeder Ort ist jetzt eine eigene Architektur statt einer Farbvariante: Sanktuarium mit Apsis, Arkaden und Sternrosette (Sanctum der Sieben Siegel), Wurzelkreis und Baumkrone (Hain der Wurzelchronik), Armillarsphäre und Fernrohr auf offenem Gipfel (Observatorium am Himmelsgrat), mehrstöckige Galerien mit Buchregalen und Leitern (Bibliothek der Nachtflügel), Korallenpfeiler und Lichtstrahlen (Abtei der Tiefenströmung), Hufeisenarkaden mit Mosaik und Wasserbecken (Sonnenpalast der Glasdünen), Mondtor, Torii und Kiesgarten (Mondkloster der stillen Gezeiten), Basaltgewölbe mit Glutofen und Lavaadern (Schmiede des Phönix), Eisprismen mit Spitzbögen und Nordlicht (Kristallhalle des Nordlichts) sowie schwebende Terrassen mit Brücken (Hängende Gärten der Äonen).
+- **Materialien und Atmosphäre prozedural.** Marmor, Moos, Sand, Eis und Wasser entstehen als Canvas-Texturen zur Laufzeit – keine Bilddateien. Dazu passt sich der Nebel, das Sternenfeld und die Lichtfarbe dem Ort an; Partikel (Staub, Glut, Schnee, Blüten) bewegen sich in drei Tiefenebenen.
+- **Weltenwechsel live.** Über die Reiter **Sternendom**, **Schwebeinseln** und **Sternenorbit** wechselt die Umgebung ohne Neuladen: Himmel, Horizont, Sternendichte und Kameraweg werden umgebaut, der aktuelle Ort wandert in die passende Welt.
+- **Eigene Kamera mit Rücksetzknopf.** Ziehen dreht, Scrollen zoomt, Doppelklick zentriert; ein Knopf stellt die vom Ort empfohlene Ansicht wieder her. Der Abstand richtet sich nach dem Seitenverhältnis, damit die Bühne im Hochformat nicht abschneidet.
+- **Zwölf Charaktere in `js/avatars.js`.** Gesicht mit Iris, Brauen, Nase und Mund, Robe mit Kragen, Borte und Stickerei, sechs Frisuren, zwei Draperien (Kapuze, Schleier), sechs Kopfbedeckungen (Diadem, Krone, Helm, Lorbeer, Hörner, keins) und zwölf Sigille – vollständig deterministisch als SVG. Die Farben leitet `paletteOf()` aus dem Farbklang der jeweiligen Figur ab und normalisiert dabei auch numerische WebGL-Werte zu CSS-Hex.
+- **Figuren in der Szene.** An jedem Ort stehen sechs Figuren aus Grundkörpern (Kopf, Hals, Schultern, Robe, Kapuze, Kopfbedeckung, Sigill-Anhänger); der aktive Spieler wird hervorgehoben, Gegner tragen ihre eigenen Gesichter. Porträts erscheinen zusätzlich im HUD, in der Gegnerliste, in den Bot-Chips und auf dem Podium.
+- **Hinweiskarte mit Kurzbeschreibung und Funktion.** Fährt man über Kacheln, Orte, Welten, Karten oder Bedienelemente, zeigt ein Overlay Titel, Kurzbeschreibung (`short`) und Funktion (`action`) – gespeist aus `HOVER_HINTS`, `roomHint()` und `cardHint()` in `js/worlds.js`. Funktioniert per Tastaturfokus, mit `aria-describedby` und ohne Überlappung am Bildschirmrand.
+- **Offline-Bibliotheken.** `vendor/three/three.min.js` (r128) und `vendor/chart/chart.umd.js` (4.4.8) liegen im Projekt; die Seite lädt sie lokal statt vom CDN und bleibt damit ohne Netz spielbar.
+- Tests für Orts- und Weltmanifest, Avatar-Identitäten und Sitzordnung, alle zwölf Porträt-SVGs, die Palettenauflösung, die Sigille, die Hinweistexte, die 3D-Manifeste und das Kartenhand-Layout (69 Tests).
+
+### Geändert
+- `js/scene3d.js` neu geschrieben: Manifest-Hydrierung, Kamera- und Layoutmathematik, Texturen, Weltbau, Raumgeneratoren und Figuren sind getrennte, testbare Funktionen statt eines monolithischen Blocks. Nicht mehr benötigte Geometrie wird freigegeben.
+- Die Bühne respektiert `prefers-reduced-motion`: Partikel und Schwankungen ruhen dann.
+- Version auf `0.5.0-beta.1` angehoben (Meta-Tag, README, Changelog, `package.json`); der Regelkern bleibt bei `0.4.0`, da sich keine Regel geändert hat.
+- Fehlerkorrektur: Der Weltenwechsel rief `GameEngine.log` ohne Namensraum auf und brach in strikt getrennten Kontexten ab.
+
 ## 0.4.0-beta.1 – 2026-11-09
 
 ### Hinzugefügt

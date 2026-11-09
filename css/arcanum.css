@@ -16,6 +16,12 @@
     12  Podium
     13  Responsive Anpassungen
     14  Reduzierte Bewegung & Druck
+    15  Atmosphäre, Welten und Stimmung
+    16  Bühnenwerkzeuge: Weltwahl und Kamera
+    17  Hinweiskarte (Kurzbeschreibung + Funktion)
+    18  Avatar-Porträts
+    19  Feinschliff: Karten, Kodex, HUD, Bewegung
+    20  Responsive Ergänzungen
    ================================================================= */
 
 /* ---------------------------------------------------------------- */
@@ -782,7 +788,7 @@ main.max-w-7xl {
 .hud-opponent__name { color: #f0e7dc; font-size: 13.5px; font-weight: 750; }
 
 .hud-opponent__meta {
-    grid-column: 1;
+    grid-column: auto;
     color: #aa9eb9;
     font-size: 11.5px;
     font-weight: 600;
@@ -790,7 +796,8 @@ main.max-w-7xl {
 
 .hud-opponent__karma {
     grid-row: 1 / span 2;
-    grid-column: 2;
+    grid-column: 3;
+    align-self: center;
     color: var(--arc-gold-light);
     font-size: 22px;
     font-weight: 800;
@@ -849,9 +856,10 @@ main.max-w-7xl {
 }
 
 .bot-chip {
-    display: grid;
-    gap: 1px;
-    padding: 8px 13px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 13px 7px 8px;
     border: 1px solid rgb(216 189 120 / 20%);
     border-radius: 12px;
     background: rgb(12 9 17 / 72%);
@@ -1242,12 +1250,19 @@ main.max-w-7xl {
 .arc-card__veil {
     position: absolute;
     z-index: 3;
-    right: 6px;
-    bottom: 6px;
-    font-size: 16px;
-    line-height: 1;
+    right: 5px;
+    bottom: 5px;
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border: 1px solid rgb(243 230 189 / 46%);
+    border-radius: 50%;
+    background: rgb(10 7 15 / 78%);
     filter: drop-shadow(0 2px 6px #000);
 }
+
+.arc-card__veil svg { width: 16px; height: 16px; display: block; }
 
 /* Handkarten */
 .hand-card {
@@ -2069,4 +2084,652 @@ body.has-dialog { overflow: hidden; }
     .site-header, #game-podium-overlay, .card-dialog, #game-log { display: none !important; }
     body { background: #fff; color: #000; }
     #play-game, #kodex { break-inside: avoid; }
+}
+
+/* =================================================================
+   15 · Atmosphäre, Welten und Stimmung
+   -----------------------------------------------------------------
+   Die 3D-Bühne setzt die Farbstimmung des Ortes; diese Schicht
+   übernimmt sie für die 2D-Oberfläche (--room-accent/--room-glow).
+   ================================================================= */
+
+/* Feiner Film aus Licht: zwei sehr weiche, langsam wandernde Auren. */
+.ambient-veil {
+    position: fixed;
+    z-index: 0;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.ambient-veil::before,
+.ambient-veil::after {
+    position: absolute;
+    width: 74vmax;
+    height: 74vmax;
+    border-radius: 50%;
+    content: "";
+    filter: blur(72px);
+    opacity: .5;
+    animation: veilDrift 44s ease-in-out infinite alternate;
+}
+
+.ambient-veil::before {
+    top: -30vmax;
+    left: -18vmax;
+    background: radial-gradient(circle, rgb(150 110 220 / 26%), transparent 68%);
+}
+
+.ambient-veil::after {
+    right: -22vmax;
+    bottom: -34vmax;
+    background: radial-gradient(circle, var(--room-accent, #b591ed) 0%, transparent 68%);
+    opacity: .16;
+    animation-delay: -18s;
+    animation-duration: 58s;
+}
+
+@keyframes veilDrift {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to { transform: translate3d(4vmax, 3vmax, 0) scale(1.12); }
+}
+
+body {
+    position: relative;
+    background:
+        radial-gradient(ellipse 62% 40% at 50% -10%, rgb(112 78 150 / 42%), transparent 64%),
+        radial-gradient(ellipse 38% 30% at 4% 26%, rgb(58 40 78 / 30%), transparent 72%),
+        radial-gradient(ellipse 42% 34% at 98% 58%, color-mix(in srgb, var(--room-accent, #b591ed) 16%, transparent), transparent 72%),
+        radial-gradient(ellipse 60% 40% at 50% 108%, rgb(46 32 64 / 34%), transparent 70%),
+        linear-gradient(158deg, #120d1a, #08060d 54%, #100a18);
+    background-attachment: fixed;
+}
+
+/* Ein Hauch Sternenstaub über der gesamten Seite. */
+.site-header::after,
+main::before {
+    position: fixed;
+    z-index: -1;
+    inset: 0;
+    background-image:
+        radial-gradient(1px 1px at 12% 18%, rgb(255 244 214 / 60%), transparent),
+        radial-gradient(1px 1px at 78% 12%, rgb(255 255 255 / 46%), transparent),
+        radial-gradient(1.4px 1.4px at 34% 72%, rgb(206 226 255 / 42%), transparent),
+        radial-gradient(1px 1px at 62% 84%, rgb(255 236 200 / 38%), transparent),
+        radial-gradient(1px 1px at 92% 42%, rgb(255 255 255 / 34%), transparent),
+        radial-gradient(1px 1px at 22% 52%, rgb(214 196 255 / 30%), transparent);
+    background-size: 46% 46%, 38% 38%, 52% 52%, 44% 44%, 60% 60%, 34% 34%;
+    background-position: 0 0, 30% 20%, 10% 40%, 60% 10%, 20% 70%, 70% 50%;
+    content: "";
+    opacity: .5;
+    pointer-events: none;
+    animation: dustShift 90s linear infinite;
+}
+
+main::before { z-index: 0; }
+
+@keyframes dustShift {
+    from { background-position: 0 0, 30% 20%, 10% 40%, 60% 10%, 20% 70%, 70% 50%; }
+    to { background-position: 6% 4%, 36% 24%, 16% 44%, 66% 14%, 26% 74%, 76% 54%; }
+}
+
+/* Panels: Glas über Nacht, goldene Haarlinie, weicher Lichtsaum. */
+#play-game,
+#rules-view,
+#kodex,
+#math,
+#calculator {
+    position: relative;
+    background:
+        linear-gradient(150deg, rgb(38 30 50 / 92%), rgb(14 10 20 / 97%) 68%),
+        linear-gradient(150deg, color-mix(in srgb, var(--room-accent, #b591ed) 8%, transparent), transparent 46%);
+    backdrop-filter: blur(2px);
+    transition: border-color .8s ease, box-shadow .8s ease;
+}
+
+#play-game::after,
+#kodex::after,
+#math::after,
+#calculator::after,
+#rules-view::after {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 22%, rgb(255 246 214 / 5%) 44%, transparent 62%);
+    content: "";
+    opacity: .9;
+    pointer-events: none;
+}
+
+#play-game > *,
+#kodex > *,
+#math > *,
+#calculator > * { position: relative; z-index: 1; }
+
+/* Ortszeile im Arena-Kopf: Ort + Stimmung, folgt der Bühne. */
+.arena-room-note {
+    margin-top: 6px;
+    color: var(--room-glow, #e7c987);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    transition: color .8s ease;
+}
+
+.arena-room-note::before {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--room-accent, #b591ed);
+    box-shadow: 0 0 10px var(--room-accent, #b591ed);
+    content: "";
+    vertical-align: middle;
+    animation: roomPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes roomPulse {
+    0%, 100% { opacity: .55; transform: scale(.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* -----------------------------------------------------------------
+   16 · Bühnenwerkzeuge: Weltwahl und Kamera
+   ----------------------------------------------------------------- */
+.stage-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-block: 2px 10px;
+}
+
+.world-switch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgb(216 189 120 / 26%);
+    border-radius: 999px;
+    background: rgb(10 7 15 / 66%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+.stage-toolbar__label {
+    padding: 0 10px 0 12px;
+    color: var(--arc-gold);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.world-chip {
+    min-height: 36px;
+    padding: 0 15px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: #c8bad8;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .08em;
+    transition: background .22s ease, color .22s ease, border-color .22s ease, transform .22s ease;
+}
+
+.world-chip:hover { color: #fff7e2; background: rgb(216 189 120 / 10%); transform: translateY(-1px); }
+
+.world-chip.is-active {
+    border-color: rgb(246 230 182 / 66%);
+    background: linear-gradient(150deg, #f2dda3, #c39a43);
+    color: #1a1206;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 34%), 0 0 22px rgb(246 230 182 / 18%);
+}
+
+.stage-actions { display: flex; gap: 6px; }
+
+.stage-action {
+    min-height: 40px;
+    padding: 0 15px;
+    border: 1px solid rgb(216 189 120 / 34%);
+    border-radius: 999px;
+    background: rgb(14 10 20 / 78%);
+    color: var(--arc-gold-light);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .06em;
+    transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.stage-action:hover { border-color: var(--arc-gold); background: rgb(34 26 46 / 92%); transform: translateY(-1px); }
+
+/* Bühne: tiefer, atmender Rahmen. */
+.stage-3d-wrapper {
+    border-color: color-mix(in srgb, var(--room-accent, #b591ed) 44%, transparent);
+    background:
+        radial-gradient(ellipse at 50% 66%, color-mix(in srgb, var(--room-accent, #b591ed) 22%, #1a1424), #0d0b14 62%, #06050a);
+    box-shadow:
+        inset 0 0 90px rgb(0 0 0 / 46%),
+        0 26px 64px rgb(0 0 0 / 38%),
+        0 0 0 1px color-mix(in srgb, var(--room-accent, #b591ed) 18%, transparent);
+    transition: border-color .8s ease, background .8s ease, box-shadow .8s ease;
+    cursor: grab;
+}
+
+.stage-3d-wrapper:active { cursor: grabbing; }
+.stage-3d-wrapper:focus-visible { box-shadow: var(--arc-focus), 0 26px 64px rgb(0 0 0 / 38%); }
+
+#canvas-container canvas { display: block; width: 100%; height: 100%; }
+
+.stage-hint {
+    position: absolute;
+    z-index: 25;
+    right: 12px;
+    bottom: 12px;
+    padding: 6px 12px;
+    border: 1px solid rgb(216 189 120 / 22%);
+    border-radius: 999px;
+    background: rgb(8 6 12 / 68%);
+    color: #a99cba;
+    font-size: 9.5px;
+    font-weight: 650;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: .8;
+    transition: opacity .3s ease;
+}
+
+.stage-3d-wrapper:hover .stage-hint { opacity: 1; }
+
+/* -----------------------------------------------------------------
+   17 · Hinweiskarte (Kurzbeschreibung + Funktion)
+   ----------------------------------------------------------------- */
+.arc-hint {
+    position: fixed;
+    z-index: 2600;
+    top: 0;
+    left: 0;
+    display: grid;
+    max-width: min(340px, calc(100vw - 28px));
+    gap: 3px;
+    padding: 11px 14px 12px;
+    border: 1px solid rgb(246 230 182 / 34%);
+    border-radius: 15px;
+    background:
+        linear-gradient(155deg, rgb(42 33 56 / 98%), rgb(11 8 16 / 99%));
+    box-shadow: 0 22px 48px rgb(0 0 0 / 62%), inset 0 1px 0 rgb(255 246 214 / 10%);
+    opacity: 0;
+    transform: translateY(6px) scale(.985);
+    transition: opacity .16s ease, transform .16s cubic-bezier(.2, .8, .2, 1);
+    pointer-events: none;
+}
+
+.arc-hint.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+
+/* Kleiner Zeiger zum auslösenden Element. */
+.arc-hint::after {
+    position: absolute;
+    left: var(--hint-anchor, 50%);
+    width: 10px;
+    height: 10px;
+    border-right: 1px solid rgb(246 230 182 / 34%);
+    border-bottom: 1px solid rgb(246 230 182 / 34%);
+    background: rgb(34 26 46 / 99%);
+    content: "";
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.arc-hint[data-placement="above"]::after { bottom: -6px; }
+.arc-hint[data-placement="below"]::after { top: -6px; transform: translateX(-50%) rotate(225deg); }
+
+.arc-hint__title {
+    color: var(--arc-gold-light);
+    font-family: Cinzel, Georgia, serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.arc-hint__short {
+    color: #efe6f8;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.42;
+}
+
+.arc-hint__action {
+    margin-top: 3px;
+    padding-top: 6px;
+    border-top: 1px solid rgb(216 189 120 / 18%);
+    color: #bfae86;
+    font-size: 11px;
+    line-height: 1.42;
+}
+
+.arc-hint__action::before {
+    margin-right: 5px;
+    color: var(--arc-gold);
+    content: "▸";
+}
+
+/* -----------------------------------------------------------------
+   18 · Avatar-Porträts
+   ----------------------------------------------------------------- */
+.avatar-frame {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 30%, rgb(255 255 255 / 10%), rgb(0 0 0 / 34%));
+    box-shadow:
+        0 0 0 1px rgb(255 246 214 / 26%),
+        0 0 0 4px rgb(9 7 13 / 70%),
+        0 8px 22px rgb(0 0 0 / 46%),
+        0 0 24px color-mix(in srgb, var(--avatar-glow, #b591ed) 26%, transparent);
+    transition: box-shadow .3s ease, transform .3s ease;
+}
+
+.avatar-frame svg { display: block; width: 100%; height: 100%; border-radius: 50%; }
+
+.hud-avatar {
+    width: 62px;
+    height: 62px;
+    animation: avatarBreathe 7s ease-in-out infinite;
+}
+
+.hud-avatar .arc-portrait { width: 62px; height: 62px; }
+
+@keyframes avatarBreathe {
+    0%, 100% { transform: translateZ(0) scale(1); }
+    50% { transform: translateZ(0) scale(1.024); }
+}
+
+.player-avatar {
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font-size: 0;
+}
+
+.player-avatar .arc-portrait { width: 58px; height: 58px; }
+
+.podium-avatar { display: grid; place-items: center; margin-bottom: 4px; }
+.podium-avatar .arc-portrait { width: clamp(52px, 8vw, 78px); height: auto; }
+
+.podium-place--1 .avatar-frame {
+    box-shadow:
+        0 0 0 1px var(--arc-gold-light),
+        0 0 0 5px rgb(9 7 13 / 70%),
+        0 10px 28px rgb(0 0 0 / 52%),
+        0 0 40px rgb(246 230 182 / 34%);
+    animation: crownGlow 4.6s ease-in-out infinite;
+}
+
+@keyframes crownGlow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+
+/* Gegnerliste mit Porträts */
+.hud-opponent {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.hud-opponent .avatar-frame { grid-row: 1 / span 2; width: 44px; height: 44px; }
+.hud-opponent .avatar-frame + .hud-opponent__body { grid-column: 2; }
+.hud-opponent__body { display: grid; min-width: 0; gap: 1px; }
+
+.hud-opponent__karma.is-met { color: var(--arc-positive); }
+.hud-opponent__karma.is-over { color: var(--arc-gold-light); }
+
+/* Bot-Chips mit Porträt */
+.bot-chip .avatar-frame { width: 34px; height: 34px; }
+.bot-chip__body { display: grid; min-width: 0; gap: 1px; }
+
+.bot-chip.is-active {
+    border-color: var(--arc-gold);
+    background: linear-gradient(150deg, rgb(216 189 120 / 16%), rgb(18 13 25 / 80%));
+    box-shadow: 0 0 22px rgb(246 230 182 / 16%);
+}
+
+/* -----------------------------------------------------------------
+   19 · Feinschliff: Karten, Kodex, HUD, Bewegung
+   ----------------------------------------------------------------- */
+
+/* Handkarten: 3D-Kippung, Lichtkante, weicher Auftritt. */
+.hand-card {
+    transform-origin: 50% 118%;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), filter .3s ease;
+}
+
+.hand-card .arc-card__frame {
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s ease;
+}
+
+.hand-card.is-playable:hover .arc-card__frame,
+.hand-card.is-playable:focus-visible .arc-card__frame {
+    transform: translateY(-4px) rotateX(7deg) rotateZ(-1.4deg) scale(1.02);
+    box-shadow:
+        0 30px 52px rgb(0 0 0 / 66%),
+        0 0 0 2px var(--arc-gold-light),
+        0 0 40px color-mix(in srgb, var(--room-glow, #f6e6b6) 40%, transparent);
+}
+
+/* Eine schmale Lichtlinie wandert beim Berühren über den Kartenrahmen. */
+.arc-card__frame::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(112deg, transparent 34%, rgb(255 255 255 / 20%) 50%, transparent 66%);
+    content: "";
+    opacity: 0;
+    transform: translateX(-40%);
+    transition: opacity .2s ease, transform .6s ease;
+    pointer-events: none;
+}
+
+.arc-card { position: relative; }
+.arc-card__frame { position: relative; }
+
+.hand-card:hover .arc-card__frame::after,
+.codex-card:hover .arc-card__art::after { opacity: 1; transform: translateX(40%); }
+
+/* Kodex: gestaffeltes Einblenden je Gruppe. */
+.codex-group { animation: groupRise .5s cubic-bezier(.2, .8, .2, 1) both; }
+.codex-group:nth-child(2) { animation-delay: .06s; }
+.codex-group:nth-child(3) { animation-delay: .12s; }
+.codex-group:nth-child(4) { animation-delay: .18s; }
+.codex-group:nth-child(5) { animation-delay: .24s; }
+
+@keyframes groupRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+}
+
+.codex-card__art { position: relative; overflow: hidden; }
+
+.codex-card__art::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(112deg, transparent 38%, rgb(255 255 255 / 16%) 50%, transparent 62%);
+    content: "";
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity .2s ease, transform .7s ease;
+    pointer-events: none;
+}
+
+.codex-card:hover { transform: translateY(-6px); }
+
+/* HUD: Karma mit Hof und pulsierendem Ring. */
+.hud-karma { position: relative; overflow: hidden; }
+
+.hud-karma::after {
+    position: absolute;
+    top: -40%;
+    left: -20%;
+    width: 60%;
+    height: 180%;
+    background: radial-gradient(circle, rgb(246 230 182 / 8%), transparent 66%);
+    content: "";
+    pointer-events: none;
+    animation: karmaSheen 9s ease-in-out infinite;
+}
+
+@keyframes karmaSheen {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(60%, 0, 0); }
+}
+
+.hud-karma__identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.hud-karma__value.is-up { animation: karmaUp .6s cubic-bezier(.2, .8, .2, 1); }
+.hud-karma__value.is-down { animation: karmaDown .6s cubic-bezier(.2, .8, .2, 1); }
+
+@keyframes karmaUp {
+    0% { color: var(--arc-positive); text-shadow: 0 0 24px rgb(143 227 176 / 60%); }
+    100% { color: var(--arc-gold-light); }
+}
+
+@keyframes karmaDown {
+    0% { color: var(--arc-negative); text-shadow: 0 0 24px rgb(255 154 134 / 60%); }
+    100% { color: var(--arc-gold-light); }
+}
+
+/* Phasenband: Licht läuft bei aktivem Zug. */
+.hud-phase-bar[data-phase="playing"] {
+    position: relative;
+    overflow: hidden;
+}
+
+.hud-phase-bar[data-phase="playing"]::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 20%, rgb(143 227 176 / 14%) 50%, transparent 80%);
+    content: "";
+    animation: phaseFlow 4.6s linear infinite;
+}
+
+@keyframes phaseFlow {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+}
+
+/* Gebotsknöpfe: gestaffelter Auftritt, feiner Glanz. */
+.bid-button { position: relative; overflow: hidden; }
+.bid-button::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(255 255 255 / 26%), transparent 56%);
+    content: "";
+    pointer-events: none;
+}
+
+.bid-button { animation: bidIn .36s cubic-bezier(.2, .9, .3, 1.2) both; }
+.bid-button:nth-child(2n) { animation-delay: .03s; }
+.bid-button:nth-child(3n) { animation-delay: .06s; }
+
+@keyframes bidIn {
+    from { opacity: 0; transform: translateY(8px) scale(.94); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Titel: feines Licht hinter der Überschrift. */
+.arena-title-block h1,
+.section-head h2 {
+    background: linear-gradient(100deg, #fdf3d5 8%, #e7c987 52%, #fdf3d5 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 3px 18px rgb(216 189 120 / 16%));
+}
+
+/* Karten-Dialog: weicher Auftritt, Tiefe. */
+.card-dialog__panel { box-shadow: 0 44px 110px rgb(0 0 0 / 74%), inset 0 1px 0 rgb(255 246 214 / 12%); }
+
+/* Anschnitte: jede Sektion bekommt eine zarte Goldkante oben. */
+#kodex, #math, #calculator, #rules-view { overflow: hidden; }
+
+/* Stichkarten: leichter Schwebezustand. */
+#trick-cards-container:not(:empty) { animation: trickPanel .4s ease both; }
+
+@keyframes trickPanel {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* -----------------------------------------------------------------
+   20 · Responsive Ergänzungen
+   ----------------------------------------------------------------- */
+@media (max-width: 1180px) {
+    .hud-avatar { width: 54px; height: 54px; }
+    .hud-avatar .arc-portrait { width: 54px; height: 54px; }
+}
+
+@media (max-width: 900px) {
+    .stage-toolbar { gap: 8px; }
+    .world-switch { width: 100%; justify-content: space-between; }
+    .world-chip { flex: 1 1 auto; padding: 0 10px; font-size: 10.5px; }
+    .stage-toolbar__label { display: none; }
+    .stage-actions { width: 100%; justify-content: flex-end; }
+    .stage-hint { font-size: 8.5px; right: 8px; bottom: 8px; }
+}
+
+@media (max-width: 700px) {
+    .hud-avatar { width: 46px; height: 46px; }
+    .hud-avatar .arc-portrait { width: 46px; height: 46px; }
+    .player-avatar, .player-avatar .arc-portrait { width: 44px; height: 44px; }
+    .hud-opponent .avatar-frame { width: 38px; height: 38px; }
+    .stage-hint { display: none; }
+    .arc-hint { max-width: min(300px, calc(100vw - 20px)); padding: 10px 12px; }
+    .arc-hint__short, .arc-hint__action { font-size: 11px; }
+    .bot-chip .avatar-frame { width: 30px; height: 30px; }
+}
+
+@media (max-width: 430px) {
+    .world-chip { font-size: 9.5px; letter-spacing: .04em; padding: 0 7px; }
+    .arena-room-note { font-size: 10px; letter-spacing: .07em; }
+    .hud-karma__identity { gap: 8px; }
+}
+
+/* Touch: keine Hinweiskarte, keine Schwebe-Effekte. */
+@media (hover: none) {
+    .arc-hint { display: none !important; }
+    .hand-card.is-playable:hover .arc-card__frame { transform: none; }
+    .codex-card:hover { transform: none; }
+}
+
+/* Reduzierte Bewegung: alle neuen Auren und Schleifen ruhen. */
+@media (prefers-reduced-motion: reduce) {
+    .ambient-veil::before,
+    .ambient-veil::after,
+    .hud-avatar,
+    .hud-karma::after,
+    .hud-phase-bar::after,
+    .podium-place--1 .avatar-frame,
+    .arena-room-note::before,
+    main::before,
+    .codex-group,
+    .bid-button {
+        animation: none !important;
+    }
+    .ambient-veil::after { opacity: .1; }
+    .hand-card.is-playable:hover .arc-card__frame { transform: translateY(-4px); }
 }

@@ -2,28 +2,30 @@
 <html lang="de" class="scroll-smooth" data-mode="turbo">
 <head>
     <meta charset="UTF-8">
-    <meta name="version" content="0.4.0-beta.1">
+    <meta name="version" content="0.5.0-beta.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b0710">
-    <meta name="description" content="Arcanum – atmosphärisches Tarot-Stichspiel im Browser mit vollständigem 78-Karten-Deck, Karten-Kodex und zehn Ritualorten.">
+    <meta name="description" content="Arcanum – atmosphärisches Tarot-Stichspiel im Browser mit vollständigem 78-Karten-Deck, Karten-Kodex, drei begehbaren 3D-Welten und zehn Ritualorten.">
     <title>Arcanum — Mystisches Tarot-Stichspiel · Beta</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap">
     <!-- Tailwind bleibt für die Layout-Grundlagen aktiv; lokal gebaut (css/tailwind.css), kein CDN in Produktion. -->
     <link rel="stylesheet" href="css/tailwind.css">
+    <!-- Bibliotheken liegen lokal unter vendor/ – kein CDN nötig, offline nutzbar. -->
+    <script src="vendor/chart/chart.umd.js"></script>
+    <script src="vendor/three/three.min.js"></script>
     <!-- Die Gestaltung liegt in css/arcanum.css -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="css/arcanum.css">
 </head>
 <body class="min-h-screen flex flex-col font-sans selection:bg-gold selection:text-black">
 
     <a class="skip-link" href="#play-game">Direkt zur Arena</a>
+    <div class="ambient-veil" aria-hidden="true"></div>
 
     <header class="site-header sticky top-0 z-50 bg-occult-950/95 backdrop-blur-md border-b border-gold/30 shadow-2xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 site-header-inner">
-            <a class="brand-lockup" href="#play-game" aria-label="Arcanum – zur Arena">
+            <a class="brand-lockup" href="#play-game" aria-label="Arcanum – zur Arena" data-hint="nav">
                 <span class="brand-mark" aria-hidden="true">✦</span>
                 <span class="brand-copy">
                     <span class="brand-title font-serif text-2xl font-bold tracking-widest text-gold drop-shadow-md">ARCANUM</span>
@@ -35,11 +37,11 @@
                 <span></span><span></span><span></span>
             </button>
             <nav id="primary-nav" class="primary-nav" aria-label="Hauptnavigation">
-                <a href="#play-game">Arena</a>
-                <a href="#rules-view">Regelwerk</a>
-                <a href="#kodex">Karten-Kodex</a>
-                <a href="#math">Stochastik</a>
-                <a href="#calculator">Wertung</a>
+                <a href="#play-game" data-hint="nav">Arena</a>
+                <a href="#rules-view" data-hint="nav">Regelwerk</a>
+                <a href="#kodex" data-hint="nav">Karten-Kodex</a>
+                <a href="#math" data-hint="nav">Stochastik</a>
+                <a href="#calculator" data-hint="nav">Wertung</a>
             </nav>
         </div>
     </header>
@@ -53,31 +55,32 @@
                     <div class="arena-title-block">
                         <span class="section-eyebrow">Lobby &amp; Ritual-Tisch</span>
                         <h1 id="arena-title">Die Arkana-Arena</h1>
+                        <p id="arena-room-note" class="arena-room-note">Sanctum der Sieben Siegel · Sternendom</p>
                     </div>
                     <div class="mode-switcher" role="group" aria-label="Regelmodus">
-                        <button id="btn-mode-turbo" type="button" aria-pressed="true" class="is-active" onclick="switchRulesetMode('turbo')">⚡ Turbo</button>
-                        <button id="btn-mode-standard" type="button" aria-pressed="false" onclick="switchRulesetMode('standard')">📜 Standard</button>
+                        <button id="btn-mode-turbo" type="button" aria-pressed="true" class="is-active" data-hint="mode-turbo" onclick="switchRulesetMode('turbo')">⚡ Turbo</button>
+                        <button id="btn-mode-standard" type="button" aria-pressed="false" data-hint="mode-standard" onclick="switchRulesetMode('standard')">📜 Standard</button>
                     </div>
                 </div>
                 <div class="arena-controls">
                     <div class="control-field control-field--environment">
                         <label for="env-select">Ort der Begegnung</label>
-                        <select id="env-select">
-                            <option value="temple">Sanctum der Sieben Siegel</option>
-                            <option value="druid">Hain der Wurzelchronik</option>
-                            <option value="mountain">Observatorium am Himmelsgrat</option>
-                            <option value="library">Bibliothek der Nachtflügel</option>
-                            <option value="undersea">Abtei der Tiefenströmung</option>
-                            <option value="desert">Sonnenpalast der Glasdünen</option>
-                            <option value="moon">Mondkloster der stillen Gezeiten</option>
-                            <option value="forge">Schmiede des Phönix</option>
-                            <option value="ice">Kristallhalle des Nordlichts</option>
-                            <option value="sky">Hängende Gärten der Äonen</option>
+                        <select id="env-select" data-hint="env-select">
+                            <option value="temple" data-hint="room" data-room="temple">Sanctum der Sieben Siegel</option>
+                            <option value="druid" data-hint="room" data-room="druid">Hain der Wurzelchronik</option>
+                            <option value="mountain" data-hint="room" data-room="mountain">Observatorium am Himmelsgrat</option>
+                            <option value="library" data-hint="room" data-room="library">Bibliothek der Nachtflügel</option>
+                            <option value="undersea" data-hint="room" data-room="undersea">Abtei der Tiefenströmung</option>
+                            <option value="desert" data-hint="room" data-room="desert">Sonnenpalast der Glasdünen</option>
+                            <option value="moon" data-hint="room" data-room="moon">Mondkloster der stillen Gezeiten</option>
+                            <option value="forge" data-hint="room" data-room="forge">Schmiede des Phönix</option>
+                            <option value="ice" data-hint="room" data-room="ice">Kristallhalle des Nordlichts</option>
+                            <option value="sky" data-hint="room" data-room="sky">Hängende Gärten der Äonen</option>
                         </select>
                     </div>
                     <div class="control-field control-field--players">
                         <label for="game-player-count">Spielende</label>
-                        <select id="game-player-count">
+                        <select id="game-player-count" data-hint="player-count">
                             <option value="2">2 (Du + 1 Bot)</option>
                             <option value="3" selected>3 (Du + 2 Bots)</option>
                             <option value="4">4 (Du + 3 Bots)</option>
@@ -85,8 +88,8 @@
                             <option value="6">6 (Du + 5 Bots)</option>
                         </select>
                     </div>
-                    <button id="game-start-btn" type="button" class="start-ritual-button">Ritual starten</button>
-                    <button id="game-restart-btn" type="button" class="ghost-button restart-button">Neu geben</button>
+                    <button id="game-start-btn" type="button" class="start-ritual-button" data-hint="start-ritual">Ritual starten</button>
+                    <button id="game-restart-btn" type="button" class="ghost-button restart-button" data-hint="restart">Neu geben</button>
                 </div>
                 <p id="environment-description" class="environment-description">Ein stiller Gewölbehof aus dunklem Marmor, vergoldeten Säulen und einem sternverglasten Sanktuarium.</p>
             </div>
@@ -94,32 +97,35 @@
             <!-- ===== HUD: groß, kontrastreich, jederzeit lesbar ===== -->
             <div class="hud" aria-label="Spielstand">
                 <div class="hud-bar">
-                    <div class="hud-tile hud-tile--round" id="hud-round-tile">
+                    <div class="hud-tile hud-tile--round" id="hud-round-tile" data-hint="round-tile" tabindex="0">
                         <span class="hud-tile__label">Emanation</span>
                         <span class="hud-tile__value"><b id="hud-round">1</b><span id="hud-round-total">/ 5</span></span>
                         <span class="hud-tile__detail" id="hud-round-cards">5 Karten · 3 Spielende</span>
                         <span class="hud-progress" id="hud-round-progress" aria-hidden="true"></span>
                     </div>
-                    <div class="hud-tile hud-tile--oracle" id="hud-oracle-tile">
+                    <div class="hud-tile hud-tile--oracle" id="hud-oracle-tile" data-hint="oracle-tile" tabindex="0">
                         <span class="hud-tile__label">Weltgesetz</span>
                         <div id="hud-oracle" class="hud-oracle" data-active="false"></div>
                     </div>
-                    <div class="hud-tile hud-tile--mode" id="hud-mode-tile">
+                    <div class="hud-tile hud-tile--mode" id="hud-mode-tile" data-hint="mode-tile" tabindex="0">
                         <span class="hud-tile__label">Regelwerk</span>
                         <span class="hud-tile__value hud-tile__value--text" id="hud-mode-name">Turbo</span>
                         <span class="hud-tile__detail" id="hud-mode-detail">5 Runden · reine Zahlenhierarchie</span>
                     </div>
                 </div>
 
-                <div class="hud-phase-bar" id="hud-phase-tile" data-phase="bidding" role="status" aria-live="polite">
+                <div class="hud-phase-bar" id="hud-phase-tile" data-phase="bidding" role="status" aria-live="polite" data-hint="phase" tabindex="0">
                     <span class="hud-phase-bar__label">Phase</span>
                     <span class="hud-phase-bar__value" id="hud-phase">Vision (Bieten)</span>
                     <span class="hud-phase-bar__detail" id="hud-phase-detail"></span>
                 </div>
 
                 <div class="hud-main">
-                    <div class="hud-karma" id="hud-karma-card">
-                        <span class="hud-karma__label">Dein Karma</span>
+                    <div class="hud-karma" id="hud-karma-card" data-hint="karma" tabindex="0">
+                        <div class="hud-karma__identity">
+                            <div id="hud-avatar" class="hud-avatar" aria-hidden="true"></div>
+                            <span class="hud-karma__label">Dein Karma</span>
+                        </div>
                         <span class="hud-karma__value" id="hud-karma" data-value="0">0</span>
                         <span class="hud-karma__name" id="hud-name">Du (Adept 1)</span>
                         <dl class="hud-karma__stats">
@@ -131,9 +137,9 @@
                     </div>
                     <div class="hud-side">
                         <h2 class="hud-side__title">Gegner</h2>
-                        <ul class="hud-opponents" id="hud-opponents"></ul>
+                        <ul class="hud-opponents" id="hud-opponents" data-hint="opponents" tabindex="0"></ul>
                         <h2 class="hud-side__title">Stichbilanz</h2>
-                        <ul class="hud-tally" id="hud-trick-tally"></ul>
+                        <ul class="hud-tally" id="hud-trick-tally" data-hint="tally" tabindex="0"></ul>
                     </div>
                 </div>
             </div>
@@ -145,26 +151,39 @@
             <div id="game-oracle-info" class="visually-hidden">Kein Orakel</div>
             <div id="game-phase-info" class="visually-hidden">Vision (Bieten)</div>
 
-            <!-- ===== Bühne ===== -->
-            <div class="stage-3d-wrapper">
+            <!-- ===== Bühne mit Weltenwahl ===== -->
+            <div class="stage-toolbar" role="group" aria-label="Bühnenansicht">
+                <div class="world-switch" role="group" aria-label="Welt der Bühne">
+                    <span class="stage-toolbar__label">Welt</span>
+                    <button id="world-cathedral" type="button" class="world-chip" data-world="cathedral" data-hint="world-switch" aria-pressed="true">Sternendom</button>
+                    <button id="world-island" type="button" class="world-chip" data-world="island" data-hint="world-switch" aria-pressed="false">Schwebeinseln</button>
+                    <button id="world-orbit" type="button" class="world-chip" data-world="orbit" data-hint="world-switch" aria-pressed="false">Sternenorbit</button>
+                </div>
+                <div class="stage-actions">
+                    <button id="camera-reset" type="button" class="stage-action" data-hint="camera-reset" aria-label="Kamera zurücksetzen">⤾ Kamera</button>
+                </div>
+            </div>
+
+            <div class="stage-3d-wrapper" data-hint="stage" tabindex="0" aria-label="Dreidimensionale Ritual-Bühne, ziehen zum Drehen, Scrollen zum Zoomen">
                 <div id="canvas-container" aria-label="Dreidimensionale Ritual-Arena"></div>
                 <div id="trick-cards-overlay" aria-live="polite" aria-label="Aktueller Stich">
-                    <div id="trick-cards-container"></div>
+                    <div id="trick-cards-container" data-hint="trick"></div>
                 </div>
                 <div id="game-toast" class="game-toast" role="status" aria-live="assertive"></div>
+                <div class="stage-hint" aria-hidden="true">Ziehen · Drehen &nbsp;|&nbsp; Scrollen · Zoom &nbsp;|&nbsp; Doppelklick · Zurück</div>
             </div>
 
             <!-- ===== Spielerpanel ===== -->
             <div class="player-panel">
                 <div class="player-panel-heading">
                     <div class="player-identity">
-                        <div id="user-avatar-badge" class="player-avatar" aria-hidden="true">🧙‍♂️</div>
+                        <div id="user-avatar-badge" class="player-avatar" data-hint="karma"></div>
                         <div>
                             <span id="user-display-name" class="player-name">Du (Adept 1)</span>
                             <span id="game-human-bids-info" class="player-subline">Wähle deine Vision</span>
                         </div>
                     </div>
-                    <div id="game-human-score" class="player-score">
+                    <div id="game-human-score" class="player-score" data-hint="karma">
                         <span>Karma</span>
                         <b>0</b>
                     </div>
@@ -172,24 +191,24 @@
 
                 <div id="game-bidding-controls" class="bidding-panel" aria-label="Stichgebot">
                     <div class="bidding-panel__title">Deine Vision – wie viele Stiche gewinnst du?</div>
-                    <div id="game-bid-buttons" class="bid-grid"></div>
+                    <div id="game-bid-buttons" class="bid-grid" data-hint="bid-button"></div>
                 </div>
 
                 <p id="game-constraint-info" class="constraint-note" role="status"></p>
 
                 <div class="hand-heading"><span>Deine Hand</span><span class="hand-scroll-hint">Wischen oder horizontal scrollen</span></div>
-                <div id="game-human-hand" class="player-hand-rail" role="group" aria-label="Deine Handkarten"></div>
+                <div id="game-human-hand" class="player-hand-rail" role="group" aria-label="Deine Handkarten" data-hint="hand"></div>
             </div>
 
             <!-- ===== Rundenbilanz ===== -->
-            <div class="round-summary">
+            <div class="round-summary" data-hint="summary">
                 <h2 class="round-summary__title">Rundenbilanz</h2>
                 <ul id="hud-round-summary" class="round-summary__list">
                     <li class="hud-summary-row is-empty">Die Bilanz erscheint nach der ersten Runde.</li>
                 </ul>
             </div>
 
-            <div id="game-log" role="log" aria-live="polite" aria-relevant="additions">
+            <div id="game-log" role="log" aria-live="polite" aria-relevant="additions" data-hint="log" tabindex="0">
                 <div class="log-line">🔮 [Chronik]: Arena bereit. Wähle die Parameter und starte das Ritual.</div>
             </div>
         </section>
@@ -252,7 +271,7 @@
                     <p id="chart-explanation" class="section-lede"></p>
                 </div>
             </div>
-            <div class="chart-frame">
+            <div class="chart-frame" data-hint="chart">
                 <canvas id="probChart" role="img" aria-label="Diagramm: Wahrscheinlichkeit für Trümpfe nach Handkartenzahl"></canvas>
             </div>
         </section>
@@ -266,7 +285,7 @@
                     <p class="section-lede">Nutzt exakt dieselben Regeln wie die Partie – inklusive Stern-Segen und Hofkarten.</p>
                 </div>
             </div>
-            <div class="calc-grid">
+            <div class="calc-grid" data-hint="calc">
                 <label class="calc-field"><span>Vision (Gebot)</span>
                     <input type="number" id="calc-bid" value="2" min="0" max="15" inputmode="numeric">
                 </label>
@@ -287,8 +306,8 @@
     </main>
 
     <footer class="site-footer">
-        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.4.0-beta.1</span> · Regelwerk <span id="footer-ruleset">0.4.0</span></p>
-        <p class="site-footer__note">Lokale Beta ohne Online-Multiplayer. Alle Kartenmotive werden prozedural als SVG erzeugt.</p>
+        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.5.0-beta.1</span> · Regelwerk <span id="footer-ruleset">0.4.0</span></p>
+        <p class="site-footer__note">Lokale Beta ohne Online-Multiplayer. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
     </footer>
 
     <!-- ================= PODIUM ================= -->
@@ -299,33 +318,45 @@
         <div class="podium-stage">
             <div id="podium-2" class="podium-place podium-place--2">
                 <span class="podium-medal">🥈</span>
+                <div id="podium-2-avatar" class="podium-avatar" aria-hidden="true"></div>
                 <span id="podium-2-name" class="podium-name">Bot 1</span>
                 <span id="podium-2-score" class="podium-score">0 Karma</span>
                 <span class="podium-block">2</span>
             </div>
             <div id="podium-1" class="podium-place podium-place--1">
                 <span class="podium-medal podium-medal--crown">👑</span>
+                <div id="podium-1-avatar" class="podium-avatar" aria-hidden="true"></div>
                 <span id="podium-1-name" class="podium-name">Du</span>
                 <span id="podium-1-score" class="podium-score">0 Karma</span>
                 <span class="podium-block">1</span>
             </div>
             <div id="podium-3" class="podium-place podium-place--3">
                 <span class="podium-medal">🥉</span>
+                <div id="podium-3-avatar" class="podium-avatar" aria-hidden="true"></div>
                 <span id="podium-3-name" class="podium-name">Bot 2</span>
                 <span id="podium-3-score" class="podium-score">0 Karma</span>
                 <span class="podium-block">3</span>
             </div>
         </div>
-        <button id="podium-new-game" type="button" class="start-ritual-button">Neues Ritual starten</button>
+        <button id="podium-new-game" type="button" class="start-ritual-button" data-hint="start-ritual">Neues Ritual starten</button>
     </div>
 
     <!-- Karten-Detaildialog (Inhalt wird in js/app.js erzeugt) -->
     <div id="card-dialog" class="card-dialog" aria-hidden="true"></div>
 
+    <!-- Schwebende Hinweiskarte: Kurzbeschreibung + Funktion beim Überfahren -->
+    <div id="arc-hint-card" class="arc-hint" role="tooltip" aria-hidden="true">
+        <span class="arc-hint__title"></span>
+        <span class="arc-hint__short"></span>
+        <span class="arc-hint__action"></span>
+    </div>
+
     <!-- ================= SKRIPTE ================= -->
     <script src="js/cards.js" defer></script>
     <script src="js/card-art.js" defer></script>
     <script src="js/rules.js" defer></script>
+    <script src="js/worlds.js" defer></script>
+    <script src="js/avatars.js" defer></script>
     <script src="js/animations.js" defer></script>
     <script src="js/scene3d.js" defer></script>
     <script src="js/engine.js" defer></script>

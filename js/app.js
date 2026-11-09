@@ -71,6 +71,7 @@
       badge.dataset.mode = next;
     }
 
+    document.documentElement.dataset.mode = next;
     setText('hud-mode-name', next === 'turbo' ? 'Turbo' : 'Standard');
     setText('hud-mode-detail', next === 'turbo'
       ? `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie`
@@ -174,7 +175,7 @@
   function codexCardMarkup(card) {
     const effect = card.effectUid ? CARDS.EFFECTS[card.effectUid] : null;
     const badge = effect ? `<span class="codex-card__badge" data-type="${effect.type}">${effect.type}</span>` : '';
-    return `<button type="button" class="codex-card" data-uid="${card.uid}" aria-label="${escapeHtml(card.name)} öffnen">
+    return `<button type="button" class="codex-card" data-uid="${card.uid}" data-hint="codex-card" aria-label="${escapeHtml(card.name)} öffnen">
       <span class="codex-card__art" aria-hidden="true">${ART.face(card, { suffix: 'codex' })}</span>
       <span class="codex-card__meta">
         <span class="codex-card__name">${escapeHtml(card.isTrump ? card.shortName : card.name)}</span>
@@ -488,64 +489,165 @@
     });
   }
 
-  let tooltipElement = null;
-  let tooltipTarget = null;
+  /**
+   * Hinweiskarte: Kurzbeschreibung + Funktion.
+   * --------------------------------------------------------------
+   * Jedes Element mit `data-hint="<schlüssel>"` liest seinen Text aus
+   * `ArcanumWorlds.HOVER_HINTS`; Karten und Handelemente mit
+   * `data-tooltip` werden in dieselbe Karte übersetzt. Die Karte
+   * folgt dem Zeiger, bleibt im Sichtfeld und erscheint auch bei
+   * Tastaturfokus. Auf Touch-Geräten bleibt sie aus.
+   */
+  const hint = {
+    element: null,
+    target: null,
+    timer: 0,
+    hideTimer: 0,
+    visible: false,
+    canHover: true
+  };
 
-  function hideTooltip() {
-    if (tooltipTarget) tooltipTarget.removeAttribute('aria-describedby');
-    if (tooltipElement) tooltipElement.remove();
-    tooltipTarget = null;
-    tooltipElement = null;
+  function hintElements() {
+    if (!hint.element) hint.element = document.getElementById('arc-hint-card');
+    return hint.element;
   }
 
-  function showTooltip(target) {
-    if (!target || !target.getAttribute) return;
-    const text = target.getAttribute('data-tooltip');
-    if (!text) return;
-    hideTooltip();
-    const tooltip = document.createElement('div');
-    tooltip.className = 'arc-tooltip';
-    tooltip.id = `arc-tooltip-${Date.now()}`;
-    tooltip.setAttribute('role', 'tooltip');
-    tooltip.textContent = text;
-    document.body.appendChild(tooltip);
-    target.setAttribute('aria-describedby', tooltip.id);
-    tooltipElement = tooltip;
-    tooltipTarget = target;
+  /** Inhalt einer Hinweiskarte: Titel, Kurzbeschreibung, Funktion. */
+  function hintContent(target) {
+    const worlds = global.ArcanumWorlds;
+    const key = target.getAttribute('data-hint');
+    if (key && worlds) {
+      // Karten tragen `data-hint="card"` plus `data-uid`.
+      if (key === 'card' && worlds.cardHint) {
+        const card = global.ArcanumCards && global.ArcanumCards.DECK_BY_UID[target.getAttribute('data-uid')];
+        const effect = card && card.effectUid ? global.ArcanumCards.EFFECTS[card.effectUid] : null;
+        const hint = worlds.cardHint(card, effect);
+        if (hint) return hint;
+      }
+      // Orte tragen `data-hint="room"` plus `data-room="<id>"`.
+      if (key === 'room' && worlds.roomHint) {
+        const room = worlds.roomHint(target.getAttribute('data-room') || target.value);
+        if (room) return room;
+      }
+      if (key === 'codex-card' && worlds.cardHint) {
+        const card = global.ArcanumCards && global.ArcanumCards.DECK_BY_UID[target.getAttribute('data-uid')];
+        const effect = card && card.effectUid ? global.ArcanumCards.EFFECTS[card.effectUid] : null;
+        const hint = worlds.cardHint(card, effect);
+        if (hint) return hint;
+      }
+      const data = worlds.hoverHint(key);
+      if (data) return { title: data.title, short: data.short, action: data.action };
+    }
+    const tooltip = target.getAttribute('data-tooltip');
+    if (tooltip) {
+      const label = (target.getAttribute('aria-label') || '').split('.')[0];
+      return {
+        title: label || 'Karte',
+        short: tooltip,
+        action: target.hasAttribute('data-card-index')
+          ? 'Klick oder Enter spielt die Karte.'
+          : 'Klick öffnet den Detaildialog zu dieser Karte.'
+      };
+    }
+    return null;
+  }
+
+  function positionHint(target) {
+    const element = hintElements();
+    if (!element) return;
     const rect = target.getBoundingClientRect();
     const viewport = global.visualViewport;
-    const leftEdge = viewport ? viewport.offsetLeft : 0;
-    const topEdge = viewport ? viewport.offsetTop : 0;
     const viewportWidth = viewport ? viewport.width : global.innerWidth;
     const viewportHeight = viewport ? viewport.height : global.innerHeight;
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const left = Math.max(leftEdge + 12, Math.min(rect.left + rect.width / 2 - tooltipRect.width / 2, leftEdge + viewportWidth - tooltipRect.width - 12));
-    const above = rect.top - tooltipRect.height - 10;
-    const top = above >= topEdge + 8 ? above : Math.min(rect.bottom + 10, topEdge + viewportHeight - tooltipRect.height - 8);
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    const box = element.getBoundingClientRect();
+    const width = box.width || 300;
+    const height = box.height || 120;
+    const margin = 14;
+    let left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, viewportWidth - width - margin));
+    let top = rect.top - height - 12;
+    let placement = 'above';
+    if (top < margin) {
+      top = Math.min(rect.bottom + 12, viewportHeight - height - margin);
+      placement = 'below';
+    }
+    element.style.left = `${Math.round(left)}px`;
+    element.style.top = `${Math.round(top)}px`;
+    element.dataset.placement = placement;
+    // Ein feiner Zeiger verbindet Karte und Element.
+    element.style.setProperty('--hint-anchor', `${Math.round(Math.max(18, Math.min(width - 18, rect.left + rect.width / 2 - left)))}px`);
   }
 
-  function installTooltips() {
-    const findTarget = event => (event.target && event.target.closest ? event.target.closest('[data-tooltip]') : null);
+  function showHint(target) {
+    if (!target || hint.target === target) return;
+    const content = hintContent(target);
+    const element = hintElements();
+    if (!content || !element) return;
+    global.clearTimeout(hint.hideTimer);
+    hint.target = target;
+    element.querySelector('.arc-hint__title').textContent = content.title;
+    element.querySelector('.arc-hint__short').textContent = content.short;
+    element.querySelector('.arc-hint__action').textContent = content.action;
+    element.classList.add('is-visible');
+    element.setAttribute('aria-hidden', 'false');
+    hint.visible = true;
+    positionHint(target);
+    target.setAttribute('aria-describedby', 'arc-hint-card');
+  }
+
+  function hideHint(immediate) {
+    const element = hintElements();
+    global.clearTimeout(hint.timer);
+    const finish = () => {
+      if (!element) return;
+      element.classList.remove('is-visible');
+      element.setAttribute('aria-hidden', 'true');
+      hint.visible = false;
+      if (hint.target) hint.target.removeAttribute('aria-describedby');
+      hint.target = null;
+    };
+    if (immediate) finish();
+    else hint.hideTimer = global.setTimeout(finish, 90);
+  }
+
+  function queueHint(target) {
+    global.clearTimeout(hint.timer);
+    if (hint.target === target && hint.visible) return;
+    if (hint.target !== target) hideHint(true);
+    hint.timer = global.setTimeout(() => showHint(target), hint.visible ? 0 : 260);
+  }
+
+  function installHoverHints() {
+    hint.canHover = !(global.matchMedia && global.matchMedia('(hover: none)').matches);
+    const card = hintElements();
+    if (card) {
+      card.querySelectorAll('span').forEach(span => span.setAttribute('aria-hidden', 'true'));
+    }
+    const targetOf = event => (event.target && event.target.closest ? event.target.closest('[data-hint], [data-tooltip]') : null);
+
     document.addEventListener('pointerover', event => {
-      if (event.pointerType === 'touch') return;
-      const target = findTarget(event);
-      if (target && target !== tooltipTarget) showTooltip(target);
+      if (event.pointerType === 'touch' || !hint.canHover) return;
+      const target = targetOf(event);
+      if (target) queueHint(target);
     });
     document.addEventListener('pointerout', event => {
-      const target = findTarget(event);
-      if (target && target === tooltipTarget && (!event.relatedTarget || !target.contains(event.relatedTarget))) hideTooltip();
+      if (event.pointerType === 'touch' || !hint.canHover) return;
+      const target = targetOf(event);
+      if (!target || target !== hint.target) return;
+      if (event.relatedTarget && target.contains(event.relatedTarget)) return;
+      hideHint();
     });
+    document.addEventListener('pointerdown', () => { if (hint.visible) hideHint(true); });
     document.addEventListener('focusin', event => {
-      const target = findTarget(event);
-      if (target) showTooltip(target);
+      const target = targetOf(event);
+      if (target) showHint(target);
     });
     document.addEventListener('focusout', event => {
-      if (tooltipTarget && (event.target === tooltipTarget || tooltipTarget.contains(event.target))) hideTooltip();
+      if (hint.target && (event.target === hint.target || hint.target.contains(event.target))) hideHint(true);
     });
-    global.addEventListener('resize', hideTooltip, { passive: true });
-    global.addEventListener('scroll', hideTooltip, { passive: true, capture: true });
+    global.addEventListener('resize', () => hideHint(true), { passive: true });
+    global.addEventListener('scroll', () => hideHint(true), { passive: true, capture: true });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && hint.visible) hideHint(true); });
   }
 
   /** Fokusfalle für Karten- und Podiumsdialog. */
@@ -582,6 +684,39 @@
   /* Ereignisse                                                        */
   /* ---------------------------------------------------------------- */
 
+  /* ---------------------------------------------------------------- */
+  /* Bühnen-Chrome: Ortsnotiz, Welten-Chips, Stimmungsfarbe            */
+  /* ---------------------------------------------------------------- */
+
+  /** Schreibt Ortsname, Stimmung und Welthülle in die Werkzeugleiste. */
+  function syncRoomChrome(profile) {
+    if (!profile) return;
+    const note = document.getElementById('arena-room-note');
+    if (note) note.textContent = `${profile.label} · ${profile.mood || ''}`.replace(/ · $/, '');
+    const world = (global.ArcanumWorlds?.WORLDS || []).find(entry => entry.id === profile.world);
+    if (world) document.title = `Arcanum — ${profile.label} · ${world.label}`;
+    document.documentElement.style.setProperty('--room-accent', profile.ui?.accent || '#b591ed');
+    document.documentElement.style.setProperty('--room-glow', profile.ui?.glow || '#e7c987');
+    document.documentElement.style.setProperty('--room-deep', profile.ui?.deep || '#110d1b');
+  }
+
+  /** Markiert die aktive Welt in der Chip-Gruppe. */
+  function syncWorldChips(world) {
+    document.querySelectorAll('[data-world]').forEach(chip => {
+      const active = chip.dataset.world === world;
+      chip.classList.toggle('is-active', active);
+      chip.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  /** Füllt die Ortsauswahl aus dem Manifest (eine Quelle für 2D und 3D). */
+  function fillEnvironmentSelect() {
+    const select = document.getElementById('env-select');
+    const rooms = global.ArcanumWorlds?.ROOMS;
+    if (!select || !Array.isArray(rooms) || select.options.length === rooms.length) return;
+    select.innerHTML = rooms.map(room => `<option value="${room.id}" data-hint="room" data-room="${room.id}">${room.label}</option>`).join('');
+  }
+
   function installArenaEvents() {
     const arena = document.getElementById('play-game');
     if (!arena) return;
@@ -608,8 +743,45 @@
 
     const envSelect = document.getElementById('env-select');
     if (envSelect) {
-      envSelect.addEventListener('change', () => global.GameEngine3D.changeEnvironment(envSelect.value));
+      envSelect.addEventListener('change', () => {
+        const stage = global.GameEngine3D;
+        if (!stage) return;
+        stage.changeEnvironment(envSelect.value);
+        syncRoomChrome(stage.profile);
+        syncWorldChips(stage.world);
+      });
     }
+
+    const stageEl = document.querySelector('.stage-3d-wrapper');
+    if (stageEl) {
+      stageEl.addEventListener('dblclick', event => {
+        if (event.target.closest('.arc-card')) return;
+        if (global.GameEngine3D) global.GameEngine3D.resetCamera();
+      });
+    }
+    const cameraButton = document.getElementById('camera-reset');
+    if (cameraButton) {
+      cameraButton.addEventListener('click', () => { if (global.GameEngine3D) global.GameEngine3D.resetCamera(); });
+    }
+    document.querySelectorAll('[data-world]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const stage = global.GameEngine3D;
+        if (!stage) return;
+        const world = chip.dataset.world;
+        const known = (global.ArcanumWorlds?.WORLDS || []).find(entry => entry.id === world);
+        const room = (global.ArcanumWorlds?.ROOMS || []).find(entry => entry.world === world);
+        if (room) {
+          if (envSelect) envSelect.value = room.id;
+          stage.changeEnvironment(room.id);
+          syncRoomChrome(stage.profile);
+          syncWorldChips(world);
+          global.GameEngine.log(`🌍 Welt gewechselt: ${known ? known.label : world} · ${room.label}`);
+        } else {
+          stage.changeWorld(world);
+          syncWorldChips(stage.world);
+        }
+      });
+    });
 
     const startButton = document.getElementById('game-start-btn');
     if (startButton) {
@@ -719,9 +891,14 @@
   /* ---------------------------------------------------------------- */
 
   function init() {
+    fillEnvironmentSelect();
     const canvas = document.getElementById('canvas-container');
     if (typeof global.THREE !== 'undefined' && global.GameEngine3D) {
       global.GameEngine3D.init();
+      if (global.GameEngine3D.profile) {
+        syncRoomChrome(global.GameEngine3D.profile);
+        syncWorldChips(global.GameEngine3D.world);
+      }
     } else if (canvas) {
       canvas.classList.add('canvas-fallback');
       canvas.textContent = 'Die 3D-Bühne konnte nicht geladen werden – das Kartenritual bleibt vollständig spielbar.';
@@ -729,7 +906,7 @@
     }
 
     installMobileNavigation();
-    installTooltips();
+    installHoverHints();
     installDialogKeyboard();
     installArenaEvents();
     installTrickFeedback();
