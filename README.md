@@ -1,20 +1,35 @@
 # Arcanum
 
-**Version 0.3.0-beta.1** · Browser-Beta
+**Version 0.4.0-beta.1** · Browser-Beta
 
-Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots und erkunde den Karten-Kodex an einem von zehn eigens komponierten Ritualorten.
+Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex und trete an einem von zehn Ritualorten an.
 
-## Funktionen
+## Was diese Version bringt
 
-- Zwei bis sechs Spielende, fünf Turbo- oder sieben Standardrunden
-- **Zehn eigenständige 3D-Orte** statt Farbvarianten: Marmorsanktuarium, Baumhain, Gipfelsternwarte, gotische Bibliothek, versunkene Abtei, Wüstenpalast, Mondkloster, Vulkan-Schmiede, Eiskathedrale und Himmelsgärten
-- Prozedurale Oberflächen, PBR-Materialien, mehrschichtige Beleuchtung, atmosphärische Effekte und eigens komponierte Architektur je Ort
-- Ritualtisch mit Intarsien, abgestimmter Bestuhlung und individuellen Details; charaktervolle Avatare
-- Vollständig responsive Navigation, Lobby, Bühne, Stichkarten, Hand, Gebote, Podium, Kodex, Diagramm und Rechner – einschließlich Hoch- und Querformat
-- Karten-Kodex mit Suche und Filter, Wahrscheinlichkeitsdiagramm und Wertungsrechner
-- Tastaturbedienbare Karten, Touch-optimierte Steuerelemente, viewport-begrenzte Tooltips und Unterstützung für reduzierte Bewegung
+- **Vollständiges Deck mit eigener Kartenkunst.** Alle 78 Karten (22 Große Arkana, 4 Farben × Ass bis König) werden prozedural als geschichtetes SVG gerendert – 22 individuelle Arkana-Motive, 16 Hofkarten-Figuren, Punktbilder von Ass bis Zehn, gestaltete Rückseite. Keine Bilddateien, keine Emoji, kein CDN für Grafiken.
+- **Karten-Kodex, sinnvoll sortiert.** Große Arkana 0–XXI zuerst, danach Stäbe, Kelche, Schwerter und Münzen – jeweils Ass bis König. Suche, sechs Filter, drei Sortierungen und ein Detaildialog mit Symbolik, Rangwert und Regeltext.
+- **Großes, gut lesbares HUD.** Karmawert in Großschrift mit Tabellenziffern, Vision/Stiche/Hand als Kennzahlen, Gegnerkarma, Stichbilanzen, Orakel und Phasenband – kontrastreich und auf jeder Breite lesbar.
+- **Gerenderte Animationen.** Kartenflug per Bézierkurve mit Geisterkarte, gestaffelte Stichauslage, Treffer-Effekt beim Stichentscheid, zählende Karmawerte, Federphysik und Konfettiregen auf dem Podium. Alles respektiert `prefers-reduced-motion`.
+- **Sortierte Hand und lesbare Karten.** Die eigene Hand wird automatisch sinnvoll sortiert (Trümpfe absteigend, danach Stäbe, Kelche, Schwerter, Münzen – je Ass zuerst), Karten sind echte Schaltflächen mit Tooltip und der verdeckte Mond zeigt eine eigene Rückseite.
+- **Getrennter Regelkern.** Die komplette Spielmathematik liegt in `js/rules.js` als DOM-freie, testbare Domäne – dieselbe Formel für Partie, Wertungsrechner und Tests.
 
-**Stand:** Lokale Browser-Beta, kein Online-Multiplayer und noch keine MMO-Serverarchitektur. Die im Kodex aufgeführten Spezialeffekte sind implementiert; für mehrdeutige Fälle gelten die Festlegungen in [der Dokumentation](docs/ARCHITECTURE.md).
+![Das vollständige Deck](docs/deck-preview.jpg)
+
+## Spielidee
+
+Zwei bis sechs Spielende sagen voraus, wie viele Stiche sie gewinnen (**Vision**). Wer anspielt, legt die zu bedienende Farbe fest; Trümpfe sind immer erlaubt. Höchster Trumpf gewinnt, sonst die höchste Karte der angespielten Farbe – das Ass zählt dabei 14,5. Exakte Visionen zahlen Karma, Abweichungen kosten.
+
+Zwei Regelwerke stehen bereit:
+
+| | Turbo | Standard |
+| --- | --- | --- |
+| Runden | 5 | 7 |
+| Karten pro Runde | 5 … 9 | 7 … 13 |
+| Orakel | – | 5 Weltgesetze zur Auswahl pro Runde |
+| Unterbieten | −10 je Stich | −15 je Stich |
+| Hofkarten-Segen | – | +1 bis +4 Karma je gewonnener Hofkarte |
+
+Details, Sonderfälle und die vollständige Punktemathematik stehen in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) und [docs/RULES.md](docs/RULES.md).
 
 ## Die zehn Orte
 
@@ -31,13 +46,13 @@ Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele
 
 ## Start
 
-Voraussetzung: ein moderner Browser mit JavaScript und Internetzugang für die CDN-Abhängigkeiten. WebGL wird für die 3D-Ansicht benötigt; ohne WebGL bleibt das Kartenspiel bedienbar.
+Voraussetzung: ein moderner Browser mit JavaScript. WebGL wird für die 3D-Bühne benötigt; ohne WebGL bleibt das Kartenspiel vollständig bedienbar. Die Kartenkunst wird im Browser erzeugt und braucht keine Verbindung.
 
 ```sh
 python3 -m http.server 8000
 ```
 
-Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die HTML-Datei kann auch direkt geöffnet werden. Es gibt keinen Build-Schritt, Paketmanager oder lokale Asset-Pipeline. Tailwind CSS, Chart.js und Three.js werden zur Laufzeit über CDNs geladen. Ohne Tailwind ist die Darstellung beeinträchtigt; ohne Chart.js entfällt das Diagramm.
+Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die HTML-Datei kann auch direkt geöffnet werden. Es gibt keinen Build-Schritt und keinen Paketmanager. Tailwind CSS, Chart.js, Three.js und die Schriften werden zur Laufzeit über CDNs geladen; ohne Chart.js entfällt nur das Diagramm.
 
 ## Prüfen
 
@@ -45,24 +60,32 @@ Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die H
 node --test tests/*.test.cjs
 ```
 
-Zusätzlich im Browser auf schmalem Hochformat, Tablet, Desktop und breitem Monitor prüfen: Navigation öffnen, Hand horizontal durchsehen, bieten und Karten spielen, alle zehn Orte wechseln, Modus wechseln und einen Neustart während eines Bot-Zugs ausprobieren.
+Die Tests laufen ohne Browser und prüfen Kartenregister, alle 78 SVG-Motive, Kodex-Sortierung und -Filter, jede Regel und jeden Spezialeffekt, die Wertungsformel (auch gegen die Engine), Determinismus per Seed, die hypergeometrische Wahrscheinlichkeit, die Animationsmathematik sowie die Konsistenz von HTML-IDs, CSS-Breakpoints und Versionsangaben.
+
+Zusätzlich im Browser prüfen: schmales Hochformat, Tablet, Desktop und breiter Monitor; Navigation öffnen, Hand horizontal durchsehen, bieten und Karten spielen, alle zehn Orte wechseln, Modus wechseln, Kodex durchsuchen, Karten-Dialog per Tastatur schließen, Neustart während eines Bot-Zugs.
 
 ## Projektstruktur
 
 ```text
-arcanum_tarot_browsergame_codex.html  Einstieg, responsive Oberfläche und Ortsauswahl
-css/arcanum.css                      Designsystem und responsive Darstellung
-js/cards.js                          Kartenregister und gemeinsame Kartendarstellung
-js/game-engine.js                    Rundenablauf, Regeln und Bot-Spiel
-js/scene3d.js                        zehn 3D-Architekturen, Materialien, Licht und Avatare
-js/app.js                            UI, Navigation, Tooltips, Kodex, Rechner und Initialisierung
-README.md                            Einstieg und Entwicklungsablauf
-CHANGELOG.md                         Versionshistorie
-docs/ARCHITECTURE.md                 Architektur und Regeln
-tests/game.test.cjs                  Spiellogik, Ortsmanifest und Responsive-Helper
-LICENSE                             GPL-2.0-Lizenztext
+arcanum_tarot_browsergame_codex.html  Einstieg, semantische Oberfläche, HUD
+css/arcanum.css                       Designsystem, Kartenkunst, HUD, Responsive
+js/cards.js                           Kartenregister (78 Karten), Effekte, Kodex-Abfragen
+js/card-art.js                        Prozeduraler SVG-Renderer für alle Kartenmotive
+js/rules.js                           Regelkern: Rangordnung, Züge, Wertung, Stochastik
+js/animations.js                      Federphysik, Kartenflug, Karmazähler, Partikel
+js/scene3d.js                         Zehn 3D-Architekturen, Materialien, Licht, Avatare
+js/engine.js                          Zustandsmaschine, Bot-Züge, HUD- und UI-Updates
+js/app.js                             Modus, Regelwerk, Kodex, Diagramm, Rechner, Events
+README.md                             Einstieg und Entwicklungsablauf
+CHANGELOG.md                          Versionshistorie
+docs/ARCHITECTURE.md                  Architektur, Datenmodell und Spielmathematik
+docs/RULES.md                         Regelnachschlagewerk mit Sonderfällen
+tests/game.test.cjs                   Automatisierte Tests für alle Schichten
+LICENSE                               GPL-2.0-Lizenztext
 ```
 
 ## Mitwirken und Versionierung
 
-Änderungen klein halten, Verantwortlichkeiten der getrennten Dateien beibehalten, Tests ausführen und sichtbare Änderungen im Changelog dokumentieren. Versionen folgen [Semantic Versioning](https://semver.org/lang/de/): MAJOR für inkompatible Änderungen, MINOR für kompatible Funktionen, PATCH für kompatible Fehlerkorrekturen. Die Beta-Versionslinie beginnt wieder bei `0.x.x`; die laufende Version steht im `version`-Meta-Tag der HTML-Datei. Der Code ist in Stylesheet, Kartendaten, 3D-Ansicht, Spiel-Engine und UI aufgeteilt. Für einen MMO-Betrieb muss die Spiellogik künftig zusätzlich als plattformneutraler, serverautoritärer Domänenkern mit versioniertem Netzwerkprotokoll herausgelöst werden; Clients dürfen dann nur Eingaben senden und bestätigte Spielereignisse darstellen. Lizenz: siehe [LICENSE](LICENSE).
+Änderungen klein halten, die Verantwortlichkeiten der Dateien beibehalten, Tests ausführen und sichtbare Änderungen im Changelog dokumentieren. Regeln ändern sich **nur** in `js/rules.js` – dort liegen alle Wertungskonstanten, und `RULESET_VERSION` wird bei Regeländerungen erhöht. Versionen folgen [Semantic Versioning](https://semver.org/lang/de/): MAJOR für inkompatible Änderungen, MINOR für kompatible Funktionen, PATCH für Fehlerkorrekturen. Die laufende Version steht im `version`-Meta-Tag der HTML-Datei, im Changelog-Kopf und im README; ein Test prüft die Übereinstimmung.
+
+Für einen späteren MMO-Betrieb ist der Regelkern bereits frei von DOM und Rendering und kann als serverautoritäre Domäne dienen; Spielstände besitzen ein versioniertes Schema (`STATE_SCHEMA_VERSION`). Lizenz: siehe [LICENSE](LICENSE).

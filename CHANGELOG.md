@@ -1,6 +1,38 @@
 # Changelog
 
-Alle nennenswerten Änderungen werden hier dokumentiert. Die neue Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
+Alle nennenswerten Änderungen werden hier dokumentiert. Die Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
+
+## 0.4.0-beta.1 – 2026-11-09
+
+### Hinzugefügt
+- **Vollständiges Spieldeck mit eigener Kartenkunst:** `js/card-art.js` rendert alle 78 Karten prozedural als geschichtetes SVG – 22 individuelle Motive für die Großen Arkana, 16 Hofkarten-Figuren mit Farbemblem, Punktbilder von Ass bis Zehn, deterministischer Sternenstaub, doppelter Goldrahmen und gestaltete Rückseite. Keine Bilddateien, keine Emoji, offline nutzbar.
+- **Karten-Kodex, sinnvoll sortiert:** Große Arkana 0–XXI vor Stäbe, Kelche, Schwerter und Münzen (je Ass → König), gruppiert mit Überschriften. Suche über Name, Symbolik und Regeltext, elf Filter, drei Sortierungen und ein Detaildialog mit großem Motiv, Rangwert, Hofkarten-Segen, Symbolik und Effekt.
+- **Vollständiges Kartenregister:** `js/cards.js` enthält jetzt alle 78 Karten mit `rank`, `court`, `element`, `keywords`, englischem Namen, römischer Ziffer und Hofkarten-Karma; das Effektregister umfasst 17 Karten mit Kurz- und Langtext.
+- **Getrennter Regelkern:** `js/rules.js` bündelt Rangordnung, Zulässigkeit, Stichauflösung, Wertung, Stochastik und Deckvalidierung als reine, DOM-freie Funktionen. Wertungskonstanten liegen zentral in `CONFIG.scoring`; `RULESET_VERSION` und `STATE_SCHEMA_VERSION` sind eingeführt.
+- **Großes, besser lesbares HUD:** Karmawert in `clamp(52px, 6,4vw, 86px)` mit Tabellenziffern, Kennzahlen für Vision, Stiche und Hand, Zielhinweis, Gegnerkarma, Stichbilanzen mit Balken, Kachelband für Runde/ Weltgesetz/Regelwerk und ein farbcodiertes Phasenband.
+- **Gerenderte Animationen:** `js/animations.js` liefert Federphysik, Bézier-Kartenflug mit Geisterkarte, gestaffelte Stichauslage, Treffer-Effekt beim Stichentscheid, zählende Karmawerte und Konfettiregen auf dem Podium – ohne Bibliothek und mit `prefers-reduced-motion`-Fallback.
+- **Hofkarten-Segen (Standard):** Gewonnene Hofkarten zahlen zusätzlich 1–4 Karma; die Regel ist an der Karte, im Regelkern, im Rechner und in der Dokumentation identisch.
+- **Dokumentation:** neue [Regeln & Kartenkunde](docs/RULES.md) mit allen Sonderfällen und Wertungsbeispielen; [ARCHITECTURE.md](docs/ARCHITECTURE.md) beschreibt Schichten, Datenmodell, Regelkern, HUD, Animationen und Spielstandsschema.
+- Tests für Kartenkunst (78 einmalige, gültige SVG-Motive), Kodex-Reihenfolge und -Filter, jede Regel und jeden Sonderfall, Wertung gegen den Engine-Pfad, Determinismus, Handsortierung, Animationsmathematik sowie HTML-ID-, ARIA-, CSS- und Versionskonsistenz (58 Tests).
+
+### Geändert
+- Version auf `0.4.0-beta.1` angehoben (Meta-Tag, README, Changelog, Footer testgestützt konsistent).
+- `js/game-engine.js` heißt jetzt `js/engine.js` und nutzt den Regelkern, statt Regeln zu duplizieren; Bot-Züge und Bots-Gebote sind neu begründet (Trümpfe, Hofkarten, hohe Farbkarten).
+- Die Bietknöpfe, Handkarten und Stichkarten werden vollständig neu aufgebaut; Karten sind echte `<button>`-Elemente mit Tooltip und Beschriftung, Zahlen in Tabellenziffern.
+- Das Rundenende zeigt eine Rundenbilanz mit Punktdelta und Begründung; die Chronik ist auf 120 Zeilen begrenzt.
+- CSS in vierzehn dokumentierte Abschnitte gegliedert (Tokens, HUD, Kartenkunst, Kodex, Dialog, Podium, Responsive, reduzierte Bewegung) mit neuen Breakpoints 1180/900/700/430 px.
+- `ArcanumCardArt` ersetzt die Emoji-Symbole der Karten durch gezeichnete Motive; Karten tragen kein Emoji mehr.
+
+### Behoben
+- **Der verdeckte Mond brach die Darstellung.** Die verdeckte Karte war ein Ad-hoc-Objekt ohne `uid` und ließ den SVG-Renderer mit `undefined` scheitern; sie ist jetzt als `CONCEALED_CARD` vollständig beschrieben und zeigt die Kartenrückseite (Regressionstest).
+- **Wertungsrechner und Partie rechneten unterschiedlich**, sobald Hofkarten oder halbe Stiche ins Spiel kamen; beide nutzen jetzt `ArcanumRules.scoreRound`.
+- **Halbe Stiche rundeten inkonsistent**. Jetzt gilt: Treffer nur bei exakter Gleichheit, Abweichungen werden auf ganze Schritte gerundet, alle Karmawerte bleiben ganzzahlig. Die Regel ist dokumentiert und getestet.
+- **Hofkarten hatten einen Effektverweis ohne Effekt** und wurden im Kodex teils falsch gefiltert; der Filter `schicksal` lieferte das ganze Deck.
+- **Narr und Rad:** Der Narr hat nun den niedrigsten Rangwert (0) und verliert damit auch in der invertierten Hierarchie gegen alle anderen Karten.
+- **Bot-Züge** wählten blind die erste zulässige Karte und konnten hohe Trümpfe verbrennen; sie spielen jetzt die höchste zulässige Nicht-Trumpf-Karte.
+- **Doppelte bzw. fehlende HTML-IDs** und tote CSS-Regeln (`canvas-fallback`, Podium-Selektoren) wurden beseitigt; ein Test verhindert Rückfälle.
+- **Die Handkarten-Warnung** nutzte `alert()`; Hinweise erscheinen jetzt in der Oberfläche.
+- Sprungmarke, Fokusfalle für beide Dialoge, `Escape`-Verhalten und sichtbarer Fokus wurden ergänzt bzw. korrigiert.
 
 ## 0.3.0-beta.1 – 2026-11-09
 
