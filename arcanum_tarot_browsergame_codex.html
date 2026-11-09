@@ -2,7 +2,7 @@
 <html lang="de" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="version" content="0.2.0-beta.1">
+    <meta name="version" content="0.3.0-beta.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arcanum — Mystisches Tarot-Stichspiel · Beta</title>
     <!-- Tailwind CSS CDN -->
@@ -44,103 +44,110 @@
 <body class="min-h-screen flex flex-col font-sans selection:bg-gold selection:text-black">
 
     <!-- Header & Navigation -->
-    <header class="sticky top-0 z-50 bg-occult-950/95 backdrop-blur-md border-b border-gold/30 shadow-2xl">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
-                    <span class="text-4xl animate-pulse">🏛️</span>
-                    <div>
-                        <span class="font-serif text-2xl font-bold tracking-widest text-gold drop-shadow-md">ARCANUM</span>
-                        <span class="block text-[10px] uppercase tracking-widest text-purple-300">Die Arkana-Arena · Browser-Beta</span>
-                    </div>
-                    <span id="header-mode-badge" class="ml-2 hidden sm:inline-block text-[10px] bg-turbo/20 text-orange-300 border border-turbo/50 px-3 py-1 rounded-full font-bold uppercase tracking-wider">⚡ Turbo Edition</span>
-                </div>
-                <nav class="hidden md:flex space-x-6 text-xs uppercase tracking-wider font-semibold">
-                    <a href="#play-game" class="text-gold hover:text-white transition">🎮 Arena</a>
-                    <a href="#rules-view" class="text-purple-200 hover:text-gold transition">Regelwerk</a>
-                    <a href="#kodex" class="text-purple-200 hover:text-gold transition">Karten-Kodex</a>
-                    <a href="#math" class="text-purple-200 hover:text-gold transition">Stochastik</a>
-                    <a href="#calculator" class="text-purple-200 hover:text-gold transition">Wertung</a>
-                </nav>
-            </div>
+    <header class="site-header sticky top-0 z-50 bg-occult-950/95 backdrop-blur-md border-b border-gold/30 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 site-header-inner">
+            <a class="brand-lockup" href="#play-game" aria-label="Arcanum – zur Arena">
+                <span class="brand-mark" aria-hidden="true">🏛️</span>
+                <span class="brand-copy">
+                    <span class="brand-title font-serif text-2xl font-bold tracking-widest text-gold drop-shadow-md">ARCANUM</span>
+                    <span class="brand-subtitle text-[10px] uppercase tracking-widest text-purple-300">Die Arkana-Arena · Browser-Beta</span>
+                </span>
+                <span id="header-mode-badge" class="header-mode-badge ml-2 hidden sm:inline-block text-[10px] bg-turbo/20 text-orange-300 border border-turbo/50 px-3 py-1 rounded-full font-bold uppercase tracking-wider">⚡ Turbo Edition</span>
+            </a>
+            <button id="mobile-nav-toggle" class="mobile-nav-toggle md:hidden" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Navigation öffnen">
+                <span></span><span></span><span></span>
+            </button>
+            <nav id="primary-nav" class="primary-nav text-xs uppercase tracking-wider font-semibold" aria-label="Hauptnavigation">
+                <a href="#play-game" class="text-gold hover:text-white transition">🎮 Arena</a>
+                <a href="#rules-view" class="text-purple-200 hover:text-gold transition">Regelwerk</a>
+                <a href="#kodex" class="text-purple-200 hover:text-gold transition">Karten-Kodex</a>
+                <a href="#math" class="text-purple-200 hover:text-gold transition">Stochastik</a>
+                <a href="#calculator" class="text-purple-200 hover:text-gold transition">Wertung</a>
+            </nav>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 w-full">
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
         <!-- SECTION: 3D REALTIME GAME ARENA -->
-        <section id="play-game" class="bg-occult-900 rounded-3xl p-4 sm:p-8 shadow-2xl border-2 border-gold relative">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-3 border-b border-gold/30">
-                <div class="flex items-center gap-3">
-                    <span class="text-xs uppercase tracking-widest text-gold font-bold">Lobby & Ritual-Tisch</span>
-                    <!-- Mode Switcher Buttons -->
-                    <div class="flex items-center bg-occult-950 p-1 rounded-xl border border-gold/40">
-                        <button id="btn-mode-turbo" onclick="switchRulesetMode('turbo')" class="px-3 py-1 rounded-lg text-xs font-bold transition bg-turbo text-white">⚡ Turbo</button>
-                        <button id="btn-mode-standard" onclick="switchRulesetMode('standard')" class="px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white">📜 Standard</button>
+        <section id="play-game" class="arena-panel bg-occult-900 rounded-3xl p-4 sm:p-8 shadow-2xl border-2 border-gold relative" aria-labelledby="arena-title">
+            <div class="arena-toolbar">
+                <div class="arena-toolbar-heading">
+                    <div class="arena-title-block">
+                        <span class="section-eyebrow text-xs uppercase tracking-widest text-gold font-bold">Lobby & Ritual-Tisch</span>
+                        <h1 id="arena-title">Die Arkana-Arena</h1>
+                    </div>
+                    <div class="mode-switcher flex items-center bg-occult-950 p-1 rounded-xl border border-gold/40" role="group" aria-label="Regelmodus">
+                        <button id="btn-mode-turbo" type="button" aria-pressed="true" onclick="switchRulesetMode('turbo')" class="px-3 py-1 rounded-lg text-xs font-bold transition bg-turbo text-white">⚡ Turbo</button>
+                        <button id="btn-mode-standard" type="button" aria-pressed="false" onclick="switchRulesetMode('standard')" class="px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white">📜 Standard</button>
                     </div>
                 </div>
-                <!-- 3D Controls & Player Count -->
-                <div class="flex items-center gap-3 flex-wrap">
-                    <label class="text-xs text-purple-300 font-bold">Atmosphäre:</label>
-                    <select id="env-select" onchange="GameEngine3D.changeEnvironment(this.value)" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2 focus:outline-none">
-                        <option value="temple">🏛️ Hermetisches Sanctum</option>
-                        <option value="druid">🌿 Druidisches Heiligtum</option>
-                        <option value="mountain">🏔️ Astral-Gipfel der Erleuchtung</option>
-                    </select>
-
-                    <label class="text-xs text-purple-300 font-bold">Spieler:</label>
-                    <select id="game-player-count" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2">
-                        <option value="2">2 Spieler (Du + 1 Bot)</option>
-                        <option value="3" selected>3 Spieler (Du + 2 Bots)</option>
-                        <option value="4">4 Spieler (Du + 3 Bots)</option>
-                        <option value="5">5 Spieler (Du + 4 Bots)</option>
-                        <option value="6">6 Spieler (Du + 5 Bots)</option>
-                    </select>
-                    
-                    <button id="game-start-btn" onclick="GameEngine.initGame(document.getElementById('game-player-count').value)" class="bg-gradient-to-r from-gold to-gold-dark text-black font-bold text-xs uppercase px-5 py-2 rounded-xl shadow-lg transition transform active:scale-95 border border-gold">
-                        🔄 Ritual Starten
+                <div class="arena-controls">
+                    <div class="control-field control-field--environment">
+                        <label for="env-select" class="text-xs text-purple-300 font-bold">Ort der Begegnung</label>
+                        <select id="env-select" onchange="GameEngine3D.changeEnvironment(this.value)" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2 focus:outline-none">
+                            <option value="temple">🏛️ Sanctum der Sieben Siegel</option>
+                            <option value="druid">🌿 Hain der Wurzelchronik</option>
+                            <option value="mountain">🏔️ Observatorium am Himmelsgrat</option>
+                            <option value="library">📚 Bibliothek der Nachtflügel</option>
+                            <option value="undersea">🌊 Abtei der Tiefenströmung</option>
+                            <option value="desert">☀️ Sonnenpalast der Glasdünen</option>
+                            <option value="moon">🌙 Mondkloster der stillen Gezeiten</option>
+                            <option value="forge">🔥 Schmiede des Phönix</option>
+                            <option value="ice">❄️ Kristallhalle des Nordlichts</option>
+                            <option value="sky">☁️ Hängende Gärten der Äonen</option>
+                        </select>
+                    </div>
+                    <div class="control-field control-field--players">
+                        <label for="game-player-count" class="text-xs text-purple-300 font-bold">Spielende</label>
+                        <select id="game-player-count" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2">
+                            <option value="2">2 Spieler (Du + 1 Bot)</option>
+                            <option value="3" selected>3 Spieler (Du + 2 Bots)</option>
+                            <option value="4">4 Spieler (Du + 3 Bots)</option>
+                            <option value="5">5 Spieler (Du + 4 Bots)</option>
+                            <option value="6">6 Spieler (Du + 5 Bots)</option>
+                        </select>
+                    </div>
+                    <button id="game-start-btn" type="button" onclick="GameEngine.initGame(document.getElementById('game-player-count').value)" class="start-ritual-button bg-gradient-to-r from-gold to-gold-dark text-black font-bold text-xs uppercase px-5 py-2 rounded-xl shadow-lg transition transform active:scale-95 border border-gold">
+                        🔄 Ritual starten
                     </button>
                 </div>
+                <p id="environment-description" class="environment-description" aria-live="polite">Ein stiller Gewölbehof aus dunklem Marmor, vergoldeten Säulen und einem sternverglasten Sanktuarium.</p>
             </div>
 
             <!-- Status Info Bar -->
-            <div class="grid sm:grid-cols-3 gap-4 mb-4">
-                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+            <div class="game-status-grid grid sm:grid-cols-3 gap-4 mb-4" aria-label="Spielstatus">
+                <div class="status-tile bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
                     <div class="text-[10px] text-gold font-bold uppercase">Emanation (Runde)</div>
                     <div id="game-round-info" class="text-sm font-bold text-white">Runde 1 von 5</div>
                 </div>
-                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+                <div class="status-tile bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
                     <div class="text-[10px] text-gold font-bold uppercase">Weltgesetz (Orakel)</div>
                     <div id="game-oracle-info" class="text-xs font-bold text-purple-200">Kein Orakel (Turbo)</div>
                 </div>
-                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+                <div class="status-tile bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
                     <div class="text-[10px] text-gold font-bold uppercase">Phase</div>
                     <div id="game-phase-info" class="text-sm font-bold text-emerald-400">Vision (Bieten)</div>
                 </div>
             </div>
 
             <!-- Bots Info Display -->
-            <div id="game-bots-status" class="flex flex-wrap justify-around gap-2 mb-3"></div>
+            <div id="game-bots-status" class="bot-status-strip flex flex-wrap justify-around gap-2 mb-3" aria-label="Gegnerstatus" aria-live="polite"></div>
 
-            <!-- 3D ISOMETRIC STAGE & ALTARE TISCH -->
-            <div class="stage-3d-wrapper my-2 relative min-h-[460px] flex items-center justify-center">
-                <!-- ThreeJS Viewport Canvas Container -->
-                <div id="canvas-container" class="w-full h-[450px]"></div>
-
-                <!-- OVERLAY: Interactive Table Cards flying layer -->
-                <div id="trick-cards-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div id="trick-cards-container" class="flex flex-wrap justify-center gap-4 z-40 pointer-events-auto">
-                        <!-- Flying cards rendered here dynamically -->
-                    </div>
+            <!-- Responsive Three.js arena and the compact trick-card layer. -->
+            <div class="stage-3d-wrapper my-2 relative">
+                <div id="canvas-container" aria-label="Dreidimensionale Ritual-Arena"></div>
+                <div id="trick-cards-overlay" aria-live="polite" aria-label="Aktueller Stich">
+                    <div id="trick-cards-container"></div>
                 </div>
             </div>
 
             <!-- PLAYER HAND & CONTROLS -->
-            <div class="max-w-4xl mx-auto mt-2 bg-occult-950/90 rounded-3xl p-5 border-2 border-gold shadow-2xl relative z-30">
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center space-x-3">
-                        <div id="user-avatar-badge" class="w-12 h-12 rounded-full bg-gradient-to-tr from-gold-dark to-gold flex items-center justify-center text-2xl shadow-lg border-2 border-white/30">🧙‍♂️</div>
+            <div class="player-panel max-w-4xl mx-auto mt-2 bg-occult-950/90 rounded-3xl p-5 border-2 border-gold shadow-2xl relative z-30">
+                <div class="player-panel-heading flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-3 player-identity">
+                        <div id="user-avatar-badge" class="w-12 h-12 rounded-full bg-gradient-to-tr from-gold-dark to-gold flex items-center justify-center text-2xl shadow-lg border-2 border-white/30" aria-hidden="true">🧙‍♂️</div>
                         <div>
                             <span id="user-display-name" class="text-base font-serif font-bold text-gold block">Du (Adept 1)</span>
                             <span id="game-human-bids-info" class="text-xs text-purple-300 font-mono"></span>
@@ -152,21 +159,92 @@
                 </div>
 
                 <!-- Bidding Controls -->
-                <div id="game-bidding-controls" class="p-4 bg-gold/10 rounded-2xl border border-gold/40 text-center my-3 space-y-2">
+                <div id="game-bidding-controls" class="bidding-panel p-4 bg-gold/10 rounded-2xl border border-gold/40 text-center my-3 space-y-2" aria-label="Stichgebot">
                     <div class="text-xs font-bold text-gold uppercase tracking-wider">Deine Vision (Stichansage abgeben):</div>
                     <div id="game-bid-buttons" class="flex flex-wrap justify-center gap-2"></div>
                 </div>
 
                 <!-- Human Hand Cards Fan -->
-                <div id="game-human-hand" class="flex justify-center flex-wrap gap-3 pt-2"></div>
+                <div class="hand-heading"><span>Deine Hand</span><span class="hand-scroll-hint">Wischen oder horizontal scrollen</span></div>
+                <div id="game-human-hand" class="player-hand-rail" role="group" aria-label="Deine Handkarten"></div>
             </div>
 
-            <!-- PODIUM / WINNER SCREEN MODAL -->
-            <div id="game-podium-overlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 text-center">
-                <span class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Das Schicksal ist besiegelt</span>
-                <h3 class="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">🏆 Endstand & Gesamtsieger</h3>
+            <!-- Action Log -->
+            <div class="bg-occult-950 rounded-2xl p-3 border border-gold/20 text-xs font-mono text-purple-300 max-h-32 overflow-y-auto space-y-1 shadow-inner mt-4" id="game-log" role="log" aria-live="polite" aria-relevant="additions">
+                <div>🔮 [Chronik]: Arena bereit. Wähle die Parameter und starte das Ritual.</div>
+            </div>
+        </section>
 
-                <div class="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-lg h-64 mb-8 border-b-4 border-gold/50 pb-2">
+        <!-- DYNAMIC RULES SECTION -->
+        <section id="rules-view" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-gold/40">
+            <!-- Dynamic Rules Injected Here -->
+        </section>
+
+        <!-- SECTION: KARTEN-KODEX EXPLORER -->
+        <section id="kodex" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-serif font-bold text-white mb-1">Karten-Kodex & Okkulte Symbolik</h2>
+                    <p class="text-purple-300 text-xs sm:text-sm">Erkunde alle 22 Großen Arkana sowie Hofkarten mit Effekten.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <input type="search" id="card-search" aria-label="Karten im Kodex suchen" oninput="renderCards()" placeholder="Karte suchen..." class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
+                    <select id="card-filter" aria-label="Kodex nach Kartentyp filtern" onchange="renderCards()" class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
+                        <option value="all">Alle Kategorien</option>
+                        <option value="active">Nur aktiver Modus</option>
+                        <option value="turbo">⚡ Turbo Sonderkarten</option>
+                        <option value="schicksal">📜 Standard Schicksal</option>
+                        <option value="orakel">🔮 Orakelkarten</option>
+                    </select>
+                </div>
+            </div>
+            <div id="cards-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- SECTION: STOCHASTIK -->
+        <section id="math" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <h2 class="text-2xl font-serif font-bold text-white mb-2">Stochastik-Analyse (Hypergeometrische Verteilung)</h2>
+            <p id="chart-explanation" class="text-xs text-purple-300 mb-4"></p>
+            <div class="chart-frame bg-occult-950 p-5 rounded-2xl border border-gold/30">
+                <canvas id="probChart" aria-label="Wahrscheinlichkeitsdiagramm: Trumpfchance nach Handkartenzahl"></canvas>
+            </div>
+        </section>
+
+        <!-- SECTION: CALCULATOR -->
+        <section id="calculator" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <h2 class="text-2xl font-serif font-bold text-white mb-4">Universal Wertungs-Rechner</h2>
+            <div class="grid sm:grid-cols-2 gap-4 bg-occult-950 p-6 rounded-2xl border border-gold/30">
+                <div>
+                    <label for="calc-bid" class="block text-xs font-bold text-gold uppercase mb-1">Vision (Gebot)</label>
+                    <input type="number" id="calc-bid" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
+                </div>
+                <div>
+                    <label for="calc-won" class="block text-xs font-bold text-gold uppercase mb-1">Manifestation (Erzielte Stiche)</label>
+                    <input type="number" id="calc-won" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
+                </div>
+                <div class="sm:col-span-2 space-y-2 pt-2 border-t border-gold/20">
+                    <label class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
+                        <input type="checkbox" id="calc-turm" onchange="calculateScore()" class="rounded border-gold">
+                        <span>Turm (XVI) im gewonnenen Stich (+0 Stich-Effekt)</span>
+                    </label>
+                    <label id="calc-stern-box" class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
+                        <input type="checkbox" id="calc-stern" onchange="calculateScore()" class="rounded border-gold">
+                        <span>Orakel XVII (Der Stern) aktiv (+30 Bonus bei Treffer, nur Standard)</span>
+                    </label>
+                </div>
+                <div id="calc-result" class="sm:col-span-2 text-center text-3xl font-serif font-bold text-gold mt-2">+40 Punkte</div>
+                <div id="calc-breakdown" class="sm:col-span-2 text-center text-xs text-purple-300">Exakt getroffen: +20 Basis + 20 Stichpunkte.</div>
+            </div>
+        </section>
+
+    </main>
+
+            <!-- PODIUM / WINNER SCREEN MODAL -->
+            <div id="game-podium-overlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 text-center" role="dialog" aria-modal="true" aria-labelledby="podium-title" aria-hidden="true" tabindex="-1">
+                <span class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Das Schicksal ist besiegelt</span>
+                <h3 id="podium-title" class="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">🏆 Endstand & Gesamtsieger</h3>
+
+                <div class="podium-stage flex items-end justify-center gap-3 sm:gap-6 w-full max-w-lg h-64 mb-8 border-b-4 border-gold/50 pb-2">
                     <!-- Platz 2 -->
                     <div id="podium-2" class="opacity-0 flex flex-col items-center flex-1">
                         <div class="text-2xl mb-1">🥈</div>
@@ -195,75 +273,7 @@
                 </button>
             </div>
 
-            <!-- Action Log -->
-            <div class="bg-occult-950 rounded-2xl p-3 border border-gold/20 text-xs font-mono text-purple-300 max-h-32 overflow-y-auto space-y-1 shadow-inner mt-4" id="game-log">
-                <div>🔮 [Chronik]: Arena bereit. Wähle die Parameter und starte das Ritual.</div>
-            </div>
-        </section>
 
-        <!-- DYNAMIC RULES SECTION -->
-        <section id="rules-view" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-gold/40">
-            <!-- Dynamic Rules Injected Here -->
-        </section>
-
-        <!-- SECTION: KARTEN-KODEX EXPLORER -->
-        <section id="kodex" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
-            <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-serif font-bold text-white mb-1">Karten-Kodex & Okkulte Symbolik</h2>
-                    <p class="text-purple-300 text-xs sm:text-sm">Erkunde alle 22 Großen Arkana sowie Hofkarten mit Effekten.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <input type="text" id="card-search" oninput="renderCards()" placeholder="Karte suchen..." class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
-                    <select id="card-filter" onchange="renderCards()" class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
-                        <option value="all">Alle Kategorien</option>
-                        <option value="active">Nur aktiver Modus</option>
-                        <option value="turbo">⚡ Turbo Sonderkarten</option>
-                        <option value="schicksal">📜 Standard Schicksal</option>
-                        <option value="orakel">🔮 Orakelkarten</option>
-                    </select>
-                </div>
-            </div>
-            <div id="cards-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- SECTION: STOCHASTIK -->
-        <section id="math" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
-            <h2 class="text-2xl font-serif font-bold text-white mb-2">Stochastik-Analyse (Hypergeometrische Verteilung)</h2>
-            <p id="chart-explanation" class="text-xs text-purple-300 mb-4"></p>
-            <div class="bg-occult-950 p-5 rounded-2xl border border-gold/30 h-72">
-                <canvas id="probChart"></canvas>
-            </div>
-        </section>
-
-        <!-- SECTION: CALCULATOR -->
-        <section id="calculator" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
-            <h2 class="text-2xl font-serif font-bold text-white mb-4">Universal Wertungs-Rechner</h2>
-            <div class="grid sm:grid-cols-2 gap-4 bg-occult-950 p-6 rounded-2xl border border-gold/30">
-                <div>
-                    <label class="block text-xs font-bold text-gold uppercase mb-1">Vision (Gebot)</label>
-                    <input type="number" id="calc-bid" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gold uppercase mb-1">Manifestation (Erzielte Stiche)</label>
-                    <input type="number" id="calc-won" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
-                </div>
-                <div class="sm:col-span-2 space-y-2 pt-2 border-t border-gold/20">
-                    <label class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
-                        <input type="checkbox" id="calc-turm" onchange="calculateScore()" class="rounded border-gold">
-                        <span>Turm (XVI) im gewonnenen Stich (+0 Stich-Effekt)</span>
-                    </label>
-                    <label id="calc-stern-box" class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
-                        <input type="checkbox" id="calc-stern" onchange="calculateScore()" class="rounded border-gold">
-                        <span>Orakel XVII (Der Stern) aktiv (+30 Bonus bei Treffer, nur Standard)</span>
-                    </label>
-                </div>
-                <div id="calc-result" class="sm:col-span-2 text-center text-3xl font-serif font-bold text-gold mt-2">+40 Punkte</div>
-                <div id="calc-breakdown" class="sm:col-span-2 text-center text-xs text-purple-300">Exakt getroffen: +20 Basis + 20 Stichpunkte.</div>
-            </div>
-        </section>
-
-    </main>
 
     <!-- JavaScript Application Engine -->
     <script src="js/cards.js" defer></script>

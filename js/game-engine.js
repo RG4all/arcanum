@@ -79,7 +79,17 @@ const GameEngine = {
                 this.maxRounds = currentActiveMode === 'turbo' ? 5 : 7;
                 this.players = [];
 
-                document.getElementById('game-podium-overlay').classList.add('hidden');
+                const podiumOverlay = document.getElementById('game-podium-overlay');
+                const returnFocusToLobby = podiumOverlay && podiumOverlay.getAttribute('aria-hidden') === 'false';
+                if (podiumOverlay) {
+                    podiumOverlay.classList.add('hidden');
+                    podiumOverlay.setAttribute('aria-hidden', 'true');
+                }
+                if (returnFocusToLobby && document.body) document.body.style.removeProperty('overflow');
+                ['podium-1', 'podium-2', 'podium-3'].forEach(id => {
+                    const podiumPlace = document.getElementById(id);
+                    if (podiumPlace) podiumPlace.classList.remove('animate-podium-1', 'animate-podium-2', 'animate-podium-3');
+                });
 
                 this.players.push({ id: 0, name: "Du (Adept 1)", isBot: false, hand: [], bid: 0, won: 0, score: 0 });
                 for(let i=1; i<this.numPlayers; i++) {
@@ -88,6 +98,10 @@ const GameEngine = {
 
                 if(GameEngine3D.scene) GameEngine3D.spawnHumanoidAvatars(this.numPlayers);
                 this.startRound();
+                if (returnFocusToLobby) {
+                    const startButton = document.getElementById('game-start-btn');
+                    if (startButton) startButton.focus();
+                }
             },
 
             startRound() {
@@ -316,6 +330,9 @@ const GameEngine = {
                 document.getElementById('podium-3-score').textContent = sorted[2] ? sorted[2].score + " Pkt" : '0';
 
                 overlay.classList.remove('hidden');
+                overlay.setAttribute('aria-hidden', 'false');
+                if (document.body) document.body.style.overflow = 'hidden';
+                overlay.focus();
 
                 document.getElementById('podium-1').classList.add('animate-podium-1');
                 document.getElementById('podium-2').classList.add('animate-podium-2');
@@ -342,6 +359,9 @@ const GameEngine = {
                 }
 
                 document.getElementById('game-phase-info').textContent = this.phase === 'bidding' ? "Vision (Bieten)" : (this.phase === 'playing' ? "Am Zug: " + this.players[this.activePlayerIdx].name : "Auswertung");
+                if (typeof GameEngine3D !== 'undefined' && typeof GameEngine3D.setActivePlayer === 'function') {
+                    GameEngine3D.setActivePlayer(this.phase === 'playing' ? this.activePlayerIdx : -1);
+                }
 
                 // Render Bots Status Bar
                 const botStatusBox = document.getElementById('game-bots-status');
@@ -364,11 +384,11 @@ const GameEngine = {
                     const concealed = item.hidden && this.currentTrick.length < this.numPlayers;
                     const shownCard = concealed ? { desc: 'Wird am Ende des Stichs aufgedeckt', icon: '🌙', name: 'Verdeckte Karte' } : item.card;
                     trickContainer.innerHTML += `
-                        <div data-tooltip="${shownCard.desc}" class="occult-card-3d card-flying-in ${cardArtClass(shownCard)} card-on-table text-center shadow-2xl">
+                        <div data-tooltip="${shownCard.desc}" aria-label="${this.players[item.playerIdx].name}: ${shownCard.name}" class="occult-card-3d card-flying-in ${cardArtClass(shownCard)} card-on-table text-center shadow-2xl">
                             <div class="card-owner">${this.players[item.playerIdx].name}</div>
-                            <div class="card-art"><span>${shownCard.icon}</span></div>
+                            <div class="card-art"><span aria-hidden="true">${shownCard.icon}</span></div>
                             <div class="card-title">${shownCard.name}</div>
-                            <div class="card-flourish">✦</div>
+                            <div class="card-flourish" aria-hidden="true">✦</div>
                         </div>
                     `;
                 });
@@ -397,13 +417,14 @@ const GameEngine = {
                 human.hand.forEach((card, idx) => {
                     const isMyTurn = (this.activePlayerIdx === 0 && this.phase === 'playing');
                     handContainer.innerHTML += `
-                        <button type="button" ${isMyTurn ? `onclick="GameEngine.playCard(0, ${idx})"` : 'disabled'} data-tooltip="${card.desc}" class="occult-card-3d ${cardArtClass(card)} ${isMyTurn ? 'cursor-pointer hover:border-gold-light' : 'opacity-70 cursor-not-allowed'} shadow-lg">
+                        <button type="button" ${isMyTurn ? `onclick="GameEngine.playCard(0, ${idx})"` : 'disabled'} data-tooltip="${card.desc}" aria-label="${card.name}. ${card.desc}${isMyTurn ? ' Karte spielen.' : ' Noch nicht spielbar.'}" class="occult-card-3d hand-card ${cardArtClass(card)} ${isMyTurn ? 'cursor-pointer hover:border-gold-light' : 'opacity-70 cursor-not-allowed'} shadow-lg">
                             <span class="card-ribbon">${card.isTrump ? 'ARCANA MAIOR' : card.suit}</span>
-                            <span class="card-art"><span>${card.icon}</span></span>
+                            <span class="card-art"><span aria-hidden="true">${card.icon}</span></span>
                             <span class="card-title">${card.name}</span>
-                            <span class="card-flourish">✦</span>
+                            <span class="card-flourish" aria-hidden="true">✦</span>
                         </button>
                     `;
                 });
+                if (typeof updateHandLayout === 'function') updateHandLayout();
             }
         };
