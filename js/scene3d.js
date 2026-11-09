@@ -1271,3 +1271,10 @@ const GameEngine3D = {
         this.renderer.render(this.scene, this.camera);
     }
 };
+
+// Die 3D-Bühne als globales Modul verfügbar machen, damit app.js und
+// engine.js auf GameEngine3D.init, changeEnvironment, handLayout usw. zugreifen können.
+// (Ein klassisches <script> mit `const` legt keine Eigenschaft auf globalThis an.)
+if (typeof globalThis !== 'undefined' && typeof GameEngine3D !== 'undefined') {
+    globalThis.GameEngine3D = GameEngine3D;
+}

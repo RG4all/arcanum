@@ -1,0 +1,4 @@
+/* Arcanum · Tailwind-Eingabe (gebaut mit `npm run build` → css/tailwind.css) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
