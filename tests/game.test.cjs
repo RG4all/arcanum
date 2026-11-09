@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const script = ['js/cards.js', 'js/scene3d.js', 'js/game-engine.js', 'js/app.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n');
 const context = { document: { addEventListener() {} }, setTimeout, clearTimeout, Math, console };
 vm.createContext(context);
-vm.runInContext(script + '\nthis.engine = GameEngine; this.probability = trumpProbability; this.setMode = mode => currentActiveMode = mode;', context);
+vm.runInContext(script + '\nthis.engine = GameEngine; this.probability = trumpProbability; this.setMode = mode => currentActiveMode = mode; this.environments = GameEngine3D.environments; this.cameraDistance = aspect => GameEngine3D.cameraDistanceForAspect(aspect); this.handLayout = (width, count) => GameEngine3D.handLayout(width, count);', context);
 const game = context.engine;
 game.log = () => {};
 game.renderUI = () => {};
@@ -27,6 +27,53 @@ test('Wahrscheinlichkeit entspricht Ziehen ohne Zurücklegen', () => {
   assert.equal(context.probability(0), 0);
   assert.equal(context.probability(1), 28.2);
   assert.equal(context.probability(5), 81.9);
+});
+
+test('Zehn Ortsprofile haben individuelle Architekturbauer und vollständige Beschreibungen', () => {
+  const environments = Array.from(context.environments);
+  assert.equal(environments.length, 10);
+  assert.equal(new Set(environments.map(room => room.id)).size, 10);
+  assert.equal(new Set(environments.map(room => room.architecture)).size, 10);
+  assert.ok(environments.every(room => room.label.length > 8 && room.description.length > 45));
+  const sceneSource = fs.readFileSync('js/scene3d.js', 'utf8');
+  for (const room of environments) {
+    const method = `build${room.architecture[0].toUpperCase()}${room.architecture.slice(1)}`;
+    assert.ok(sceneSource.includes(`${method}(profile)`), `${room.id} has ${method}`);
+  }
+});
+
+test('3D-Kamera zoomt im Hochformat weiter heraus als auf breiten Displays', () => {
+  const portrait = context.cameraDistance(0.68);
+  const tablet = context.cameraDistance(1.2);
+  const ultrawide = context.cameraDistance(2.5);
+  assert.ok(Number.isFinite(portrait) && Number.isFinite(tablet) && Number.isFinite(ultrawide));
+  assert.ok(portrait > tablet && tablet > ultrawide);
+  assert.ok(portrait <= 54 && ultrawide >= 25);
+});
+
+test('Handkarten-Layout hält auf Touch-Geräten mindestens 44 Pixel der Karte sichtbar', () => {
+  const phone = context.handLayout(360, 13);
+  const desktop = context.handLayout(1200, 10);
+  assert.ok(phone.cardWidth >= 60);
+  assert.ok(phone.cardWidth - phone.overlap >= 44);
+  assert.ok(phone.totalWidth > 360, 'größere Hände bleiben scrollbar statt auf unantippbare Streifen zu schrumpfen');
+  assert.ok(desktop.cardWidth <= 124);
+  assert.ok(desktop.totalWidth <= 1200);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.handLayout(360, 0))), { cardWidth: 0, overlap: 0, totalWidth: 0 });
+});
+
+test('HTML bietet genau die zehn Orte des 3D-Manifests an und enthält mobile Layout-Hooks', () => {
+  const html = fs.readFileSync('arcanum_tarot_browsergame_codex.html', 'utf8');
+  const selector = html.match(/<select id="env-select"[\s\S]*?<\/select>/);
+  assert.ok(selector, 'environment select exists');
+  const optionIds = Array.from(selector[0].matchAll(/<option value="([^"]+)"/g), match => match[1]);
+  assert.deepEqual(optionIds, Array.from(context.environments, room => room.id));
+  assert.match(html, /id="mobile-nav-toggle"/);
+  assert.match(html, /id="game-human-hand"/);
+  const css = fs.readFileSync('css/arcanum.css', 'utf8');
+  assert.match(css, /@media \(max-width: 900px\)/);
+  assert.match(css, /@media \(max-width: 700px\)/);
+  assert.match(css, /orientation: landscape/);
 });
 
 test('Narr verliert; unmittelbar nach Welt gewinnt er', () => {

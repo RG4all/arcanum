@@ -6,12 +6,37 @@ Die Oberfläche ist als statische Browser-Beta ohne Build-Schritt organisiert. H
 
 - `js/cards.js`: Kartenregister und gemeinsame Darstellungshilfen.
 - `js/game-engine.js`: Deck, Rundenablauf, Wertung, Bot-Züge und Spielzustand.
-- `js/scene3d.js`: Three.js-Renderer, prozedurale Ritualräume/Avatare und Freigabe temporärer Ressourcen.
-- `js/app.js`: DOM-Updates, Kodex, Moduswechsel, Diagramm und Initialisierung.
-- `css/arcanum.css`: visuelle Tokens, Kartenstile, responsive Darstellung und reduzierte Bewegung.
-- `arcanum_tarot_browsergame_codex.html`: semantische Oberfläche und Einstiegspunkt.
+- `js/scene3d.js`: Three.js-Renderer, Ortsmanifest, zehn individuelle Raumarchitekturen, prozedurale Materialien/Avatare und Freigabe temporärer Ressourcen.
+- `js/app.js`: DOM-Updates, mobile Navigation, viewport-begrenzte Tooltips, responsives Kartenlayout, Kodex, Moduswechsel, Diagramm und Initialisierung.
+- `css/arcanum.css`: visuelle Tokens, Kartenstile, responsive Darstellung, Reduced-Motion-Regeln und Touch-Zielgrößen.
+- `arcanum_tarot_browsergame_codex.html`: semantische Oberfläche, zugängliche Steuerelemente und Ortsauswahl.
 
-`ALL_CARDS` enthält die Einträge des Kodex (nicht das komplette Spieldeck). Die 3D-Szene wird aus wiederverwendbaren prozeduralen Meshes gebaut. Three.js r128 und Chart.js 4.4.8 sowie Tailwind Play CDN werden extern geladen; für vollständig reproduzierbare Builds sollten Abhängigkeiten und ein kompiliertes CSS-Bundle lokal festgeschrieben werden.
+`ALL_CARDS` enthält die Einträge des Kodex (nicht das komplette Spieldeck). Three.js r128 und Chart.js 4.4.8 sowie Tailwind Play CDN werden extern geladen; für vollständig reproduzierbare Builds sollten Abhängigkeiten und ein kompiliertes CSS-Bundle lokal festgeschrieben werden.
+
+### Responsives Verhalten
+
+Die Oberfläche verwendet fluide Abstände, Typografie und Bühnenhöhe (`clamp()`), ein kleines Navigationsmenü für schmale Displays und umfließende Steuerleisten. Statusinformationen, Kodex, Diagramm und Rechner brechen in einspaltige Layouts um; die Gebotsbuttons behalten große Touch-Ziele. Die Spielerhand überlappt Karten dynamisch, garantiert eine sichtbare, antippbare Kartenkante und bleibt horizontal scrollbar. Stichkarten verwenden kleinere, umfließende Karten statt die 3D-Bühne mit sechs großen Karten zu verdecken. Das Siegerpodium ist ein viewport-festes Dialogfenster, das auch in kurzen Querformaten scrollt.
+
+Die 3D-Kamera berechnet bei jeder Größenänderung das Seitenverhältnis neu und hält Tisch sowie Sitzkreis auch im Hochformat im Bild. Räume dürfen an den Rändern beschnitten werden, damit der Spielbereich im Mittelpunkt bleibt. Eine ResizeObserver-Überwachung ergänzt die Fenster-Resize-Behandlung. Auf Geräten mit niedriger Leistung werden Schatten und Partikelauflösung reduziert; die Renderer-Pixeldichte ist auf 1,6 begrenzt (1,25 auf leistungsschwachen Geräten).
+
+### Zehn individuelle 3D-Orte
+
+`GameEngine3D.environments` ist die alleinige Datenquelle für Kennungen, Namen, Kurzbeschreibungen, Materialfamilien, Beleuchtungsfarben und je einen unterschiedlichen Architekturbauer. `buildEnvironment()` verwirft die Ressourcen des alten Szenen-Wurzelknotens, setzt Atmosphäre und Grundfläche neu auf und ruft genau einen dieser eigenständigen Räume auf:
+
+| Kennung | Architekturbauer | Kompositorischer Schwerpunkt |
+| --- | --- | --- |
+| `temple` | `buildSanctum()` | Marmor-Apsis, Säulenarkaden, Treppen und Sternrosette |
+| `druid` | `buildGrove()` | Baumchronik, verästelte Stämme, Wurzelkreis und Runensteine |
+| `mountain` | `buildPeak()` | offene Gipfelkulisse, Armillarsphäre, Fernrohr und Cairns |
+| `library` | `buildLibrary()` | Bücherwände, Galerien, Leitern, Spitzbögen und farbige Buchrücken |
+| `undersea` | `buildUndersea()` | Korallenpfeiler, Glasfenster, Kelp und Meereslichtstrahlen |
+| `desert` | `buildDesert()` | Hufeisenarkaden, Gitter, Sonnenrosette, Palmen und Wasserbecken |
+| `moon` | `buildMoon()` | Mondtor, Torii, Kiesgarten, Laternen und Spiegelfläche |
+| `forge` | `buildForge()` | Glutofen, Basaltrippen, Ketten, Ambosse und Lavaadern |
+| `ice` | `buildIce()` | Eisnave, prismatische Stützen, Spitzbögen und Nordlichtbänder |
+| `sky` | `buildSky()` | schwebendes Felsbett, Seiteninseln, Hängebrücken, Pergola und Wolken |
+
+Die Räume teilen nur Bühne, Ritualtisch, Sitzkreis und Avatar-Grundmodell – nicht ihre architektonische Silhouette. Der Tisch erhält je Ort andere Oberflächen und Formen; sechs passende, mehrteilige Stühle sind radial auf den Spielerkreis ausgerichtet. Säulen, Rahmen, Regale, Fenster, Gartenstrukturen und Werkbänke folgen jeweils einem erkennbaren Raumplan. Canvas-Texturen werden pro Szene wiederverwendet; `clearEnvironment()` entsorgt Geometrien, Materialien und Texturen beim Ortswechsel. Partikel, Feuer, Meeresleben und ausgewählte Zentralobjekte werden nur dann animiert, wenn reduzierte Bewegung nicht aktiviert ist.
 
 ### MMO- und Plattform-Zielbild
 
@@ -52,4 +77,4 @@ Das Diagramm berechnet die Chance auf mindestens einen Trumpf aus dem tatsächli
 
 ## Persistenz und Betrieb
 
-Es gibt weder `localStorage` noch serverseitige Speicherung oder ein Spielstandsformat. Ein Neuladen verwirft die Partie. Die vorhandenen Zustandsfelder und Karten-IDs bleiben erhalten; eine künftige Persistenz benötigt ein versioniertes Schema und Migrationen. Externe CDN-Ressourcen sind für den Betrieb nötig, siehe README. Die Renderauflösung ist auf 1,75-fache Pixeldichte begrenzt; Schatten, mehrschichtige Beleuchtung, prozedurale Ornamentik und farbige Sternenstaub-Partikel werten die Arena auf. Animationen berücksichtigen die Systemeinstellung für reduzierte Bewegung.
+Es gibt weder `localStorage` noch serverseitige Speicherung oder ein Spielstandsformat. Ein Neuladen verwirft die Partie. Die vorhandenen Zustandsfelder und Karten-IDs bleiben erhalten; eine künftige Persistenz benötigt ein versioniertes Schema und Migrationen. Externe CDN-Ressourcen sind für den Betrieb nötig, siehe README. Die Renderauflösung ist auf 1,6-fache Pixeldichte begrenzt (auf leistungsschwachen Geräten 1,25); prozedurale Oberflächen, abgestimmte Lichtquellen, Raumarchitektur und ortsspezifische Partikel tragen die Darstellung. Animationen berücksichtigen die Systemeinstellung für reduzierte Bewegung.

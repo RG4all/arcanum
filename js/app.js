@@ -10,11 +10,15 @@
             if(mode === 'turbo') {
                 btnTurbo.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-turbo text-white";
                 btnStandard.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white";
+                btnTurbo.setAttribute('aria-pressed', 'true');
+                btnStandard.setAttribute('aria-pressed', 'false');
                 headerBadge.textContent = "⚡ Turbo Edition";
                 if(calcSternBox) calcSternBox.classList.add('opacity-40', 'pointer-events-none');
             } else {
                 btnStandard.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-purple-600 text-white";
                 btnTurbo.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white";
+                btnStandard.setAttribute('aria-pressed', 'true');
+                btnTurbo.setAttribute('aria-pressed', 'false');
                 headerBadge.textContent = "📜 Standard Edition";
                 if(calcSternBox) calcSternBox.classList.remove('opacity-40', 'pointer-events-none');
             }
@@ -118,7 +122,9 @@
 
         function initProbabilityChart() {
             if (typeof Chart === 'undefined') return;
-            const ctx = document.getElementById('probChart').getContext('2d');
+            const canvas = document.getElementById('probChart');
+            const ctx = canvas && canvas.getContext('2d');
+            if (!ctx) return;
             const turboData = [5, 7, 9, 11, 13, 15].map(trumpProbability);
             const standardData = turboData;
 
@@ -198,12 +204,146 @@
             document.getElementById('calc-breakdown').textContent = breakdown.join(" | ");
         }
 
+        function updateHandLayout() {
+            const hand = document.getElementById('game-human-hand');
+            if (!hand || !hand.style || typeof GameEngine3D === 'undefined' || typeof GameEngine3D.handLayout !== 'function') return;
+            const available = Math.max(1, hand.clientWidth - 16);
+            const layout = GameEngine3D.handLayout(available, hand.children.length);
+            hand.style.setProperty('--hand-card-width', `${layout.cardWidth}px`);
+            hand.style.setProperty('--hand-overlap', `${layout.overlap}px`);
+        }
+
+        function installResponsiveHandLayout() {
+            const hand = document.getElementById('game-human-hand');
+            if (!hand) return;
+            updateHandLayout();
+            if (typeof ResizeObserver !== 'undefined') {
+                const observer = new ResizeObserver(updateHandLayout);
+                observer.observe(hand);
+            }
+            window.addEventListener('resize', updateHandLayout, { passive: true });
+        }
+
+        function installMobileNavigation() {
+            const toggle = document.getElementById('mobile-nav-toggle');
+            const nav = document.getElementById('primary-nav');
+            if (!toggle || !nav) return;
+            const close = () => {
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Navigation öffnen');
+                nav.classList.remove('is-open');
+            };
+            toggle.addEventListener('click', () => {
+                const open = toggle.getAttribute('aria-expanded') !== 'true';
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Navigation schließen' : 'Navigation öffnen');
+                nav.classList.toggle('is-open', open);
+            });
+            nav.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+            document.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+            document.addEventListener('pointerdown', event => {
+                if (!nav.contains(event.target) && !toggle.contains(event.target)) close();
+            });
+        }
+
+        let arcTooltipElement = null;
+        let arcTooltipTarget = null;
+        function hideFloatingTooltip() {
+            if (arcTooltipTarget) arcTooltipTarget.removeAttribute('aria-describedby');
+            if (arcTooltipElement) arcTooltipElement.remove();
+            arcTooltipTarget = null;
+            arcTooltipElement = null;
+        }
+
+        function showFloatingTooltip(target) {
+            if (!target || !target.getAttribute) return;
+            const text = target.getAttribute('data-tooltip');
+            if (!text) return;
+            hideFloatingTooltip();
+            const tooltip = document.createElement('div');
+            tooltip.className = 'arc-tooltip';
+            tooltip.id = `arc-tooltip-${Date.now()}`;
+            tooltip.setAttribute('role', 'tooltip');
+            tooltip.textContent = text;
+            document.body.appendChild(tooltip);
+            target.setAttribute('aria-describedby', tooltip.id);
+            arcTooltipElement = tooltip;
+            arcTooltipTarget = target;
+            const rect = target.getBoundingClientRect();
+            const viewport = window.visualViewport;
+            const leftEdge = viewport ? viewport.offsetLeft : 0;
+            const topEdge = viewport ? viewport.offsetTop : 0;
+            const viewportWidth = viewport ? viewport.width : window.innerWidth;
+            const viewportHeight = viewport ? viewport.height : window.innerHeight;
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const left = Math.max(leftEdge + 12, Math.min(rect.left + rect.width / 2 - tooltipRect.width / 2, leftEdge + viewportWidth - tooltipRect.width - 12));
+            const above = rect.top - tooltipRect.height - 10;
+            const top = above >= topEdge + 8 ? above : Math.min(rect.bottom + 10, topEdge + viewportHeight - tooltipRect.height - 8);
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        }
+
+        function installModalFocusTrap() {
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Tab') return;
+                const dialog = document.getElementById('game-podium-overlay');
+                if (!dialog || dialog.classList.contains('hidden') || dialog.getAttribute('aria-hidden') === 'true') return;
+                const focusable = Array.from(dialog.querySelectorAll('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'))
+                    .filter(element => element.offsetParent !== null);
+                if (!focusable.length) {
+                    event.preventDefault();
+                    dialog.focus();
+                    return;
+                }
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            });
+        }
+
+        function installFloatingTooltips() {
+            const findTarget = event => event.target && event.target.closest ? event.target.closest('[data-tooltip]') : null;
+            document.addEventListener('pointerover', event => {
+                if (event.pointerType === 'touch') return;
+                const target = findTarget(event);
+                if (target && target !== arcTooltipTarget) showFloatingTooltip(target);
+            });
+            document.addEventListener('pointerout', event => {
+                const target = findTarget(event);
+                if (target && target === arcTooltipTarget && (!event.relatedTarget || !target.contains(event.relatedTarget))) hideFloatingTooltip();
+            });
+            document.addEventListener('focusin', event => {
+                const target = findTarget(event);
+                if (target) showFloatingTooltip(target);
+            });
+            document.addEventListener('focusout', event => {
+                if (arcTooltipTarget && (event.target === arcTooltipTarget || arcTooltipTarget.contains(event.target))) hideFloatingTooltip();
+            });
+            window.addEventListener('resize', hideFloatingTooltip, { passive: true });
+            window.addEventListener('scroll', hideFloatingTooltip, { passive: true, capture: true });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            installMobileNavigation();
+            installModalFocusTrap();
+            installFloatingTooltips();
+            installResponsiveHandLayout();
+            const canvas = document.getElementById('canvas-container');
             if (typeof THREE !== 'undefined') GameEngine3D.init();
-            else document.getElementById('canvas-container').textContent = '3D-Ansicht konnte nicht geladen werden; das Kartenspiel bleibt spielbar.';
+            else if (canvas) {
+                canvas.classList.add('canvas-fallback');
+                canvas.textContent = '3D-Ansicht konnte nicht geladen werden; das Kartenspiel bleibt spielbar.';
+            }
             renderDynamicRules();
             renderCards();
             initProbabilityChart();
             calculateScore();
             GameEngine.initGame(3);
+            updateHandLayout();
         });

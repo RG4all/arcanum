@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen werden hier dokumentiert. Die neue Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
 
+## 0.3.0-beta.1 – 2026-11-09
+
+### Hinzugefügt
+- Vollständig responsive Oberflächen für Smartphone-Hoch-/Querformat, Tablet, Desktop und breite Displays; inklusive mobiler Hauptnavigation, flüssiger Lobby-Steuerung, adaptiver 3D-Bühne, kompakter Stichkarten, dynamisch überlappender Handkarten und scrollbarem Podium.
+- Zehn individuell komponierte Spielorte mit eigenen Architekturbauern: Marmorsanktuarium, Baumhain, Gipfelsternwarte, gotische Bibliothek, versunkene Abtei, Wüstenpalast, Mondkloster, Vulkan-Schmiede, Eiskathedrale und Himmelsgärten.
+- Prozedurale Canvas-Oberflächen, raumspezifische Materialfamilien, abgestimmte Lichtstimmungen, Architekturdetails und Atmosphäreneffekte; wiederverwendbare Szenentexturen sowie vollständige Freigabe der Ressourcen beim Ortswechsel.
+- Mehrteilige Ritualsessel im Spielerkreis, detaillierterer Ritualtisch, passende raumprägende Objekte und dezente Zugmarkierung an den Avataren.
+- Zugängliche Navigation, Statusregionen, Kartenbeschriftungen, Touch-Ziele und am Viewport gehaltene Tooltips.
+- Tests für das Ortsmanifest, die Kamerarahmung, das dynamische Kartenhand-Layout und die Übereinstimmung der zehn Ortsoptionen.
+
+### Geändert
+- Version auf `0.3.0-beta.1` angehoben; README und Architektur dokumentieren die zehn Räume, responsive Regeln und Renderergrenzen.
+- Bibliotheksbuchrücken werden instanziert statt als hunderte einzelne Draw Calls aufgebaut; niedrige Geräteleistung reduziert Schatten und Partikel.
+
 ## 0.2.0-beta.1 – 2026-11-09
 
 ### Hinzugefügt
