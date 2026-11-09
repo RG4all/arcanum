@@ -1,11 +1,14 @@
 # Arcanum
 
-**Version 0.4.0-beta.1** · Browser-Beta
+**Version 0.5.0-beta.1** · Browser-Beta
 
 Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex und trete an einem von zehn Ritualorten an.
 
 ## Was diese Version bringt
 
+- **Zehn begehbare 3D-Ritualorte.** Jede Bühne ist eine eigene Architektur aus Three.js-Primitiven – Apsis und Sternrosette im Sanctum, Wurzelkreis im Hain, Armillarsphäre auf dem Himmelsgrat, Korallenpfeiler in der Tiefenströmung, Glutofen in der Phönixschmiede, Eisprismen im Nordlicht. Dazu prozedurale Materialien (Marmor, Moos, Sand, Eis, Wasser), Lichtstimmungen, Nebel, Partikel und drei Himmelswelten – **Sternendom**, **Schwebeinseln** und **Sternenorbit** – zwischen denen sich live wechseln lässt.
+- **Zwölf gezeichnete Charaktere.** `js/avatars.js` rendert Porträts als deterministisches SVG: Gesicht, Iris, Brauen, Robe mit Kragen und Stickerei, sechs Frisuren, Kapuzen und Schleier, Kopfbedeckungen von Diadem bis Krone und zwölf eigene Sigille. Jede Figur hat ihren eigenen Farbklang; `paletteOf()` leitet daraus Hauttöne, Robentiefe und Iris ab – dieselbe Figur bleibt überall erkennbar, und nichts wird nachgeladen.
+- **Hinweiskarte statt Tooltip.** Fährt die Maus über Kacheln, Orte, Karten oder Bedienelemente, beschreibt ein Overlay **was es ist** (Kurzbeschreibung) und **was es tut** (Funktion) – deutsch, vollständig tastaturzugänglich und mit `aria-describedby` verbunden.
 - **Vollständiges Deck mit eigener Kartenkunst.** Alle 78 Karten (22 Große Arkana, 4 Farben × Ass bis König) werden prozedural als geschichtetes SVG gerendert – 22 individuelle Arkana-Motive, 16 Hofkarten-Figuren, Punktbilder von Ass bis Zehn, gestaltete Rückseite. Keine Bilddateien, keine Emoji, kein CDN für Grafiken.
 - **Karten-Kodex, sinnvoll sortiert.** Große Arkana 0–XXI zuerst, danach Stäbe, Kelche, Schwerter und Münzen – jeweils Ass bis König. Suche, sechs Filter, drei Sortierungen und ein Detaildialog mit Symbolik, Rangwert und Regeltext.
 - **Großes, gut lesbares HUD.** Karmawert in Großschrift mit Tabellenziffern, Vision/Stiche/Hand als Kennzahlen, Gegnerkarma, Stichbilanzen, Orakel und Phasenband – kontrastreich und auf jeder Breite lesbar.
@@ -52,7 +55,9 @@ Voraussetzung: ein moderner Browser mit JavaScript. WebGL wird für die 3D-Bühn
 python3 -m http.server 8000
 ```
 
-Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die HTML-Datei kann auch direkt geöffnet werden. Es gibt keinen Build-Schritt und keinen Paketmanager. Tailwind CSS, Chart.js, Three.js und die Schriften werden zur Laufzeit über CDNs geladen; ohne Chart.js entfällt nur das Diagramm.
+Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die HTML-Datei kann auch direkt geöffnet werden. Es gibt keinen Build-Schritt und keinen Paketmanager.
+
+Chart.js und Three.js liegen einbettbar unter `vendor/` und werden lokal geladen – das Spiel funktioniert damit **vollständig offline**. Nur die Schriften kommen von einem CDN; fallen sie aus, greift eine Serifenschrift. Ohne WebGL bleibt das Kartenspiel bedienbar, die Bühne zeigt dann einen ruhigen Platzhalter.
 
 ## Prüfen
 
@@ -60,7 +65,7 @@ Dann `http://localhost:8000/arcanum_tarot_browsergame_codex.html` öffnen. Die H
 node --test tests/*.test.cjs
 ```
 
-Die Tests laufen ohne Browser und prüfen Kartenregister, alle 78 SVG-Motive, Kodex-Sortierung und -Filter, jede Regel und jeden Spezialeffekt, die Wertungsformel (auch gegen die Engine), Determinismus per Seed, die hypergeometrische Wahrscheinlichkeit, die Animationsmathematik sowie die Konsistenz von HTML-IDs, CSS-Breakpoints und Versionsangaben.
+Die Tests laufen ohne Browser und prüfen Kartenregister, alle 78 SVG-Motive, Kodex-Sortierung und -Filter, jede Regel und jeden Spezialeffekt, die Wertungsformel (auch gegen die Engine), Determinismus per Seed, die hypergeometrische Wahrscheinlichkeit, die Animationsmathematik, die Manifeste der zehn Orte und drei Welten, alle zwölf Avatar-Porträts samt Palette und Sigillen, die Vollständigkeit der Hinweiskarte sowie die Konsistenz von HTML-IDs, CSS-Breakpoints und Versionsangaben (69 Tests).
 
 Zusätzlich im Browser prüfen: schmales Hochformat, Tablet, Desktop und breiter Monitor; Navigation öffnen, Hand horizontal durchsehen, bieten und Karten spielen, alle zehn Orte wechseln, Modus wechseln, Kodex durchsuchen, Karten-Dialog per Tastatur schließen, Neustart während eines Bot-Zugs.
 
@@ -73,7 +78,11 @@ js/cards.js                           Kartenregister (78 Karten), Effekte, Kodex
 js/card-art.js                        Prozeduraler SVG-Renderer für alle Kartenmotive
 js/rules.js                           Regelkern: Rangordnung, Züge, Wertung, Stochastik
 js/animations.js                      Federphysik, Kartenflug, Karmazähler, Partikel
-js/scene3d.js                         Zehn 3D-Architekturen, Materialien, Licht, Avatare
+js/worlds.js                          Manifest: zehn Orte, drei Welten, zwölf Avatare, Hinweistexte
+js/avatars.js                         SVG-Porträt-Engine: Gesichter, Roben, Frisuren, Sigille
+js/scene3d.js                         Zehn 3D-Architekturen, Materialien, Licht, Kamera, Figuren
+vendor/three/three.min.js             Three.js r128 (lokal, offline nutzbar)
+vendor/chart/chart.umd.js             Chart.js 4.4.8 (lokal, offline nutzbar)
 js/engine.js                          Zustandsmaschine, Bot-Züge, HUD- und UI-Updates
 js/app.js                             Modus, Regelwerk, Kodex, Diagramm, Rechner, Events
 README.md                             Einstieg und Entwicklungsablauf

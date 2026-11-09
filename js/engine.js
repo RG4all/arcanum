@@ -28,6 +28,24 @@
     GAME_OVER: 'gameOver'
   });
 
+  /**
+   * Avatar-Identitäten aus `js/worlds.js`. Die Engine kennt nur IDs;
+   * Porträt (2D) und Figur (3D) lesen dieselbe Palette.
+   */
+  function avatarIdentity(index, isBot) {
+    const worlds = global.ArcanumWorlds;
+    if (!worlds || !worlds.avatarForPlayer) return null;
+    return worlds.avatarForPlayer(index, isBot);
+  }
+
+  /** Porträt-Markup für HUD, Gegnerliste und Podium. */
+  function avatarMarkup(identity, suffix, size) {
+    const avatars = global.ArcanumAvatars;
+    if (!identity || !avatars) return '';
+    const tone = identity.ui.accent;
+    return `<span class="avatar-frame" style="--avatar-accent:${tone};--avatar-glow:${identity.ui.glow}">${avatars.portrait(identity, { suffix, size: size || 64 })}</span>`;
+  }
+
   const BOT_DELAY = 620;
   const TRICK_DELAY = 900;
   const ROUND_DELAY = 2400;
@@ -98,9 +116,20 @@
       this.numPlayers = Math.min(RULES.CONFIG.players.max, Math.max(RULES.CONFIG.players.min, parseInt(numPlayers, 10) || 3));
       this.currentRound = 1;
       this.maxRounds = RULES.maxRounds(this.mode);
-      this.players = [{ id: 0, name: 'Du (Adept 1)', isBot: false, hand: [], bid: 0, won: 0, score: 0 }];
+      const hero = avatarIdentity(0, false);
+      this.players = [{
+        id: 0, name: hero ? `Du (${hero.label} 1)` : 'Du (Adept 1)',
+        isBot: false, hand: [], bid: 0, won: 0, score: 0,
+        avatar: hero ? hero.id : 'adept'
+      }];
       for (let i = 1; i < this.numPlayers; i++) {
-        this.players.push({ id: i, name: `Bot ${i}`, isBot: true, hand: [], bid: 0, won: 0, score: 0 });
+        const identity = avatarIdentity(i, true);
+        this.players.push({
+          id: i,
+          name: identity ? `${identity.label} ${i}` : `Bot ${i}`,
+          isBot: true, hand: [], bid: 0, won: 0, score: 0,
+          avatar: identity ? identity.id : null
+        });
       }
       this.lastTrick = null;
       this.roundSummary = [];
@@ -420,6 +449,15 @@
       const ranking = this.ranking();
       [1, 2, 3].forEach(place => {
         const player = ranking[place - 1];
+        const avatarEl = document.getElementById(`podium-${place}-avatar`);
+        if (avatarEl) {
+          if (player && typeof player.id === 'number') {
+            const identity = avatarIdentity(player.id, Boolean(player.isBot));
+            avatarEl.innerHTML = identity ? avatarMarkup(identity, `podium-${place}`, 78) : '';
+          } else {
+            avatarEl.innerHTML = '';
+          }
+        }
         const nameEl = document.getElementById(`podium-${place}-name`);
         const scoreEl = document.getElementById(`podium-${place}-score`);
         if (nameEl) nameEl.textContent = player ? player.name : '–';
@@ -521,11 +559,15 @@
       if (botStatusBox) {
         botStatusBox.innerHTML = this.players.slice(1).map(bot => {
           const active = this.activePlayerIdx === bot.id && this.phase === PHASE.PLAYING;
+          const identity = avatarIdentity(bot.id, true);
           return `
-            <div class="bot-chip${active ? ' is-active' : ''}">
-              <span class="bot-chip__name">${bot.name}</span>
-              <span class="bot-chip__row"><span>Gebot</span><b>${bot.bid}</b><span>Stiche</span><b>${RULES.formatNumber(bot.won)}</b></span>
-              <span class="bot-chip__karma" data-value="${bot.score}">${bot.score} Karma</span>
+            <div class="bot-chip${active ? ' is-active' : ''}" role="listitem">
+              ${identity ? avatarMarkup(identity, `chip-${bot.id}`, 34) : ''}
+              <span class="bot-chip__body">
+                <span class="bot-chip__name">${bot.name}</span>
+                <span class="bot-chip__row"><span>Gebot</span><b>${bot.bid}</b><span>Stiche</span><b>${RULES.formatNumber(bot.won)}</b></span>
+                <span class="bot-chip__karma" data-value="${bot.score}">${bot.score} Karma</span>
+              </span>
             </div>`;
         }).join('');
       }
@@ -605,8 +647,14 @@
       const attrs = opts.attributes ? ` ${opts.attributes}` : '';
       const owner = opts.ownerLabel ? `<span class="arc-card__owner">${opts.owner}</span>` : '';
       const tooltip = (card.desc || '').replace(/"/g, '&quot;');
-      const hiddenBadge = card.concealed ? '<span class="arc-card__veil" aria-hidden="true">🌙</span>' : '';
-      return `<${tag}${attrs} class="${classes}" data-tooltip="${tooltip}" aria-label="${label.replace(/"/g, '&quot;')}">
+      // Der Mondschleier ist ein gezeichnetes Sigill, kein Emoji.
+      const veilSigil = global.ArcanumAvatars
+        ? global.ArcanumAvatars.sigil('moon', { size: 26, color: '#f3e6bd' })
+        : '';
+      const hiddenBadge = card.concealed
+        ? `<span class="arc-card__veil" aria-hidden="true">${veilSigil}</span>`
+        : '';
+      return `<${tag}${attrs} class="${classes}" data-tooltip="${tooltip}" data-hint="card" data-uid="${card.uid}" aria-label="${label.replace(/"/g, '&quot;')}">
         ${owner}
         <span class="arc-card__frame" aria-hidden="true">${faceSvg}</span>
         ${hiddenBadge}
@@ -664,6 +712,26 @@
         }
       }
 
+      // Porträt der Spieler:in neben dem Karmawert
+      const hudAvatar = document.getElementById('hud-avatar');
+      if (hudAvatar && human) {
+        const identity = avatarIdentity(0, false);
+        if (identity && hudAvatar.dataset.avatar !== identity.id) {
+          hudAvatar.dataset.avatar = identity.id;
+          hudAvatar.innerHTML = avatarMarkup(identity, 'hud', 62);
+          hudAvatar.dataset.hint = 'karma';
+          hudAvatar.setAttribute('data-hint-title', `Dein Avatar: ${identity.label}`);
+        }
+      }
+      const panelAvatar = document.getElementById('user-avatar-badge');
+      if (panelAvatar && human) {
+        const identity = avatarIdentity(0, false);
+        if (identity && panelAvatar.dataset.avatar !== identity.id) {
+          panelAvatar.dataset.avatar = identity.id;
+          panelAvatar.innerHTML = avatarMarkup(identity, 'panel', 58);
+        }
+      }
+
       // Spielerwerte
       if (human) {
         this.setKarma('hud-karma', human.score);
@@ -689,10 +757,15 @@
       if (opponentList) {
         opponentList.innerHTML = this.players.slice(1).map(bot => {
           const active = this.activePlayerIdx === bot.id && this.phase === PHASE.PLAYING;
+          const identity = avatarIdentity(bot.id, true);
+          const scoreSide = active ? 'is-active' : bot.won === bot.bid && bot.bid > 0 ? 'is-met' : bot.won > bot.bid ? 'is-over' : '';
           return `<li class="hud-opponent${active ? ' is-active' : ''}">
-            <span class="hud-opponent__name">${bot.name}</span>
-            <span class="hud-opponent__meta">Gebot ${bot.bid} · ${RULES.formatNumber(bot.won)} Stiche</span>
-            <span class="hud-opponent__karma" data-value="${bot.score}">${bot.score}</span>
+            ${identity ? avatarMarkup(identity, `opp-${bot.id}`, 44) : ''}
+            <span class="hud-opponent__body">
+              <span class="hud-opponent__name">${bot.name}</span>
+              <span class="hud-opponent__meta">Gebot ${bot.bid} · ${RULES.formatNumber(bot.won)} Stiche</span>
+            </span>
+            <span class="hud-opponent__karma ${scoreSide}" data-value="${bot.score}">${bot.score}</span>
           </li>`;
         }).join('');
       }

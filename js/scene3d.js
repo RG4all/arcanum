@@ -1,11 +1,36 @@
-// Three.js presentation layer. Ten hand-built locations share a common ritual table,
-// but each room has its own architecture, furniture language, materials and atmosphere.
+/**
+ * Arcanum · 3D-Bühne (Three.js r128, klassisches Skript)
+ * =================================================================
+ * Verantwortung: **nur** Darstellung. Alle Regel- und Spieldaten kommen
+ * aus `js/cards.js`, `js/rules.js` und `js/worlds.js`; die Bühne kennt
+ * weder Kartenlogik noch Wertung.
+ *
+ * Aufbau
+ *   1  Zustand & Manifeste      – Orte (worlds.js), Welten, Kamera
+ *   2  Lebenszyklus             – init, resize, dispose, animate
+ *   3  Kamera                  – Ziehen, Zoom, Trägheit, Ruhe-Drift
+ *   4  Werkzeuge               – Texturen, Materialien, Primitiven
+ *   5  Raumarchitektur         – Tisch, Sitze, zehn Ortsbauwerke
+ *   6  Welt                    – Sternendom, Schwebeinseln, Orbit
+ *   7  Figuren                 – zwölf Avatar-Identitäten in 3D
+ *
+ * Qualitätsleitlinien
+ *   – Jede Geometrie wird beim Ortswechsel freigegeben (kein Leck).
+ *   – Texturen werden pro Farbtripel zwischengespeichert.
+ *   – `prefers-reduced-motion` und schwache Geräte reduzieren Effekte,
+ *     nie aber die Erkennbarkeit von Figuren und Raum.
+ *   – Der Renderer passt die Pixeldichte an die gemessene Bildrate an.
+ */
 const GameEngine3D = {
+    /* -------------------------------------------------------------- */
+    /* 1 · Zustand & Manifeste                                        */
+    /* -------------------------------------------------------------- */
     scene: null,
     camera: null,
     renderer: null,
     container: null,
     environmentRoot: null,
+    worldRoot: null,
     tableMesh: null,
     avatarMeshes: [],
     decorations: [],
@@ -17,33 +42,58 @@ const GameEngine3D = {
     resizeObserver: null,
     rafId: null,
     environment: 'temple',
+    world: 'cathedral',
     profile: null,
     textures: [],
     textureCache: new Map(),
+    environmentParameters: new Map(),
     cameraFov: 36,
-    cameraTarget: { x: 0, y: 1.25, z: 0 },
+    cameraTarget: { x: 0, y: 1.2, z: 0 },
+    orbit: {
+        yaw: 0, pitch: 0.3, distance: 30,
+        targetYaw: 0, targetPitch: 0.3, targetDistance: 30,
+        dragging: false, pointerId: null, lastX: 0, lastY: 0, lastTouchAt: 0, idle: 0
+    },
+    perf: { frames: 0, elapsed: 0, quality: 1, fps: 60 },
 
-    // Keep this manifest data-only: it is also used by the UI and Node tests without WebGL.
-    environments: [
-        { id: 'temple', label: 'Sanctum der Sieben Siegel', description: 'Ein stiller Gewölbehof aus dunklem Marmor, vergoldeten Säulen und einem sternverglasten Sanktuarium.', architecture: 'sanctum', background: 0x110d1b, fog: 0x282037, fogDensity: 0.008, stone: 0x51445a, trim: 0xc7a96a, accent: 0xb591ed, glass: 0x654b91, floor: 0x211b2a, wood: 0x3b2930, seat: 0x593d58, keyLight: 0xffd8a0, fillLight: 0x9d85d2, tableShape: 12, floorPattern: 'radial', particles: 'dust', particleTint: 0xe7c987 },
-        { id: 'druid', label: 'Hain der Wurzelchronik', description: 'Ein uralter Baumkreis: verwachsene Wurzeln, Moossteine, schwebende Samen und ein lebender Holzaltar.', architecture: 'grove', background: 0x071410, fog: 0x18392b, fogDensity: 0.012, stone: 0x344c3a, trim: 0xb1a36b, accent: 0x70ce91, glass: 0x38865d, floor: 0x17291d, wood: 0x493923, seat: 0x38533b, keyLight: 0xb7e8a0, fillLight: 0x5abf9d, tableShape: 14, floorPattern: 'moss', particles: 'spores', particleTint: 0xc9e88e },
-        { id: 'mountain', label: 'Observatorium am Himmelsgrat', description: 'Eine offene Sternwarte auf einem schneebedeckten Grat mit Armillarsphäre, Fernrohr und fernen Gipfeln.', architecture: 'peak', background: 0x0a1726, fog: 0x263b53, fogDensity: 0.006, stone: 0x596b7c, trim: 0xa8d2e3, accent: 0x8dc8ef, glass: 0x47748e, floor: 0x263442, wood: 0x493e34, seat: 0x34495c, keyLight: 0xc6eaff, fillLight: 0x829dd4, tableShape: 10, floorPattern: 'star', particles: 'snow', particleTint: 0xd9f2ff },
-        { id: 'library', label: 'Bibliothek der Nachtflügel', description: 'Eine gotische Wissenshalle mit mehrstöckigen Galerien, dicht gefüllten Eichenregalen und einer Rosette aus Glas.', architecture: 'library', background: 0x17101b, fog: 0x30263a, fogDensity: 0.007, stone: 0x554650, trim: 0xd1ac72, accent: 0xd19a55, glass: 0x597a9d, floor: 0x251b24, wood: 0x543a2a, seat: 0x593d32, keyLight: 0xffd49a, fillLight: 0x9b82ae, tableShape: 8, floorPattern: 'parquet', particles: 'dust', particleTint: 0xe2bc78 },
-        { id: 'undersea', label: 'Abtei der Tiefenströmung', description: 'Eine versunkene Abtei aus Perlmutt und Korallen, durch deren Spitzbogenfenster blaues Meereslicht fällt.', architecture: 'undersea', background: 0x06202a, fog: 0x0e5260, fogDensity: 0.014, stone: 0x397078, trim: 0x91d9cb, accent: 0x68e0dc, glass: 0x347e9b, floor: 0x14343b, wood: 0x3a655f, seat: 0x315d63, keyLight: 0x9bf5ed, fillLight: 0x5eadd8, tableShape: 16, floorPattern: 'tide', particles: 'bubbles', particleTint: 0x97f4ec },
-        { id: 'desert', label: 'Sonnenpalast der Glasdünen', description: 'Ein warmer Hof aus Sandstein, Hufeisenarkaden, Sternmosaiken, Palmen und einem stillen Wasserbecken.', architecture: 'desert', background: 0x28180f, fog: 0x70452b, fogDensity: 0.009, stone: 0x9d704a, trim: 0xe5bd75, accent: 0xf2a85d, glass: 0x3c8690, floor: 0x70513b, wood: 0x6e472b, seat: 0x835542, keyLight: 0xffdfa5, fillLight: 0xe79050, tableShape: 8, floorPattern: 'mosaic', particles: 'sand', particleTint: 0xffd69b },
-        { id: 'moon', label: 'Mondkloster der stillen Gezeiten', description: 'Ein stiller Mondhof mit Torii, silbernem Mondtor, spiegelndem Wasser und sorgfältig geharktem Kies.', architecture: 'moon', background: 0x0a1020, fog: 0x202b4a, fogDensity: 0.006, stone: 0x505a70, trim: 0xc3d1e6, accent: 0x9eb7ed, glass: 0x768fba, floor: 0x252c3b, wood: 0x433c39, seat: 0x35405b, keyLight: 0xd5e3ff, fillLight: 0x778cce, tableShape: 12, floorPattern: 'zen', particles: 'moonlight', particleTint: 0xe0e7ff },
-        { id: 'forge', label: 'Schmiede des Phönix', description: 'Eine unterirdische Schmiede aus Basalt und Eisen, durchzogen von Lavaadern und beherrscht von einem Glutofen.', architecture: 'forge', background: 0x190b0a, fog: 0x592219, fogDensity: 0.011, stone: 0x493436, trim: 0xb98453, accent: 0xff653c, glass: 0xee4c2e, floor: 0x241819, wood: 0x3a2521, seat: 0x563329, keyLight: 0xffa05b, fillLight: 0xa13c32, tableShape: 10, floorPattern: 'lava', particles: 'embers', particleTint: 0xffa052 },
-        { id: 'ice', label: 'Kristallhalle des Nordlichts', description: 'Eine Kathedrale aus Gletschereis mit prismatischen Pfeilern, gläsernen Spitzbögen und tanzendem Nordlicht.', architecture: 'ice', background: 0x09172b, fog: 0x263f62, fogDensity: 0.008, stone: 0x5f89a1, trim: 0xc1eaff, accent: 0x7cdcf1, glass: 0x80c8eb, floor: 0x1c3047, wood: 0x37495c, seat: 0x32536c, keyLight: 0xc4f2ff, fillLight: 0x8b91e1, tableShape: 8, floorPattern: 'ice', particles: 'snow', particleTint: 0xbdeaff },
-        { id: 'sky', label: 'Hängende Gärten der Äonen', description: 'Ein offenes Himmelsheiligtum auf schwebenden Inseln, verbunden durch Brücken, Pergolen und Wasserfälle aus Licht.', architecture: 'sky', background: 0x13223b, fog: 0x5b7a9b, fogDensity: 0.006, stone: 0x728b8d, trim: 0xe3c77b, accent: 0x91d8dc, glass: 0x94cde4, floor: 0x344f51, wood: 0x67533a, seat: 0x48645e, keyLight: 0xffe0a1, fillLight: 0x86c4e4, tableShape: 12, floorPattern: 'garden', particles: 'pollen', particleTint: 0xfff0b0 }
-    ],
+    /**
+     * Das Manifest der zehn Orte: Anzeige-Daten aus `js/worlds.js`,
+     * angereichert um die WebGL-Parameter. Die Bauwerke unten lesen
+     * ausschließlich diese flachen Profile (`profile.stone` usw.).
+     */
+    environments: [],
+    worlds: [],
 
+    /** Baut die flachen Profile aus der Datenquelle (DOM-frei, testbar). */
+    hydrateManifests() {
+        const source = typeof globalThis !== 'undefined' ? globalThis.ArcanumWorlds : null;
+        const rooms = source && Array.isArray(source.ROOMS) ? source.ROOMS : [];
+        this.environments = rooms.map(room => ({
+            id: room.id,
+            label: room.label,
+            description: room.description,
+            tagline: room.tagline,
+            mood: room.mood,
+            architecture: room.architecture,
+            world: room.world,
+            camera: room.camera,
+            ui: room.ui,
+            ...room.scene
+        }));
+        this.worlds = source && Array.isArray(source.WORLDS) ? source.WORLDS.slice() : [];
+        return this.environments;
+    },
+
+    /** Kameraabstand, der die Bühne unabhängig vom Seitenverhältnis fasst. */
     cameraDistanceForAspect(aspect) {
         const ratio = Math.max(0.55, Math.min(4, Number(aspect) || 1));
         const halfFov = (this.cameraFov * Math.PI / 180) / 2;
         const neededForWidth = 25 / (2 * Math.tan(halfFov) * ratio);
-        return Math.max(25, Math.min(54, neededForWidth));
+        const roomDistance = (this.profile && this.profile.camera && this.profile.camera.distance) || 30;
+        return Math.max(21, Math.min(58, Math.max(neededForWidth, roomDistance * 0.86)));
     },
 
+    /** Layout der Handkarten (Breite, Überlappung, Gesamtbreite). */
     handLayout(width, cardCount) {
         const available = Math.max(1, Number(width) || 360);
         const count = Math.max(0, Math.floor(Number(cardCount) || 0));
@@ -56,26 +106,41 @@ const GameEngine3D = {
         return { cardWidth, overlap, totalWidth: cardWidth + (count - 1) * step };
     },
 
+    /* -------------------------------------------------------------- */
+    /* 2 · Lebenszyklus                                               */
+    /* -------------------------------------------------------------- */
+
     init() {
         this.container = document.getElementById('canvas-container');
         if (!this.container || typeof THREE === 'undefined') return;
+        if (!this.environments.length) this.hydrateManifests();
         try {
             this.scene = new THREE.Scene();
-            this.camera = new THREE.PerspectiveCamera(this.cameraFov, 1, 0.1, 180);
+            this.camera = new THREE.PerspectiveCamera(this.cameraFov, 1, 0.1, 260);
             this.clock = new THREE.Clock();
             this.reducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
             const hardware = typeof navigator !== 'undefined' ? navigator : {};
-            this.lowPowerDevice = Boolean(window.innerWidth < 720 || (hardware.hardwareConcurrency && hardware.hardwareConcurrency <= 4) || (hardware.deviceMemory && hardware.deviceMemory <= 4));
-            this.renderer = new THREE.WebGLRenderer({ antialias: !this.lowPowerDevice, alpha: false, powerPreference: 'high-performance' });
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowPowerDevice ? 1.25 : 1.6));
+            this.lowPowerDevice = Boolean(
+                window.innerWidth < 720 ||
+                (hardware.hardwareConcurrency && hardware.hardwareConcurrency <= 4) ||
+                (hardware.deviceMemory && hardware.deviceMemory <= 4)
+            );
+            this.renderer = new THREE.WebGLRenderer({
+                antialias: !this.lowPowerDevice,
+                alpha: false,
+                powerPreference: 'high-performance',
+                stencil: false
+            });
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.lowPowerDevice ? 1.25 : 1.75));
             this.renderer.shadowMap.enabled = !this.lowPowerDevice;
             this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             this.renderer.outputEncoding = THREE.sRGBEncoding;
             this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            this.renderer.toneMappingExposure = 1.12;
+            this.renderer.toneMappingExposure = 1.18;
             this.renderer.domElement.setAttribute('aria-label', 'Dreidimensionale Ritual-Arena mit zehn individuell gestalteten Spielorten');
             this.container.replaceChildren(this.renderer.domElement);
             this.buildEnvironment(this.environment);
+            this.installCameraControls();
             this.resize();
             if (typeof ResizeObserver !== 'undefined') {
                 this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -98,22 +163,156 @@ const GameEngine3D = {
         const aspect = width / height;
         this.camera.aspect = aspect;
         const distance = this.cameraDistanceForAspect(aspect);
-        const direction = { x: 0, y: 0.55, z: 0.835 };
-        const length = Math.hypot(direction.y, direction.z);
-        this.camera.position.set(
-            this.cameraTarget.x,
-            this.cameraTarget.y + distance * direction.y / length,
-            this.cameraTarget.z + distance * direction.z / length
-        );
-        this.camera.lookAt(this.cameraTarget.x, this.cameraTarget.y, this.cameraTarget.z);
+        const orbit = this.orbit;
+        orbit.distance = distance;
+        orbit.targetDistance = distance;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height, false);
+        this.updateCamera(0, true);
+    },
+
+    /* -------------------------------------------------------------- */
+    /* 3 · Kamera: Ziehen, Zoom, Trägheit, Ruhe-Drift                 */
+    /* -------------------------------------------------------------- */
+
+    /**
+     * Die Kamera umkreist den Ritualtisch. Ziehen dreht, Mausrad und
+     * Pinch zoomen, ein Doppelklick setzt zurück. Ohne Eingabe driftet
+     * sie langsam, damit die Bühne lebendig bleibt (außer bei
+     * reduzierter Bewegung).
+     */
+    installCameraControls() {
+        const element = this.renderer && this.renderer.domElement;
+        if (!element) return;
+        const orbit = this.orbit;
+        const clampPitch = value => Math.max(-0.02, Math.min(0.78, value));
+        const clampYaw = value => Math.max(-0.95, Math.min(0.95, value));
+
+        element.style.touchAction = 'pan-y';
+        element.style.cursor = 'grab';
+
+        const pointerDown = event => {
+            if (event.button !== undefined && event.button !== 0) return;
+            orbit.dragging = true;
+            orbit.pointerId = event.pointerId;
+            orbit.lastX = event.clientX;
+            orbit.lastY = event.clientY;
+            orbit.idle = 0;
+            element.style.cursor = 'grabbing';
+            if (element.setPointerCapture) element.setPointerCapture(event.pointerId);
+        };
+        const pointerMove = event => {
+            if (!orbit.dragging || event.pointerId !== orbit.pointerId) return;
+            const dx = event.clientX - orbit.lastX;
+            const dy = event.clientY - orbit.lastY;
+            orbit.lastX = event.clientX;
+            orbit.lastY = event.clientY;
+            orbit.targetYaw = clampYaw(orbit.targetYaw + dx * 0.0042);
+            orbit.targetPitch = clampPitch(orbit.targetPitch + dy * 0.0032);
+            orbit.idle = 0;
+        };
+        const pointerUp = event => {
+            if (orbit.pointerId !== null && event.pointerId !== orbit.pointerId) return;
+            orbit.dragging = false;
+            orbit.pointerId = null;
+            element.style.cursor = 'grab';
+        };
+        const reset = () => {
+            orbit.targetYaw = 0;
+            orbit.targetPitch = 0.3;
+            orbit.targetDistance = this.cameraDistanceForAspect(this.camera ? this.camera.aspect : 1);
+        };
+        element.addEventListener('pointerdown', pointerDown);
+        element.addEventListener('pointermove', pointerMove);
+        element.addEventListener('pointerup', pointerUp);
+        element.addEventListener('pointercancel', pointerUp);
+        element.addEventListener('pointerleave', pointerUp);
+        element.addEventListener('dblclick', reset);
+        element.addEventListener('wheel', event => {
+            if (!event.deltaY) return;
+            event.preventDefault();
+            const next = orbit.targetDistance + Math.sign(event.deltaY) * 2.4;
+            orbit.targetDistance = Math.max(19, Math.min(56, next));
+            orbit.idle = 0;
+        }, { passive: false });
+        // Zwei-Finger-Zoom auf Touch-Geräten.
+        let pinchStart = null;
+        element.addEventListener('touchstart', event => {
+            orbit.lastTouchAt = Date.now();
+            if (event.touches.length === 2) {
+                pinchStart = Math.hypot(
+                    event.touches[0].clientX - event.touches[1].clientX,
+                    event.touches[0].clientY - event.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+        element.addEventListener('touchmove', event => {
+            if (event.touches.length !== 2 || !pinchStart) return;
+            const distance = Math.hypot(
+                event.touches[0].clientX - event.touches[1].clientX,
+                event.touches[0].clientY - event.touches[1].clientY
+            );
+            const delta = (pinchStart - distance) * 0.06;
+            orbit.targetDistance = Math.max(19, Math.min(56, orbit.targetDistance + delta));
+            pinchStart = distance;
+            orbit.idle = 0;
+        }, { passive: true });
+        element.addEventListener('touchend', () => { pinchStart = null; }, { passive: true });
+        this.resetCamera = reset;
+    },
+
+    /** Setzt die Kamera zurück (auch von außen aufrufbar). */
+    resetCamera() {
+        this.orbit.targetYaw = 0;
+        this.orbit.targetPitch = 0.3;
+        this.orbit.targetDistance = this.cameraDistanceForAspect(this.camera ? this.camera.aspect : 1);
+    },
+
+    /**
+     * Weiche Kameraführung: Die Differenz zwischen Ist und Ziel wird
+     * exponentiell geschlossen; ohne Eingabe entsteht eine ruhige Fahrt.
+     * @param {number} dt Sekunden seit dem letzten Bild
+     * @param {boolean} [snap] sofort setzen (Resize, Ortswechsel)
+     */
+    updateCamera(dt, snap = false) {
+        if (!this.camera) return;
+        const orbit = this.orbit;
+        const time = this.clock ? this.clock.getElapsedTime() : 0;
+        const smooth = snap ? 1 : Math.min(1, dt * 3.4);
+        orbit.yaw += (orbit.targetYaw - orbit.yaw) * smooth;
+        orbit.pitch += (orbit.targetPitch - orbit.pitch) * smooth;
+        orbit.distance += (orbit.targetDistance - orbit.distance) * smooth;
+        if (this.reducedMotion) orbit.idle = 1;
+
+        const drift = this.profile && this.profile.camera ? this.profile.camera.drift || 1 : 1;
+        const sway = this.reducedMotion ? 0 : Math.sin(time * 0.14) * 0.045 * drift;
+        const breathe = this.reducedMotion ? 0 : Math.sin(time * 0.21 + 1.4) * 0.9 * drift;
+        const yaw = orbit.yaw + sway;
+        const pitch = Math.max(0.02, Math.min(0.8, orbit.pitch + Math.sin(time * 0.11) * 0.012));
+        const distance = orbit.distance + breathe;
+        const target = this.cameraTarget;
+        this.camera.position.set(
+            target.x + Math.sin(yaw) * Math.cos(pitch) * distance,
+            target.y + Math.sin(pitch) * distance,
+            target.z + Math.cos(yaw) * Math.cos(pitch) * distance
+        );
+        this.camera.lookAt(target.x, target.y + 0.15, target.z);
     },
 
     colorCss(color) {
         return `#${Number(color).toString(16).padStart(6, '0')}`;
     },
 
+    /* -------------------------------------------------------------- */
+    /* 4 · Werkzeuge: Texturen, Materialien, Primitiven               */
+    /* -------------------------------------------------------------- */
+
+    /**
+     * Prozedurale Canvas-Textur. `kind` bestimmt das Korn:
+     * stone | wood | cloth | metal | ice | water | marble | moss | sand.
+     * Texturen werden je Schlüssel zwischengespeichert und beim
+     * Ortswechsel gemeinsam freigegeben.
+     */
     makeTexture(kind, colors, seed = 17) {
         const key = `${kind}:${colors.join(',')}`;
         if (this.textureCache && this.textureCache.has(key)) return this.textureCache.get(key);
@@ -191,8 +390,46 @@ const GameEngine3D = {
                 ctx.beginPath(); ctx.ellipse(x, y, 8 + random() * 44, 2 + random() * 8, random() * Math.PI, 0, Math.PI * 2);
                 ctx.strokeStyle = `rgba(180,255,245,${.05 + random() * .18})`; ctx.lineWidth = 1 + random() * 2; ctx.stroke();
             }
+        } else if (kind === 'marble') {
+            // Marmor: ruhige Grundfläche, wenige weiche Adern.
+            for (let i = 0; i < 26; i++) {
+                let x = random() * 512, y = random() * 512;
+                ctx.beginPath(); ctx.moveTo(x, y);
+                for (let n = 0; n < 6; n++) {
+                    x += (random() - .5) * 130;
+                    y += (random() - .5) * 120;
+                    ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = `rgba(255,255,255,${.05 + random() * .09})`;
+                ctx.lineWidth = .6 + random() * 1.6;
+                ctx.stroke();
+            }
+            for (let i = 0; i < 600; i++) {
+                ctx.fillStyle = `rgba(255,255,255,${.01 + random() * .035})`;
+                ctx.fillRect(random() * 512, random() * 512, 2 + random() * 6, 2 + random() * 6);
+            }
+        } else if (kind === 'moss') {
+            for (let i = 0; i < 900; i++) {
+                const r = 2 + random() * 9;
+                ctx.beginPath(); ctx.arc(random() * 512, random() * 512, r, 0, Math.PI * 2);
+                ctx.fillStyle = random() > .55
+                    ? `rgba(120,168,96,${.04 + random() * .08})`
+                    : `rgba(26,58,36,${.05 + random() * .1})`;
+                ctx.fill();
+            }
+        } else if (kind === 'sand') {
+            for (let i = 0; i < 2200; i++) {
+                ctx.fillStyle = random() > .5 ? `rgba(255,236,200,${.02 + random() * .07})` : `rgba(96,64,40,${.02 + random() * .05})`;
+                const s = 1 + random() * 2.4;
+                ctx.fillRect(random() * 512, random() * 512, s, s);
+            }
+            for (let i = 0; i < 22; i++) {
+                ctx.beginPath();
+                ctx.ellipse(random() * 512, random() * 512, 40 + random() * 90, 6 + random() * 14, random() * .3 - .15, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,228,186,.07)'; ctx.lineWidth = 1 + random() * 2; ctx.stroke();
+            }
         } else {
-            // Stone, sand and ceramic get a hand-worn mineral grain with occasional hairline fractures.
+            // Stein, Keramik und Basalt: verwittertes Mineral mit Haarrissen.
             for (let i = 0; i < 1200; i++) {
                 const shade = random() > .5 ? 255 : 0;
                 ctx.fillStyle = `rgba(${shade},${shade},${shade},${.012 + random() * .055})`;
@@ -269,9 +506,8 @@ const GameEngine3D = {
         this.addCylinder(group, radius * 1.36, radius * 1.12, 0.36, 12, [0, height - 0.25, 0], stone);
         for (let i = 0; i < flutes; i++) {
             const angle = i * Math.PI * 2 / flutes;
-            const flute = this.addCylinder(group, radius * 0.035, radius * 0.035, height - 1.25, 6,
+            this.addCylinder(group, radius * 0.035, radius * 0.035, height - 1.25, 6,
                 [Math.cos(angle) * radius * 0.82, height / 2 + 0.25, Math.sin(angle) * radius * 0.82], trim, false);
-            flute.material = trim;
         }
         group.userData.parts = [base, plinth];
         return group;
@@ -303,31 +539,42 @@ const GameEngine3D = {
             const a = (Math.PI * 2 * i) / segments;
             this.addMesh(
                 new THREE.CircleGeometry(radius * 0.88, 3, a, Math.PI * 2 / segments),
-                this.material(glassColors[i % glassColors.length], { roughness: 0.32, metalness: 0.18, emissive: glassColors[i % glassColors.length], emissiveIntensity: 0.11, transparent: true, opacity: 0.72, side: THREE.DoubleSide }),
+                this.material(glassColors[i % glassColors.length], {
+                    roughness: 0.32, metalness: 0.18, emissive: glassColors[i % glassColors.length],
+                    emissiveIntensity: 0.16, transparent: true, opacity: 0.78, side: THREE.DoubleSide
+                }),
                 [0, 0, -0.045], windowGroup, false
             );
         }
-        const rim = this.addMesh(new THREE.TorusGeometry(radius, radius * 0.075, 10, 64), this.material(profile.trim, { metalness: 0.72, roughness: 0.24 }), [0, 0, 0], windowGroup, false);
+        this.addMesh(new THREE.TorusGeometry(radius, radius * 0.075, 10, 64), this.material(profile.trim, { metalness: 0.72, roughness: 0.24 }), [0, 0, 0], windowGroup, false);
         for (let i = 0; i < segments; i++) {
             const a = (Math.PI * 2 * i) / segments;
             const spoke = this.addBox(windowGroup, [radius * 0.94, radius * 0.055, 0.12], [Math.cos(a) * radius * 0.47, Math.sin(a) * radius * 0.47, 0.035], this.material(profile.trim, { metalness: 0.65, roughness: 0.3 }), [0, 0, a], false);
             spoke.rotation.z = a;
         }
-        this.addMesh(new THREE.CircleGeometry(radius * 0.18, 16), this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.6, metalness: 0.3 }), [0, 0, 0.055], windowGroup, false);
+        this.addMesh(new THREE.CircleGeometry(radius * 0.18, 16), this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: 0.72, metalness: 0.3 }), [0, 0, 0.055], windowGroup, false);
         return windowGroup;
     },
 
+    /* -------------------------------------------------------------- */
+    /* 5 · Raumaufbau                                                 */
+    /* -------------------------------------------------------------- */
+
     buildEnvironment(type = 'temple') {
         if (!this.scene) return;
+        if (!this.environments.length) this.hydrateManifests();
         const profile = this.environments.find(item => item.id === type) || this.environments[0];
         this.environment = profile.id;
+        this.world = profile.world || 'cathedral';
         this.profile = profile;
         this.clearEnvironment();
+        // Eine Welt, viele Orte: Der Ortswechsel baut nur neu, wenn die
+        // Hülle (Sternendom / Schwebeinseln / Orbit) sich wirklich ändert.
+        const rebuildWorld = !this.worldRoot || this.worldRoot.userData.world !== this.world;
+        if (rebuildWorld) this.buildWorld(this.world);
         this.environmentRoot = new THREE.Group();
         this.environmentRoot.name = `environment-${profile.id}`;
         this.scene.add(this.environmentRoot);
-        this.scene.background = new THREE.Color(profile.background);
-        this.scene.fog = new THREE.FogExp2(profile.fog, profile.fogDensity);
         this.addLighting(profile);
         this.buildFloor(profile);
         this.buildAltar(profile);
@@ -337,7 +584,26 @@ const GameEngine3D = {
         this.spawnHumanoidAvatars((typeof GameEngine !== 'undefined' && GameEngine.numPlayers) || 3);
         const label = typeof document !== 'undefined' && document.getElementById('environment-description');
         if (label) label.textContent = profile.description;
+        this.applyRoomPalette(profile);
+        if (this.camera && profile.camera) this.camera.fov = this.cameraFov = profile.camera.fov || 36;
         if (this.container && this.renderer) this.resize();
+        if (this.camera) {
+            this.camera.fov = profile.camera ? profile.camera.fov || this.cameraFov : this.cameraFov;
+            this.camera.updateProjectionMatrix();
+        }
+        this.orbit.targetYaw = 0;
+        this.orbit.targetPitch = profile.camera ? 0.3 - (profile.camera.height - 0.6) * 0.5 : 0.3;
+        this.updateCamera(0, true);
+    },
+
+    /** Reicht die Ortsfarben an CSS-Variablen weiter (2D folgt 3D). */
+    applyRoomPalette(profile) {
+        if (typeof document === 'undefined' || !document.documentElement || !profile.ui) return;
+        const style = document.documentElement.style;
+        style.setProperty('--room-accent', profile.ui.accent);
+        style.setProperty('--room-glow', profile.ui.glow);
+        style.setProperty('--room-deep', profile.ui.deep);
+        if (this.container) this.container.dataset.room = profile.id;
     },
 
     clearEnvironment() {
@@ -350,37 +616,71 @@ const GameEngine3D = {
         this.particles = null;
         this.textures = [];
         this.textureCache = new Map();
+        if (this.worldRoot) {
+            this.worldRoot.traverse(part => {
+                if (part.material) {
+                    const materials = Array.isArray(part.material) ? part.material : [part.material];
+                    materials.forEach(material => {
+                        ['map', 'alphaMap', 'emissiveMap'].forEach(key => {
+                            if (material[key] && !this.textures.includes(material[key])) this.textures.push(material[key]);
+                        });
+                    });
+                }
+            });
+        }
     },
 
     addLighting(profile) {
         const root = this.environmentRoot;
-        root.add(new THREE.HemisphereLight(profile.keyLight, profile.floor, 1.5));
-        const key = new THREE.DirectionalLight(profile.keyLight, 2.35);
+        root.add(new THREE.HemisphereLight(profile.keyLight, profile.floor, 1.35));
+        const key = new THREE.DirectionalLight(profile.keyLight, 2.15);
         key.position.set(-8, 15, 8);
         key.castShadow = !this.lowPowerDevice;
-        key.shadow.mapSize.set(this.lowPowerDevice ? 512 : 1024, this.lowPowerDevice ? 512 : 1024);
-        key.shadow.camera.left = -18; key.shadow.camera.right = 18;
-        key.shadow.camera.top = 18; key.shadow.camera.bottom = -18;
+        key.shadow.mapSize.set(this.lowPowerDevice ? 512 : 2048, this.lowPowerDevice ? 512 : 2048);
+        key.shadow.camera.left = -18;
+        key.shadow.camera.right = 18;
+        key.shadow.camera.top = 18;
+        key.shadow.camera.bottom = -18;
         key.shadow.bias = -0.00035;
+        key.shadow.normalBias = 0.02;
         root.add(key);
-        const fill = new THREE.DirectionalLight(profile.fillLight, 1.15);
+        const fill = new THREE.DirectionalLight(profile.fillLight, 1.05);
         fill.position.set(8, 9, -12);
         root.add(fill);
-        const rim = new THREE.DirectionalLight(profile.accent, 0.62);
+        const rim = new THREE.DirectionalLight(profile.accent, 0.72);
         rim.position.set(0, 12, 14);
         root.add(rim);
-        this.addPointLight(root, profile.accent, 24, 21, [0, 4.1, 0], 2);
+        // Zwei weiche Spots heben den Ritualtisch als Zentrum der Bühne hervor.
+        const tableSpot = new THREE.SpotLight(profile.keyLight, 1.5, 34, Math.PI / 5.4, 0.55, 1.5);
+        tableSpot.position.set(0, 15, 2.5);
+        tableSpot.target.position.set(0, 0, 0);
+        root.add(tableSpot);
+        root.add(tableSpot.target);
+        this.addPointLight(root, profile.accent, 26, 22, [0, 4.1, 0], 2);
         this.addPointLight(root, profile.keyLight, 12, 18, [-8, 5, -8], 2);
+        this.addPointLight(root, profile.accent, 9, 16, [8, 3.4, 7], 2);
     },
 
     buildFloor(profile) {
         const root = this.environmentRoot;
-        const floorTexture = profile.floorPattern === 'ice' ? 'ice' : profile.floorPattern === 'tide' ? 'water' : 'stone';
+        const floorTexture = profile.floorPattern === 'ice' ? 'ice'
+            : profile.floorPattern === 'tide' ? 'water'
+                : profile.floorPattern === 'moss' || profile.floorPattern === 'garden' ? 'moss'
+                    : (profile.architecture === 'sanctum' || profile.floorPattern === 'star') ? 'marble'
+                        : profile.floorPattern === 'mosaic' ? 'sand' : 'stone';
         const floorColors = [profile.floor, profile.stone, profile.background];
         let ground = null;
         if (profile.id !== 'sky') {
-            ground = this.addMesh(new THREE.PlaneGeometry(78, 78), this.surface(floorTexture, floorColors, { roughness: profile.floorPattern === 'tide' || profile.floorPattern === 'ice' ? 0.32 : 0.92, metalness: profile.floorPattern === 'tide' ? 0.32 : 0.08 }), [0, -1.16, 0], root, false);
+            ground = this.addMesh(
+                new THREE.PlaneGeometry(90, 90),
+                this.surface(floorTexture, floorColors, {
+                    roughness: profile.floorPattern === 'tide' || profile.floorPattern === 'ice' ? 0.3 : 0.9,
+                    metalness: profile.floorPattern === 'tide' ? 0.36 : 0.08
+                }),
+                [0, -1.16, 0], root, false
+            );
             ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
         } else {
             const floatingBedrock = this.addMesh(new THREE.DodecahedronGeometry(13.5, 1), this.surface('stone', [0x596b68, 0x2e4141, profile.floor], { roughness: .95 }), [0, -7.15, 0], root);
             floatingBedrock.scale.set(1.08, .47, 1.02);
@@ -391,14 +691,24 @@ const GameEngine3D = {
                 hangingRoot.rotation.x = Math.sin(a) * .2;
             }
         }
-        const platformMat = this.surface(profile.floorPattern === 'mosaic' ? 'stone' : floorTexture, [profile.floor, profile.stone, profile.trim], { roughness: .7, metalness: .14 });
-        this.addCylinder(root, 13.35, 14.1, 0.42, profile.tableShape, [0, -0.91, 0], platformMat);
-        const outerBand = this.material(profile.trim, { metalness: .72, roughness: .26 });
+        const platformMat = this.surface(profile.floorPattern === 'mosaic' ? 'sand' : floorTexture, [profile.floor, profile.stone, profile.trim], { roughness: .68, metalness: .16 });
+        this.addCylinder(root, 13.4, 14.15, 0.46, profile.tableShape, [0, -0.92, 0], platformMat);
+        const outerBand = this.material(profile.trim, { metalness: .74, roughness: .24 });
         const floorRing = this.addMesh(new THREE.TorusGeometry(13.15, .075, 8, 120), outerBand, [0, -.69, 0], root, false);
         floorRing.rotation.x = Math.PI / 2;
         const innerRing = this.addMesh(new THREE.TorusGeometry(10.15, .035, 6, 120), this.material(profile.trim, { metalness: .6, roughness: .4, transparent: true, opacity: .7 }), [0, -.68, 0], root, false);
         innerRing.rotation.x = Math.PI / 2;
-        this.decorations.push(ground, floorRing, innerRing);
+
+        // Ein dezenter Lichtsaum am Plattformrand trennt Bühne und Umgebung.
+        const rimGlow = this.addMesh(
+            new THREE.TorusGeometry(13.55, .026, 6, 140),
+            this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: .8, transparent: true, opacity: .48 }),
+            [0, -.9, 0], root, false
+        );
+        rimGlow.rotation.x = Math.PI / 2;
+        rimGlow.name = 'platform-rim';
+        this.decorations.push(ground, floorRing, innerRing, rimGlow);
+        this.animatedObjects.push({ object: rimGlow, type: 'pulse', offset: 0 });
 
         if (profile.floorPattern === 'radial' || profile.floorPattern === 'star' || profile.floorPattern === 'mosaic') {
             for (let i = 0; i < 24; i++) {
@@ -445,8 +755,8 @@ const GameEngine3D = {
         const group = new THREE.Group();
         group.name = 'ritual-table';
         const stone = this.surface('stone', [profile.stone, profile.floor, profile.background], { roughness: .48, metalness: .28 });
-        const topMat = this.surface(profile.id === 'druid' || profile.id === 'sky' ? 'wood' : 'stone', [profile.wood, profile.stone, profile.floor], { roughness: profile.id === 'ice' ? .28 : .48, metalness: profile.id === 'undersea' ? .27 : .13 });
-        const trim = this.material(profile.trim, { metalness: .86, roughness: .22, emissive: profile.trim, emissiveIntensity: .045 });
+        const topMat = this.surface(profile.id === 'druid' || profile.id === 'sky' ? 'wood' : 'marble', [profile.wood, profile.stone, profile.floor], { roughness: profile.id === 'ice' ? .28 : .42, metalness: profile.id === 'undersea' ? .27 : .13 });
+        const trim = this.material(profile.trim, { metalness: .86, roughness: .22, emissive: profile.trim, emissiveIntensity: .06 });
         const dark = this.material(profile.background, { roughness: .35, metalness: .48 });
         this.addCylinder(group, 3.55, 4.15, .54, profile.tableShape, [0, -.82, 0], stone);
         this.addCylinder(group, 1.38, 2.55, 1.38, profile.tableShape, [0, -.26, 0], stone);
@@ -456,7 +766,7 @@ const GameEngine3D = {
         const lip = this.addMesh(new THREE.TorusGeometry(5.02, .11, 12, 96), trim, [0, .23, 0], group);
         lip.rotation.x = Math.PI / 2;
         [4.72, 4.5, 1.78, 1.55].forEach((radius, index) => {
-            const ring = this.addMesh(new THREE.TorusGeometry(radius, index < 2 ? .028 : .035, 8, 96), index === 1 ? this.material(profile.accent, { metalness: .6, roughness: .3, emissive: profile.accent, emissiveIntensity: .22 }) : trim, [0, .274 + index * .006, 0], group, false);
+            const ring = this.addMesh(new THREE.TorusGeometry(radius, index < 2 ? .028 : .035, 8, 96), index === 1 ? this.material(profile.accent, { metalness: .6, roughness: .3, emissive: profile.accent, emissiveIntensity: .26 }) : trim, [0, .274 + index * .006, 0], group, false);
             ring.rotation.x = Math.PI / 2;
         });
         const medallion = this.addMesh(new THREE.CircleGeometry(1.42, 64), dark, [0, .267, 0], group, false);
@@ -473,7 +783,7 @@ const GameEngine3D = {
             const r0 = i % 2 ? 4.18 : 4.26, r1 = i % 2 ? 4.42 : 4.36;
             this.addTube(group, [[Math.cos(angle) * r0, .285, Math.sin(angle) * r0], [Math.cos(angle) * r1, .285, Math.sin(angle) * r1]], .018, trim, 4, 4, false);
         }
-        // Six restrained ritual objects sit in an intentional ring, leaving the playable center clear.
+        // Sechs zurückhaltende Ritualobjekte in einem bewussten Kranz.
         for (let i = 0; i < 6; i++) {
             const a = i * Math.PI / 3 + Math.PI / 6;
             const prop = new THREE.Group();
@@ -497,10 +807,10 @@ const GameEngine3D = {
         const heart = this.addMesh(new THREE.OctahedronGeometry(.31, 1), this.material(profile.accent, { metalness: .38, roughness: .16, emissive: profile.accent, emissiveIntensity: .9 }), [0, .69, 0], group, false);
         heart.name = 'altar-heart';
         this.animatedObjects.push({ object: heart, type: 'heart', offset: 0 });
-        // Fluted structural ribs make the pedestal read as carved furniture rather than a floating slab.
+        // Kannelierte Rippen lassen den Sockel als gearbeitetes Möbel lesen.
         for (let i = 0; i < 8; i++) {
             const a = i * Math.PI / 4;
-            const rib = this.addBox(group, [.17, 1.12, .18], [Math.cos(a) * 1.69, -.28, Math.sin(a) * 1.69], trim, [0, -a, -.12], false);
+            this.addBox(group, [.17, 1.12, .18], [Math.cos(a) * 1.69, -.28, Math.sin(a) * 1.69], trim, [0, -a, -.12], false);
         }
         this.tableMesh = group;
         this.environmentRoot.add(group);
@@ -533,6 +843,421 @@ const GameEngine3D = {
             backGem.scale.y = 1.45;
             seat.userData.playerIndex = i;
             this.decorations.push(seat);
+        }
+    },
+
+    /* -------------------------------------------------------------- */
+    /* 6 · Welt: Sternendom, Schwebeinseln, Sternenorbit              */
+    /* -------------------------------------------------------------- */
+
+    /**
+     * Die Welt ist die Hülle um die Bühne. Sie wird nur neu gebaut,
+     * wenn sich die Welt wirklich ändert – der Ortswechsel innerhalb
+     * derselben Welt bleibt dadurch billig.
+     */
+    buildWorld(worldId) {
+        const manifest = (this.worlds || []).find(entry => entry.id === worldId) || { id: 'cathedral', sky: 0x0c0918, horizon: 0x2a2140, starDensity: 1200 };
+        // Ohne WebGL (oder vor init) gibt es keine Szene: Welt nur merken.
+        if (!this.scene || typeof THREE === 'undefined') {
+            this.world = manifest.id;
+            return this.world;
+        }
+        if (this.worldRoot) this.disposeObject(this.worldRoot);
+        const root = new THREE.Group();
+        root.name = `world-${manifest.id}`;
+        root.userData.world = manifest.id;
+        this.scene.add(root);
+        this.worldRoot = root;
+        this.scene.background = new THREE.Color(manifest.sky);
+        this.scene.fog = new THREE.FogExp2(manifest.horizon, manifest.id === 'orbit' ? 0.0038 : manifest.id === 'island' ? 0.0055 : 0.0072);
+
+        this.buildStarfield(root, manifest);
+        if (manifest.id === 'cathedral') {
+            this.buildWorldCathedral(root, manifest);
+        } else if (manifest.id === 'island') {
+            this.buildWorldIsles(root, manifest);
+        } else {
+            this.buildWorldOrbit(root, manifest);
+        }
+    },
+
+    /**
+     * Sternenfeld als Punktewolke auf einer Kugelschale. Größe und
+     * Farbtemperatur variieren, damit der Himmel nicht wie ein Raster
+     * wirkt. Zusätzlich entsteht ein weicher Milchstraßen-Gürtel.
+     */
+    buildStarfield(parent, manifest) {
+        const count = this.lowPowerDevice ? Math.round(manifest.starDensity * 0.55) : manifest.starDensity;
+        const positions = [];
+        const colors = [];
+        const base = new THREE.Color(0xffffff);
+        let seed = 987654321 + manifest.starDensity;
+        const random = () => {
+            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+            return seed / 4294967296;
+        };
+        for (let i = 0; i < count; i++) {
+            // Gleichmäßig auf der Kugel, Radius 90–170.
+            const u = random() * 2 - 1;
+            const theta = random() * Math.PI * 2;
+            const r = 90 + random() * 80;
+            const s = Math.sqrt(1 - u * u);
+            positions.push(Math.cos(theta) * s * r, Math.abs(u) * r * 0.85 + 2, Math.sin(theta) * s * r);
+            const tint = base.clone().lerp(new THREE.Color(random() > .5 ? 0xfff0cc : 0xcfe0ff), random() * .8);
+            colors.push(tint.r, tint.g, tint.b);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        const stars = new THREE.Points(geometry, new THREE.PointsMaterial({
+            size: this.lowPowerDevice ? .55 : .72, vertexColors: true, transparent: true,
+            opacity: .92, depthWrite: false, sizeAttenuation: true, fog: false
+        }));
+        stars.name = 'starfield';
+        parent.add(stars);
+        this.animatedObjects.push({ object: stars, type: 'starfield', offset: 0 });
+
+        // Milchstraße: ein breites Band dichterer, schwächerer Sterne.
+        const bandCount = this.lowPowerDevice ? 320 : 760;
+        const bandPositions = [];
+        const bandColors = [];
+        for (let i = 0; i < bandCount; i++) {
+            const t = random() * Math.PI * 2;
+            const spread = (random() - .5) * (random() - .5) * 60;
+            const radius = 150 + random() * 40;
+            const bandColor = new THREE.Color(0xd9c9ff).lerp(new THREE.Color(0x8fb6ff), random());
+            bandPositions.push(Math.cos(t) * radius, Math.sin(t) * radius * .38 + spread, Math.sin(t) * radius * .92);
+            bandColors.push(bandColor.r, bandColor.g, bandColor.b);
+        }
+        const bandGeometry = new THREE.BufferGeometry();
+        bandGeometry.setAttribute('position', new THREE.Float32BufferAttribute(bandPositions, 3));
+        bandGeometry.setAttribute('color', new THREE.Float32BufferAttribute(bandColors, 3));
+        const band = new THREE.Points(bandGeometry, new THREE.PointsMaterial({
+            size: .42, vertexColors: true, transparent: true, opacity: .5, depthWrite: false, fog: false
+        }));
+        band.name = 'milky-way';
+        parent.add(band);
+        this.decorations.push(stars, band);
+    },
+
+    /** Sternendom: Langhaus, Strebepfeiler, Rosette, schwebende Kerzen. */
+    buildWorldCathedral(parent, manifest) {
+        const stone = this.surface('marble', [0x2a2336, 0x161020, 0x3d3450], { roughness: .82, metalness: .06 });
+        const gold = this.material(0xb79a5c, { metalness: .8, roughness: .28 });
+        const glassWarm = this.material(0x6b4b91, { emissive: 0x8a63b8, emissiveIntensity: .5, transparent: true, opacity: .72, side: THREE.DoubleSide });
+        // Langhaus: zwei Wände mit Arkaden und ein Gewölbe aus Rippen.
+        for (const side of [-1, 1]) {
+            this.addBox(parent, [1.2, 26, 62], [side * 24, 9, -6], stone);
+            for (let i = 0; i < 6; i++) {
+                const z = 16 - i * 9.4;
+                this.addBox(parent, [1.9, 24, 2.4], [side * 23.2, 8.4, z], stone);
+                this.addArch(parent, side * 22.2, 10.6, z - 4.4, 3.4, glassWarm, .16, true);
+            }
+            for (let i = 0; i < 5; i++) {
+                const z = 12 - i * 9.4;
+                this.addArch(parent, side * 21.6, 2.1, z, 4.2, stone, .3, true);
+            }
+        }
+        for (let i = 0; i < 7; i++) {
+            const z = 18 - i * 8.6;
+            const rib = this.addMesh(new THREE.TorusGeometry(23, .24, 6, 40, Math.PI), stone, [0, 13.6, z], parent);
+            rib.rotation.z = 0;
+            rib.rotation.x = Math.PI;
+            rib.rotation.y = 0;
+            rib.scale.set(1, .58, 1);
+            this.addBox(parent, [.34, .5, 1.1], [-11, 11.2, z], gold, [0, 0, .1], false);
+            this.addBox(parent, [.34, .5, 1.1], [11, 11.2, z], gold, [0, 0, -.1], false);
+        }
+        // Rosettenfenster am Kopfende und ein schmaler Lichtspalt darüber.
+        this.addMosaicWindow(parent, 0, 12.4, -34.4, 5.2, { glass: 0x594070, accent: 0xb591ed, trim: 0xe0c489 }, 18);
+        this.addBox(parent, [26, .8, 1.2], [0, 18.2, -34.6], gold, [0, 0, 0], false);
+        // Schwebende Kerzen liefern warme Tiefe im Schiff.
+        for (let i = 0; i < 14; i++) {
+            const angle = i / 14 * Math.PI * 2;
+            const radius = 13 + (i % 4) * 1.6;
+            const candle = this.addMesh(
+                new THREE.SphereGeometry(.16, 8, 6),
+                this.material(0xffd9a0, { emissive: 0xffb066, emissiveIntensity: 1.5, transparent: true, opacity: .9 }),
+                [Math.cos(angle) * radius, 4.4 + (i % 5) * 1.5, Math.sin(angle) * radius - 4], parent, false
+            );
+            candle.userData.baseY = candle.position.y;
+            this.animatedObjects.push({ object: candle, type: 'drift', offset: i * .6 });
+        }
+    },
+
+    /** Schwebeinseln: Terrassen, Brücken, Wasserfälle, Wolkenmeer. */
+    buildWorldIsles(parent, manifest) {
+        const rock = this.surface('stone', [0x4a5a63, 0x2b3942, 0x74838a], { roughness: .96 });
+        const grass = this.material(0x5c8055, { roughness: .95 });
+        const water = this.material(0x8fd8e8, { transparent: true, opacity: .34, roughness: .08, metalness: .34, emissive: 0x2d7d93, emissiveIntensity: .3 });
+        // Satelliteninseln in zwei Ringen.
+        for (let i = 0; i < 9; i++) {
+            const angle = i / 9 * Math.PI * 2 + .3;
+            const distance = 26 + (i % 3) * 5;
+            const isle = new THREE.Group();
+            isle.position.set(Math.cos(angle) * distance, -2.6 + (i % 4) * 1.6, Math.sin(angle) * distance);
+            isle.rotation.y = angle;
+            parent.add(isle);
+            const body = this.addMesh(new THREE.DodecahedronGeometry(3.4 + (i % 3) * .9, 1), rock, [0, 0, 0], isle);
+            body.scale.set(1.4, .82, 1.2);
+            const cap = this.addCylinder(isle, 3.1 + (i % 2) * .6, 3.4 + (i % 2) * .6, .5, 9, [0, 2.2, 0], grass);
+            for (let j = 0; j < 3; j++) {
+                const a = j * Math.PI * 2 / 3;
+                const shrub = this.addMesh(new THREE.DodecahedronGeometry(.7 + (j % 2) * .3, 1), this.material(j % 2 ? 0x6f9a63 : 0x82a768, { roughness: .94 }), [Math.cos(a) * 1.9, 2.8, Math.sin(a) * 1.9], isle);
+                shrub.scale.set(1.1, .9, 1);
+            }
+            // Wasserfall: ein schmales, halbtransparentes Band in die Tiefe.
+            if (i % 2 === 0) {
+                const fall = this.addBox(isle, [1.1, 7.5, .22], [0, -2.6, 2.6], water, [.08, 0, 0], false);
+                fall.name = 'waterfall';
+                this.animatedObjects.push({ object: fall, type: 'pulse', offset: i });
+            }
+        }
+        // Brücken zum Zentrum.
+        for (let i = 0; i < 4; i++) {
+            const angle = i * Math.PI / 2 + Math.PI / 4;
+            for (let step = 0; step < 8; step++) {
+                const t = 14 + step * 1.5;
+                this.addBox(parent, [1.6, .22, 2.6], [Math.cos(angle) * t, -.4 - Math.sin(step / 8 * Math.PI) * .5, Math.sin(angle) * t], rock, [0, -angle, 0], false);
+            }
+        }
+        // Wolkenmeer: drei Schichten weicher Kugelwolken unter der Bühne.
+        for (let layer = 0; layer < 3; layer++) {
+            for (let i = 0; i < 16; i++) {
+                const angle = i / 16 * Math.PI * 2 + layer * .4;
+                const radius = 30 + layer * 9 + (i % 3) * 3;
+                const cloud = this.addMesh(
+                    new THREE.SphereGeometry(3.4 + (i % 4), 10, 8),
+                    this.material(0xdfe9f2, { roughness: 1, transparent: true, opacity: .16 - layer * .03, fog: false }),
+                    [Math.cos(angle) * radius, -12 - layer * 3.5, Math.sin(angle) * radius], parent, false
+                );
+                cloud.scale.set(1.9, .38, 1.1);
+                this.animatedObjects.push({ object: cloud, type: 'cloud', offset: i * .8 + layer });
+            }
+        }
+    },
+
+    /** Sternenorbit: Asteroidenring, Polarlichter, ferner Planet. */
+    buildWorldOrbit(parent, manifest) {
+        const rockMat = this.surface('stone', [0x4b4b5e, 0x24242f, 0x777a8c], { roughness: .98 });
+        // Asteroidenring: instanziert, damit der Ring aus hunderten
+        // Brocken nur einen Draw Call kostet.
+        const count = this.lowPowerDevice ? 150 : 340;
+        const instances = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), rockMat, count);
+        const transform = new THREE.Object3D();
+        let seed = 424242;
+        const random = () => {
+            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+            return seed / 4294967296;
+        };
+        for (let i = 0; i < count; i++) {
+            const angle = random() * Math.PI * 2;
+            const radius = 26 + random() * 16;
+            const scale = .18 + random() * .72;
+            transform.position.set(Math.cos(angle) * radius, (random() - .5) * 2.6, Math.sin(angle) * radius);
+            transform.rotation.set(random() * Math.PI, random() * Math.PI, random() * Math.PI);
+            transform.scale.set(scale, scale * (.6 + random() * .8), scale);
+            transform.updateMatrix();
+            instances.setMatrixAt(i, transform.matrix);
+        }
+        instances.instanceMatrix.needsUpdate = true;
+        instances.name = 'asteroid-belt';
+        parent.add(instances);
+        this.animatedObjects.push({ object: instances, type: 'belt', offset: 0 });
+
+        // Polarlichter: drei weiche, halbtransparente Bänder.
+        if (manifest.aurora) {
+            for (let band = 0; band < 3; band++) {
+                const points = [];
+                for (let i = 0; i <= 20; i++) {
+                    const t = i / 20;
+                    const angle = -Math.PI * .55 + t * Math.PI * 1.1;
+                    const radius = 46 + band * 6;
+                    points.push([
+                        Math.cos(angle) * radius,
+                        12 + Math.sin(t * Math.PI) * (7 + band * 2.5),
+                        Math.sin(angle) * radius - 10
+                    ]);
+                }
+                const ribbon = this.addTube(
+                    parent, points, .38 + band * .16,
+                    this.material(band === 1 ? 0x8ef0d0 : 0x9a8cf0, {
+                        emissive: band === 1 ? 0x4fd3a8 : 0x6b5ad8,
+                        emissiveIntensity: 1.05, transparent: true, opacity: .2, fog: false
+                    }),
+                    60, 8, false
+                );
+                ribbon.name = `aurora-${band}`;
+                this.animatedObjects.push({ object: ribbon, type: 'aurora', offset: band * 1.4 });
+            }
+        }
+        // Ferner Planet mit Ring als Tiefenanker.
+        const planet = new THREE.Group();
+        planet.position.set(-52, 26, -78);
+        parent.add(planet);
+        this.addMesh(new THREE.SphereGeometry(11, 32, 24), this.material(0x3d4a72, { roughness: .85, emissive: 0x1b2340, emissiveIntensity: .32 }), [0, 0, 0], planet, false);
+        const ring = this.addMesh(new THREE.TorusGeometry(17, .5, 6, 96), this.material(0x8b93c9, { transparent: true, opacity: .36, roughness: .6 }), [0, 0, 0], planet, false);
+        ring.rotation.set(1.16, .3, .2);
+        planet.userData.isBackdrop = true;
+        this.decorations.push(planet);
+    },
+
+    /* -------------------------------------------------------------- */
+    /* 7 · Figuren                                                   */
+    /* -------------------------------------------------------------- */
+
+    /**
+     * Baut bis zu sechs Figuren im Kreis. Jede Figur erbt ihre Palette
+     * von einer Avatar-Identität (`js/worlds.js`), damit 2D-Porträt und
+     * 3D-Figur dieselbe Person zeigen: Hautton, Haar, Robe, Metall,
+     * Kopfbedeckung und Sigill.
+     */
+    spawnHumanoidAvatars(num) {
+        this.avatarMeshes.forEach(object => this.disposeObject(object));
+        this.avatarMeshes = [];
+        if (!this.environmentRoot) return;
+        const profile = this.profile || this.environments[0];
+        const worlds = typeof globalThis !== 'undefined' ? globalThis.ArcanumWorlds : null;
+        const count = Math.max(2, Math.min(6, Number(num) || 3));
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2 + Math.PI / 2;
+            const x = Math.cos(angle) * 7.45;
+            const z = Math.sin(angle) * 7.45;
+            const player = typeof GameEngine !== 'undefined' && GameEngine.players && GameEngine.players[i];
+            const isHuman = Boolean(player && !player.isBot) || i === 0;
+            const identity = worlds && worlds.avatarForPlayer ? worlds.avatarForPlayer(i, !isHuman) : null;
+            const palette = identity ? identity.ui : {
+                robe: '#c6a258', robeDeep: '#6a4c22', trim: '#ffe194', accent: '#b591ed', skin: '#e8b890', hair: '#2c1d20'
+            };
+            const robeColor = Number('0x' + palette.robe.replace('#', ''));
+            const accentColor = Number('0x' + palette.trim.replace('#', ''));
+            const root = new THREE.Group();
+            root.position.set(x, -.62, z);
+            root.rotation.y = Math.atan2(-x, -z);
+            root.userData.baseRotationY = root.rotation.y;
+            root.userData.bobOffset = i * 1.7;
+            root.userData.isHuman = isHuman;
+            root.userData.playerIndex = i;
+            root.userData.identity = identity ? identity.id : 'custom';
+            this.environmentRoot.add(root);
+            const body = new THREE.Group();
+            root.add(body);
+            const robe = this.surface('cloth', [robeColor, Number('0x' + palette.robeDeep.replace('#', '')), profile.background], { roughness: .9 });
+            const trim = this.material(accentColor, { metalness: .62, roughness: .29 });
+            const skin = this.material(Number('0x' + palette.skin.replace('#', '')), { roughness: .86 });
+            const hair = this.surface('cloth', [Number('0x' + palette.hair.replace('#', '')), 0x1d1519, 0x4b332a], { roughness: .98 });
+            const dark = this.material(0x1a151c, { roughness: .78 });
+            const gold = this.material(profile.trim, { metalness: .82, roughness: .22 });
+            // Geschichtete Robe, Mantel, gewebte Schärpe, Ärmel und Hände
+            // ergeben eine lesbare sitzende Silhouette.
+            this.addCylinder(body, .2, .72, 1.72, 20, [0, .86, 0], robe);
+            const mantle = this.addMesh(new THREE.SphereGeometry(.83, 22, 15, 0, Math.PI * 2, .16, 1.32), robe, [0, 1.52, -.06], body);
+            mantle.scale.set(1.12, .69, .68);
+            const collar = this.addMesh(new THREE.TorusGeometry(.36, .09, 10, 28), trim, [0, 1.88, .04], body);
+            collar.rotation.x = Math.PI / 2;
+            this.addBox(body, [.15, 1.3, .97], [.18, .91, .2], gold, [0, 0, -.11], false);
+            const belt = this.addMesh(new THREE.TorusGeometry(.48, .07, 8, 24), gold, [0, .63, 0], body, false);
+            belt.rotation.x = Math.PI / 2;
+            this.addMesh(new THREE.OctahedronGeometry(.16, 1), this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: .52 }), [.18, .66, .47], body, false);
+            for (const side of [-1, 1]) {
+                const sleeve = this.addCylinder(body, .2, .24, .88, 14, [side * .65, 1.16, .05], robe);
+                sleeve.rotation.z = side * .29;
+                const cuff = this.addMesh(new THREE.TorusGeometry(.2, .05, 8, 20), gold, [side * .78, .79, .1], body, false);
+                cuff.rotation.z = Math.PI / 2;
+                this.addMesh(new THREE.SphereGeometry(.14, 14, 10), skin, [side * .8, .66, .15], body);
+                const shoulder = this.addMesh(new THREE.SphereGeometry(.31, 16, 12), robe, [side * .58, 1.62, -.04], body);
+                shoulder.scale.set(1.25, .72, .82);
+            }
+            this.addCylinder(body, .16, .19, .37, 16, [0, 1.99, .05], skin);
+            const head = this.addMesh(new THREE.SphereGeometry(.39, 28, 22), skin, [0, 2.37, .05], body);
+            head.scale.set(.84, 1.12, .92);
+            for (const side of [-1, 1]) {
+                this.addMesh(new THREE.SphereGeometry(.1, 12, 9), skin, [side * .32, 2.34, .04], body);
+                this.addMesh(new THREE.SphereGeometry(.06, 12, 10), this.material(0xf4eade, { roughness: .45 }), [side * .135, 2.4, .377], body, false);
+                this.addMesh(new THREE.SphereGeometry(.032, 10, 8), dark, [side * .135, 2.4, .43], body, false);
+                const brow = this.addBox(body, [.14, .035, .045], [side * .14, 2.5, .37], hair, [0, 0, side * -.09], false);
+                brow.rotation.z = side * -.08;
+            }
+            const nose = this.addMesh(new THREE.ConeGeometry(.07, .17, 8), skin, [0, 2.29, .42], body, false);
+            nose.rotation.x = Math.PI / 2;
+            this.addBox(body, [.12, .025, .025], [0, 2.17, .411], this.material(0x713f43, { roughness: .88 }), [0, 0, -.02], false);
+            const hairCap = this.addMesh(new THREE.SphereGeometry(.4, 20, 14, 0, Math.PI * 2, 0, 1.08), hair, [0, 2.57, .01], body);
+            hairCap.scale.set(.92, .92, .95);
+            const backHair = this.addMesh(new THREE.SphereGeometry(.36, 16, 12), hair, [i % 2 ? .05 : -.08, 2.49, -.19], body);
+            backHair.scale.set(.94, .65, .78);
+            for (let braid = 0; braid < (i % 3 === 0 ? 2 : 1); braid++) {
+                const side = braid === 0 ? (i % 2 ? -1 : 1) : -1;
+                this.addTube(body, [[side * .28, 2.45, -.12], [side * .37, 2.08, -.16], [side * .34, 1.77, -.12]], .075, hair, 16, 6, false);
+                this.addMesh(new THREE.SphereGeometry(.095, 10, 8), gold, [side * .34, 1.79, -.1], body, false);
+            }
+            // Kopfbedeckung als erkennbares Merkmal der Identität.
+            this.buildHeadwear(body, identity ? identity.headwear : 'circlet', { trim, accent: profile.accent, gold, hair });
+            // Sigill als schwebendes Zeichen über dem Haupt.
+            const sigilRune = this.addMesh(
+                new THREE.OctahedronGeometry(.12, 0),
+                this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: 1.1, metalness: .4 }),
+                [0, 3.05, 0], body, false
+            );
+            sigilRune.name = 'sigil';
+            root.userData.sigil = sigilRune;
+            this.animatedObjects.push({ object: sigilRune, type: 'sigil', offset: i * .9 });
+            // Ein flacher, weich beleuchteter Ring markiert den Zug.
+            const turnRing = this.addMesh(new THREE.TorusGeometry(1.04, .025, 7, 40), this.material(isHuman ? profile.trim : profile.accent, { emissive: isHuman ? profile.trim : profile.accent, emissiveIntensity: 0, transparent: true, opacity: .74 }), [0, -.53, 0], root, false);
+            turnRing.rotation.x = Math.PI / 2;
+            root.userData.turnRing = turnRing;
+            root.userData.body = body;
+            this.avatarMeshes.push(root);
+        }
+    },
+
+    /** Kopfbedeckung in 3D – dieselben Formen wie im Porträt. */
+    buildHeadwear(body, kind, materials) {
+        const { trim, gold, hair } = materials;
+        const accentMat = this.material(materials.accent, { emissive: materials.accent, emissiveIntensity: .8, metalness: .4 });
+        if (kind === 'circlet') {
+            const circlet = this.addMesh(new THREE.TorusGeometry(.31, .035, 8, 24), gold, [0, 2.61, .02], body, false);
+            circlet.rotation.x = .09;
+            const jewel = this.addMesh(new THREE.OctahedronGeometry(.11, 1), accentMat, [0, 2.7, .31], body, false);
+            jewel.scale.set(.8, 1.4, .7);
+        } else if (kind === 'crown') {
+            const band = this.addMesh(new THREE.TorusGeometry(.34, .05, 8, 26), gold, [0, 2.66, .02], body, false);
+            band.rotation.x = .06;
+            for (let i = 0; i < 6; i++) {
+                const a = i / 6 * Math.PI * 2;
+                const spike = this.addMesh(new THREE.ConeGeometry(.075, .26, 5), gold, [Math.cos(a) * .31, 2.84, Math.sin(a) * .31 + .02], body, false);
+                spike.rotation.z = Math.cos(a) * .12;
+            }
+            this.addMesh(new THREE.OctahedronGeometry(.075, 0), accentMat, [0, 2.86, .34], body, false);
+        } else if (kind === 'hood') {
+            const hood = this.addMesh(new THREE.SphereGeometry(.48, 20, 15, 0, Math.PI * 2, 0, 1.55), this.surface('cloth', [0x4a4a55, 0x22222a, 0x6a6a78], { roughness: .96 }), [0, 2.5, -.04], body);
+            hood.scale.set(1.02, 1.14, 1.06);
+            const rim = this.addMesh(new THREE.TorusGeometry(.4, .05, 8, 28), trim, [0, 2.4, .02], body, false);
+            rim.rotation.x = 1.4;
+        } else if (kind === 'veil') {
+            const veil = this.addMesh(new THREE.ConeGeometry(.62, 1.5, 16, 1, true), this.surface('cloth', [0x3a3f5a, 0x1d2030, 0x5a6080], { roughness: .9 }), [0, 2.36, -.05], body, false);
+            veil.scale.set(1, 1, .85);
+            const band = this.addMesh(new THREE.TorusGeometry(.36, .028, 6, 26), gold, [0, 2.7, .02], body, false);
+            band.rotation.x = .1;
+        } else if (kind === 'helm') {
+            const dome = this.addMesh(new THREE.SphereGeometry(.42, 22, 14, 0, Math.PI * 2, 0, 1.55), this.material(0xb8c2d4, { metalness: .9, roughness: .22 }), [0, 2.56, .01], body);
+            dome.scale.set(.96, 1, .98);
+            const crest = this.addMesh(new THREE.TorusGeometry(.36, .035, 6, 26, Math.PI), trim, [0, 2.62, -.02], body, false);
+            crest.rotation.y = Math.PI / 2;
+            const noseGuard = this.addBox(body, [.07, .34, .07], [0, 2.42, .38], trim, [0, 0, 0], false);
+        } else if (kind === 'laurel') {
+            for (let i = 0; i < 14; i++) {
+                const a = -Math.PI * .92 + (i / 13) * Math.PI * .84;
+                const leaf = this.addMesh(new THREE.SphereGeometry(.07, 8, 6), gold, [Math.cos(a) * .42, 2.72 + Math.sin(Math.abs(a)) * .06, Math.sin(a) * .42], body, false);
+                leaf.scale.set(1.6, .5, .7);
+            }
+        } else if (kind === 'horns') {
+            for (const side of [-1, 1]) {
+                const horn = this.addTube(body, [
+                    [side * .3, 2.6, 0], [side * .46, 2.86, -.04], [side * .52, 3.1, -.1]
+                ], .055, trim, 14, 6, false);
+            }
+            const cap = this.addMesh(new THREE.TorusGeometry(.33, .04, 6, 24), gold, [0, 2.64, .02], body, false);
+            cap.rotation.x = .06;
         }
     },
 
@@ -1087,6 +1812,7 @@ const GameEngine3D = {
         }
     },
 
+    /** Partikel der Raumstimmung: Staub, Sporen, Schnee, Glut, Pollen. */
     buildAtmosphere(profile) {
         const root = this.environmentRoot;
         const positions = [];
@@ -1113,95 +1839,15 @@ const GameEngine3D = {
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
         const size = profile.particles === 'embers' ? .095 : profile.particles === 'bubbles' ? .11 : .07;
-        this.particles = new THREE.Points(geometry, new THREE.PointsMaterial({ size, vertexColors: true, transparent: true, opacity: profile.particles === 'dust' ? .62 : .78, depthWrite: false, sizeAttenuation: true }));
+        this.particles = new THREE.Points(geometry, new THREE.PointsMaterial({
+            size, vertexColors: true, transparent: true,
+            opacity: profile.particles === 'dust' ? .62 : .78,
+            depthWrite: false, sizeAttenuation: true
+        }));
+        this.particles.name = `particles-${profile.particles}`;
         root.add(this.particles);
         this.decorations.push(this.particles);
         this.animatedObjects.push({ object: this.particles, type: profile.particles, offset: 0 });
-    },
-
-    spawnHumanoidAvatars(num) {
-        this.avatarMeshes.forEach(object => this.disposeObject(object));
-        this.avatarMeshes = [];
-        if (!this.environmentRoot) return;
-        const profile = this.profile || this.environments[0];
-        const robeColors = [0xb39256, 0x667fa4, 0x916b9b, 0x4f866f, 0xa86054, 0x638c94];
-        const skinTones = [0xe8b890, 0x8b563d, 0xd59871, 0x6c4637, 0xf0c9a5, 0xb87857];
-        const hairColors = [0x302026, 0x151724, 0x5a2f1d, 0x231713, 0xb68a42, 0x4c263d];
-        for (let i = 0; i < num; i++) {
-            const angle = (i / num) * Math.PI * 2 + Math.PI / 2;
-            const x = Math.cos(angle) * 7.45;
-            const z = Math.sin(angle) * 7.45;
-            const player = typeof GameEngine !== 'undefined' && GameEngine.players && GameEngine.players[i];
-            const isHuman = Boolean(player && !player.isBot);
-            const robeColor = isHuman ? 0xc6a258 : robeColors[(i - 1 + robeColors.length) % robeColors.length];
-            const accentColor = isHuman ? 0xffe194 : robeColors[(i + 2) % robeColors.length];
-            const root = new THREE.Group();
-            root.position.set(x, -.62, z);
-            root.rotation.y = Math.atan2(-x, -z);
-            root.userData.baseRotationY = root.rotation.y;
-            root.userData.bobOffset = i * 1.7;
-            root.userData.isHuman = isHuman;
-            root.userData.playerIndex = i;
-            this.environmentRoot.add(root);
-            const body = new THREE.Group(); root.add(body);
-            const robe = this.surface('cloth', [robeColor, profile.background, profile.stone], { roughness: .9 });
-            const trim = this.material(accentColor, { metalness: .62, roughness: .29 });
-            const skin = this.material(skinTones[i % skinTones.length], { roughness: .86 });
-            const hair = this.surface('cloth', [hairColors[(i * 2 + 1) % hairColors.length], 0x1d1519, 0x4b332a], { roughness: .98 });
-            const dark = this.material(0x1a151c, { roughness: .78 });
-            const gold = this.material(profile.trim, { metalness: .82, roughness: .22 });
-            // Layered robe, mantle, woven sash, sleeves and hands make a legible seated silhouette.
-            this.addCylinder(body, .2, .72, 1.72, 20, [0, .86, 0], robe);
-            const mantle = this.addMesh(new THREE.SphereGeometry(.83, 22, 15, 0, Math.PI * 2, .16, 1.32), robe, [0, 1.52, -.06], body);
-            mantle.scale.set(1.12, .69, .68);
-            const collar = this.addMesh(new THREE.TorusGeometry(.36, .09, 10, 28), trim, [0, 1.88, .04], body);
-            collar.rotation.x = Math.PI / 2;
-            this.addBox(body, [.15, 1.3, .97], [.18, .91, .2], gold, [0, 0, -.11], false);
-            const belt = this.addMesh(new THREE.TorusGeometry(.48, .07, 8, 24), gold, [0, .63, 0], body, false);
-            belt.rotation.x = Math.PI / 2;
-            this.addMesh(new THREE.OctahedronGeometry(.16, 1), this.material(profile.accent, { emissive: profile.accent, emissiveIntensity: .52 }), [.18, .66, .47], body, false);
-            for (const side of [-1, 1]) {
-                const sleeve = this.addCylinder(body, .2, .24, .88, 14, [side * .65, 1.16, .05], robe);
-                sleeve.rotation.z = side * .29;
-                const cuff = this.addMesh(new THREE.TorusGeometry(.2, .05, 8, 20), gold, [side * .78, .79, .1], body, false);
-                cuff.rotation.z = Math.PI / 2;
-                this.addMesh(new THREE.SphereGeometry(.14, 14, 10), skin, [side * .8, .66, .15], body);
-                const shoulder = this.addMesh(new THREE.SphereGeometry(.31, 16, 12), robe, [side * .58, 1.62, -.04], body);
-                shoulder.scale.set(1.25, .72, .82);
-            }
-            this.addCylinder(body, .16, .19, .37, 16, [0, 1.99, .05], skin);
-            const head = this.addMesh(new THREE.SphereGeometry(.39, 28, 22), skin, [0, 2.37, .05], body);
-            head.scale.set(.84, 1.12, .92);
-            for (const side of [-1, 1]) {
-                this.addMesh(new THREE.SphereGeometry(.1, 12, 9), skin, [side * .32, 2.34, .04], body);
-                this.addMesh(new THREE.SphereGeometry(.06, 12, 10), this.material(0xf4eade, { roughness: .45 }), [side * .135, 2.4, .377], body, false);
-                this.addMesh(new THREE.SphereGeometry(.032, 10, 8), dark, [side * .135, 2.4, .43], body, false);
-                const brow = this.addBox(body, [.14, .035, .045], [side * .14, 2.5, .37], hair, [0, 0, side * -.09], false);
-                brow.rotation.z = side * -.08;
-            }
-            const nose = this.addMesh(new THREE.ConeGeometry(.07, .17, 8), skin, [0, 2.29, .42], body, false);
-            nose.rotation.x = Math.PI / 2;
-            this.addBox(body, [.12, .025, .025], [0, 2.17, .411], this.material(0x713f43, { roughness: .88 }), [0, 0, -.02], false);
-            const hairCap = this.addMesh(new THREE.SphereGeometry(.4, 20, 14, 0, Math.PI * 2, 0, 1.08), hair, [0, 2.57, .01], body);
-            hairCap.scale.set(.92, .92, .95);
-            const backHair = this.addMesh(new THREE.SphereGeometry(.36, 16, 12), hair, [i % 2 ? .05 : -.08, 2.49, -.19], body);
-            backHair.scale.set(.94, .65, .78);
-            for (let braid = 0; braid < (i % 3 === 0 ? 2 : 1); braid++) {
-                const side = braid === 0 ? (i % 2 ? -1 : 1) : -1;
-                const braidMesh = this.addTube(body, [[side * .28, 2.45, -.12], [side * .37, 2.08, -.16], [side * .34, 1.77, -.12]], .075, hair, 16, 6, false);
-                this.addMesh(new THREE.SphereGeometry(.095, 10, 8), gold, [side * .34, 1.79, -.1], body, false);
-            }
-            const circlet = this.addMesh(new THREE.TorusGeometry(.31, .035, 8, 24), gold, [0, 2.61, .02], body, false);
-            circlet.rotation.x = .09;
-            const jewel = this.addMesh(new THREE.OctahedronGeometry(.11, 1), this.material(profile.accent, { metalness: .4, emissive: profile.accent, emissiveIntensity: .85 }), [0, 2.7, .31], body, false);
-            jewel.scale.set(.8, 1.4, .7);
-            // A low, softly lit ring marks whose turn it is without obscuring the seat or table.
-            const turnRing = this.addMesh(new THREE.TorusGeometry(1.04, .025, 7, 40), this.material(isHuman ? profile.trim : profile.accent, { emissive: isHuman ? profile.trim : profile.accent, emissiveIntensity: 0, transparent: true, opacity: .74 }), [0, -.53, 0], root, false);
-            turnRing.rotation.x = Math.PI / 2;
-            root.userData.turnRing = turnRing;
-            root.userData.body = body;
-            this.avatarMeshes.push(root);
-        }
     },
 
     setActivePlayer(playerIdx) {
@@ -1212,13 +1858,19 @@ const GameEngine3D = {
                 ring.material.emissiveIntensity = active ? .92 : .04;
                 ring.material.opacity = active ? .98 : .34;
             }
+            const sigil = avatar.userData.sigil;
+            if (sigil && sigil.material) {
+                sigil.material.emissiveIntensity = active ? 1.9 : .32;
+                sigil.scale.setScalar(active ? 1.5 : 1);
+            }
             avatar.userData.isActive = active;
         });
     },
 
+    /** Gibt Geometrien, Materialien und Texturen eines Objektbaums frei. */
     disposeObject(object) {
         if (!this.scene || !object) return;
-        this.scene.remove(object);
+        if (object.parent) object.parent.remove(object);
         const geometries = new Set();
         const materials = new Set();
         const textures = new Set();
@@ -1240,10 +1892,32 @@ const GameEngine3D = {
         this.buildEnvironment(environment);
     },
 
+    /** Wechselt die Hülle (Sternendom / Inseln / Orbit) ohne Ortswechsel. */
+    changeWorld(worldId) {
+        const known = (this.worlds || []).find(entry => entry.id === worldId);
+        if (!known || known.id === this.world) return this.world;
+        this.world = known.id;
+        if (this.profile) {
+            // Der erste Ort dieser Welt übernimmt die Bühne.
+            const target = this.environments.find(entry => entry.world === known.id);
+            if (target) return this.buildEnvironment(target.id), this.environment;
+        }
+        this.buildWorld(known.id);
+        return this.world;
+    },
+
+    /**
+     * Bildschleife. Die Bildrate wird gemessen; fällt sie unter
+     * ~42 fps, sinkt die Pixeldichte schrittweise, ohne dass Figuren
+     * oder Raumdetails verschwinden.
+     */
     animate() {
         this.rafId = requestAnimationFrame(() => this.animate());
         if (!this.renderer || !this.scene || !this.camera) return;
+        const dt = this.clock ? Math.min(0.05, this.clock.getDelta()) : 0.016;
         const time = this.clock ? this.clock.getElapsedTime() : 0;
+        this.updateCamera(dt);
+
         if (!this.reducedMotion) {
             if (this.particles) {
                 const kind = this.profile && this.profile.particles;
@@ -1251,26 +1925,90 @@ const GameEngine3D = {
                 if (kind === 'embers') this.particles.rotation.x = Math.sin(time * .12) * .025;
             }
             this.avatarMeshes.forEach(avatar => {
-                avatar.position.y = -.62 + Math.sin(time * .72 + avatar.userData.bobOffset) * .025;
+                const breath = Math.sin(time * .72 + avatar.userData.bobOffset);
+                avatar.position.y = -.62 + breath * .025;
                 avatar.rotation.y = avatar.userData.baseRotationY + Math.sin(time * .24 + avatar.userData.bobOffset) * .0015;
+                if (avatar.userData.body) avatar.userData.body.rotation.z = breath * .006;
             });
             this.animatedObjects.forEach(({ object, type, offset }) => {
                 if (!object) return;
                 if (type === 'heart') {
                     object.rotation.y = time * .24;
                     object.position.y = .69 + Math.sin(time * 1.1) * .055;
-                } else if (type === 'armillary') object.rotation.y = Math.sin(time * .12 + offset) * .2;
-                else if (type === 'fish') object.position.y = object.userData.baseY + Math.sin(time * .65 + offset) * .12;
-                else if (type === 'flicker') {
+                } else if (type === 'armillary') {
+                    object.rotation.y = Math.sin(time * .12 + offset) * .2;
+                } else if (type === 'fish') {
+                    object.position.y = object.userData.baseY + Math.sin(time * .65 + offset) * .12;
+                } else if (type === 'flicker') {
                     const baseY = object.userData.baseY || object.position.y;
                     object.scale.y = 1 + Math.sin(time * 11 + offset) * .08;
                     object.position.y = baseY + Math.sin(time * 9 + offset) * .025;
+                } else if (type === 'sigil') {
+                    object.rotation.y = time * .9 + offset;
+                    object.rotation.x = Math.sin(time * .8 + offset) * .3;
+                    const pulse = 1 + Math.sin(time * 2.2 + offset) * .12;
+                    const activeScale = object.parent && object.parent.parent && object.parent.parent.userData.isActive ? 1.5 : 1;
+                    object.scale.setScalar(pulse * activeScale);
+                } else if (type === 'starfield') {
+                    object.rotation.y = time * .0035;
+                } else if (type === 'belt') {
+                    object.rotation.y = time * .012;
+                } else if (type === 'aurora') {
+                    object.material.opacity = .16 + Math.sin(time * .5 + offset) * .07;
+                    object.position.y = Math.sin(time * .22 + offset) * .6;
+                } else if (type === 'cloud') {
+                    object.position.y += Math.sin(time * .18 + offset) * .0016;
+                } else if (type === 'drift') {
+                    object.position.y = object.userData.baseY + Math.sin(time * .6 + offset) * .5;
+                } else if (type === 'pulse') {
+                    if (object.material) object.material.opacity = .32 + Math.sin(time * 1.4 + offset) * .18;
                 }
             });
         }
         this.renderer.render(this.scene, this.camera);
+        this.trackPerformance(dt);
+    },
+
+    /**
+     * Einfache Qualitätsregel: Wird es dauerhaft zu langsam, sinkt die
+     * Pixeldichte (min. 1.0). Wird es wieder flüssig, steigt sie
+     * höchstens bis zum Startwert – nie darüber.
+     */
+    trackPerformance(dt) {
+        const perf = this.perf;
+        perf.frames++;
+        perf.elapsed += dt;
+        if (perf.elapsed < 2.4) return;
+        perf.fps = perf.frames / perf.elapsed;
+        perf.frames = 0;
+        perf.elapsed = 0;
+        const target = Math.min(window.devicePixelRatio || 1, this.lowPowerDevice ? 1.25 : 1.75);
+        if (perf.fps < 42 && perf.quality > 1) {
+            perf.quality = Math.max(1, perf.quality - 0.15);
+            this.renderer.setPixelRatio(target * perf.quality);
+        } else if (perf.fps > 56 && perf.quality < 1) {
+            perf.quality = Math.min(1, perf.quality + 0.1);
+            this.renderer.setPixelRatio(target * perf.quality);
+        }
+        if (perf.fps < 30 && this.renderer.shadowMap.enabled) {
+            this.renderer.shadowMap.enabled = false;
+        }
+    },
+
+    /** Für Tests und externe Werkzeuge: aktueller Kamera-Zustand. */
+    cameraState() {
+        return {
+            yaw: this.orbit.yaw,
+            pitch: this.orbit.pitch,
+            distance: this.orbit.distance,
+            fov: this.camera ? this.camera.fov : this.cameraFov
+        };
     }
 };
+
+// Das Manifest wird beim Laden aus `js/worlds.js` gefüllt, damit UI und
+// Tests die zehn Orte ohne WebGL lesen können.
+GameEngine3D.hydrateManifests();
 
 // Die 3D-Bühne als globales Modul verfügbar machen, damit app.js und
 // engine.js auf GameEngine3D.init, changeEnvironment, handLayout usw. zugreifen können.
