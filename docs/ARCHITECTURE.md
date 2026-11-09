@@ -1,10 +1,25 @@
 # Architektur und Spielstand
 
-## Aufbau
+## Aufbau und Verantwortlichkeiten
 
-Die Anwendung besteht aus einer HTML-Datei mit Inline-CSS und JavaScript. Tailwind (Browser-CDN) erzeugt Utility-CSS, Chart.js zeichnet das Diagramm, Three.js r128 rendert die Szene. Es gibt keinen Bundler, kein Backend und keine externen Bilddateien. Kartenmaterial entsteht durch CSS, Tisch und Avatare aus Three.js-Geometrien; diese Stellen können später durch eigene, lokal bereitgestellte Texturen oder Modelle ersetzt werden. Bei neuen Assets Pfade relativ zur HTML-Datei angeben und Lizenz sowie Dateigröße prüfen.
+Die Oberfläche ist als statische Browser-Beta ohne Build-Schritt organisiert. HTML und Darstellung sind getrennt; JavaScript-Dateien werden als klassische Skripte in fester Reihenfolge geladen, damit die Browser-Beta weiterhin direkt von einem einfachen Webserver lauffähig bleibt.
 
-`ALL_CARDS` enthält die Einträge des Kodex (nicht das komplette Spieldeck). `GameEngine3D` verwaltet Szene, Kamera, Renderer, Umgebungen und Avatare; beim Umbau werden Geometrien und Materialien freigegeben. `GameEngine` verwaltet Runden und UI. Weitere Funktionen behandeln Moduswechsel, Kodex, Diagramm und Rechner. Initialisierung erfolgt bei `DOMContentLoaded`.
+- `js/cards.js`: Kartenregister und gemeinsame Darstellungshilfen.
+- `js/game-engine.js`: Deck, Rundenablauf, Wertung, Bot-Züge und Spielzustand.
+- `js/scene3d.js`: Three.js-Renderer, prozedurale Ritualräume/Avatare und Freigabe temporärer Ressourcen.
+- `js/app.js`: DOM-Updates, Kodex, Moduswechsel, Diagramm und Initialisierung.
+- `css/arcanum.css`: visuelle Tokens, Kartenstile, responsive Darstellung und reduzierte Bewegung.
+- `arcanum_tarot_browsergame_codex.html`: semantische Oberfläche und Einstiegspunkt.
+
+`ALL_CARDS` enthält die Einträge des Kodex (nicht das komplette Spieldeck). Die 3D-Szene wird aus wiederverwendbaren prozeduralen Meshes gebaut. Three.js r128 und Chart.js 4.4.8 sowie Tailwind Play CDN werden extern geladen; für vollständig reproduzierbare Builds sollten Abhängigkeiten und ein kompiliertes CSS-Bundle lokal festgeschrieben werden.
+
+### MMO- und Plattform-Zielbild
+
+Die aktuelle Version ist **kein MMO-Client**: Spielregeln laufen im Browser, Bot-Timer und UI sind klientenseitig, es gibt keine Accounts, Transportebene, Serverautorität oder Persistenz. Die jetzt getrennten Dateien sind ein Wartbarkeitsschritt, nicht die Behauptung eines fertigen Multiplayer-Fundaments.
+
+Vor Netzwerkbetrieb ist die Spiellogik in einen plattformneutralen Domänenkern ohne DOM/Three.js zu extrahieren. Eine serverautoritär ausgeführte Zustandsmaschine sollte validierte, versionierte Spielerbefehle annehmen und unveränderliche Ereignisse (z. B. `CardPlayed`, `TrickResolved`, `RoundScored`) publizieren. Clients für Web, Desktop und Mobilgeräte rendern diese Ereignisse; sie entscheiden nicht über Kartengültigkeit oder Wertung. Dazu gehören außerdem deterministische Zufallsquellen mit serverseitigem Seed, Reconnect-Snapshots, Schema-Migrationen, Missbrauchsschutz, Tests mit reproduzierbaren Partien und eine klar versionierte Transport-/Nachrichten-API. Keine dieser Netzwerkfunktionen ist in der Beta implementiert.
+
+Neue UI- und Renderfunktionen sollen die Regeln nicht duplizieren. Für Plattformausbau die Domänenregeln zuerst aus `game-engine.js` herauslösen, nicht vom Browser aus in einen Server-Transport hineinwachsen lassen.
 
 ## Daten und Ablauf
 
@@ -37,4 +52,4 @@ Das Diagramm berechnet die Chance auf mindestens einen Trumpf aus dem tatsächli
 
 ## Persistenz und Betrieb
 
-Es gibt weder `localStorage` noch serverseitige Speicherung oder ein Spielstandsformat. Ein Neuladen verwirft die Partie. Die vorhandenen Zustandsfelder und Karten-IDs bleiben erhalten; eine künftige Persistenz benötigt ein versioniertes Schema und Migrationen. Externe CDN-Ressourcen sind für den Betrieb nötig, siehe README. Die Renderauflösung ist auf zweifache Pixeldichte begrenzt; Partikel sind einfache Punkte. Animationen berücksichtigen die Systemeinstellung für reduzierte Bewegung.
+Es gibt weder `localStorage` noch serverseitige Speicherung oder ein Spielstandsformat. Ein Neuladen verwirft die Partie. Die vorhandenen Zustandsfelder und Karten-IDs bleiben erhalten; eine künftige Persistenz benötigt ein versioniertes Schema und Migrationen. Externe CDN-Ressourcen sind für den Betrieb nötig, siehe README. Die Renderauflösung ist auf 1,75-fache Pixeldichte begrenzt; Schatten, mehrschichtige Beleuchtung, prozedurale Ornamentik und farbige Sternenstaub-Partikel werten die Arena auf. Animationen berücksichtigen die Systemeinstellung für reduzierte Bewegung.

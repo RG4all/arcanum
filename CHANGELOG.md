@@ -1,6 +1,20 @@
 # Changelog
 
-Alle nennenswerten Änderungen werden hier dokumentiert. Versionierung nach Semantic Versioning.
+Alle nennenswerten Änderungen werden hier dokumentiert. Die neue Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
+
+## 0.2.0-beta.1 – 2026-11-09
+
+### Hinzugefügt
+- Eigenständiges responsives Stylesheet und aufgeteilte JavaScript-Verantwortlichkeiten für Kartenregister, Spielregeln, 3D-Szene und UI.
+- Neu gestaltete Tarotkarten mit individuellen Arkana-Farbstimmungen, Suiten, ornamentierten Rahmen, illustrativen Mittelfeldern und optimierter mobiler Hand.
+- Ritualraum mit architektonischen Säulen und Bögen, goldenen Intarsien, mehreren Lichtquellen, weichen Schatten, Nebel, schwebenden Kristallen und farbigem Sternenstaub.
+- Prozedural differenzierte Avatare mit Gesichtszügen, Haaren, Gewändern, individuellen Farbpaletten und sanfter Idle-Animation.
+- Explizitere Architektur- und MMO-Roadmap: klare Abgrenzung zwischen Browser-Beta und künftigem plattformneutralem, serverautoritärem Spielkern.
+
+### Geändert
+- Versionslinie bewusst von 1.x auf `0.2.0-beta.1` zurückgesetzt.
+- Three.js-Ressourcen werden beim Umgebungswechsel freigegeben; die 3D-Auflösung ist auf 1,75-fache Pixeldichte begrenzt.
+- Alle 22 Großen Arkana besitzen jetzt eigene Symbole auf den Spielkarten.
 
 ## 1.1.0 – 2026-11-09
 

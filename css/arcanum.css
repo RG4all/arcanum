@@ -1,0 +1,224 @@
+@keyframes flyToCenter {
+    0% { transform: translateY(180px) scale(.4) rotateX(60deg) rotateZ(-20deg); opacity: 0; }
+    70% { transform: translateY(-12px) scale(1.04) rotateX(0) rotateZ(3deg); opacity: 1; }
+    100% { transform: translateY(0) scale(1) rotateX(0) rotateZ(0); opacity: 1; }
+}
+.card-flying-in { animation: flyToCenter .65s cubic-bezier(.175,.885,.32,1.275) both; }
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 118%;
+    left: 50%;
+    z-index: 100;
+    width: 230px;
+    padding: 8px 14px;
+    border: 1px solid #d4af37;
+    border-radius: 10px;
+    background: #0b0314;
+    box-shadow: 0 12px 35px rgb(0 0 0 / 95%);
+    color: #ffea80;
+    font-size: 11px;
+    text-align: center;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+@keyframes podUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.animate-podium-1 { animation: podUp .8s cubic-bezier(.175,.885,.32,1.275) forwards; }
+.animate-podium-2 { animation: podUp .8s cubic-bezier(.175,.885,.32,1.275) .2s forwards; }
+.animate-podium-3 { animation: podUp .8s cubic-bezier(.175,.885,.32,1.275) .4s forwards; }
+
+/* Beta visual system: intentionally asset-light so every platform can render the same scene. */
+:root {
+    color-scheme: dark;
+    --arc-gold: #d8bd78;
+    --arc-ivory: #f3e8ca;
+    --arc-violet: #ac8ad2;
+    --arc-ink: #100b17;
+}
+body {
+    background:
+        radial-gradient(ellipse at 50% -12%, #47305d 0%, #181020 38%, #08070c 80%),
+        #08070c;
+    color: #efe9df;
+    letter-spacing: .012em;
+}
+header.sticky {
+    background: linear-gradient(180deg, rgb(12 9 17 / 96%), rgb(12 9 17 / 86%));
+    border-bottom-color: rgb(216 189 120 / 32%);
+    box-shadow: 0 14px 45px rgb(0 0 0 / 45%);
+}
+#play-game {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgb(36 25 46 / 98%), rgb(15 11 21 / 98%) 72%);
+    border: 1px solid rgb(216 189 120 / 55%);
+    box-shadow: 0 32px 100px rgb(0 0 0 / 68%), inset 0 1px 0 rgb(255 244 218 / 10%);
+}
+#play-game::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(244 219 160 / 76%), transparent);
+    pointer-events: none;
+}
+#canvas-container {
+    position: relative;
+    isolation: isolate;
+    min-height: 300px;
+    border: 1px solid rgb(222 201 158 / 15%);
+    background: radial-gradient(ellipse at 50% 58%, #282031, #0a0911 72%);
+    box-shadow: inset 0 0 100px rgb(0 0 0 / 70%), 0 18px 45px rgb(0 0 0 / 25%);
+}
+#canvas-container canvas { display: block; width: 100%; height: 100%; }
+.stage-3d-wrapper { perspective: 1500px; }
+#game-bots-status > div {
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
+    transition: border-color .25s ease, background .25s ease, transform .25s ease;
+}
+#game-bots-status > div:hover { transform: translateY(-2px); }
+#game-human-hand {
+    align-items: flex-end;
+    padding: 18px 6px 8px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-color: rgb(216 189 120 / 55%) transparent;
+    scrollbar-width: thin;
+    perspective: 1100px;
+}
+.occult-card-3d {
+    --card-ink: #f1dfb2;
+    --card-accent: #d6bb78;
+    --card-shadow: rgb(0 0 0 / 65%);
+    position: relative;
+    display: flex;
+    flex: 0 0 126px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 126px;
+    min-width: 126px;
+    max-width: 156px;
+    min-height: 188px;
+    padding: 12px 9px 8px;
+    overflow: hidden;
+    border: 1px solid rgb(226 202 140 / 84%);
+    border-radius: 8px;
+    color: var(--card-ink);
+    background:
+        linear-gradient(135deg, rgb(255 255 255 / 10%), transparent 28%, transparent 72%, rgb(255 255 255 / 5%)),
+        radial-gradient(ellipse at 52% 42%, rgb(93 62 115 / 95%), rgb(37 26 48 / 98%) 61%, rgb(16 12 21 / 99%));
+    box-shadow: 0 14px 28px var(--card-shadow), inset 0 0 0 3px rgb(15 11 17 / 76%), inset 0 0 0 4px rgb(218 190 124 / 37%), inset 0 0 35px rgb(0 0 0 / 44%);
+    text-align: center;
+    transform-style: preserve-3d;
+    transition: transform .28s cubic-bezier(.2,.7,.2,1), box-shadow .28s ease, border-color .28s ease;
+}
+.occult-card-3d::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgb(233 215 170 / 38%);
+    border-radius: 4px;
+    background:
+        radial-gradient(circle at 50% 48%, transparent 0 29%, rgb(232 204 142 / 9%) 30% 30.6%, transparent 31%),
+        repeating-conic-gradient(from 3deg at 50% 48%, transparent 0deg 29deg, rgb(232 204 142 / 11%) 30deg 31deg, transparent 32deg 60deg);
+    opacity: .68;
+    pointer-events: none;
+}
+.occult-card-3d::after { content: none; }
+.occult-card-3d:hover:not(:disabled) {
+    z-index: 6;
+    border-color: #fff0b5;
+    box-shadow: 0 23px 38px rgb(0 0 0 / 76%), 0 0 24px rgb(226 191 100 / 27%), inset 0 0 0 3px rgb(15 11 17 / 78%), inset 0 0 0 4px rgb(245 223 165 / 54%);
+    transform: translateY(-13px) rotateX(4deg) scale(1.045);
+}
+.occult-card-3d:focus-visible { outline: 3px solid #fff1b9; outline-offset: 4px; }
+.card-minor.suit-cups { --card-accent: #80c8d6; --card-ink: #d9f1ed; background-color: #17353d; background-image: radial-gradient(ellipse at 50% 45%, #336678, #152735 74%, #10121c); }
+.card-minor.suit-wands { --card-accent: #e39b68; --card-ink: #fae2c0; background-color: #422717; background-image: radial-gradient(ellipse at 50% 45%, #795139, #302018 74%, #151019); }
+.card-minor.suit-swords { --card-accent: #bdc8e9; --card-ink: #e9edfa; background-color: #21253c; background-image: radial-gradient(ellipse at 50% 45%, #515d7f, #25273b 74%, #111019); }
+.card-minor.suit-pentacles { --card-accent: #c7cb83; --card-ink: #f0edcf; background-color: #29351f; background-image: radial-gradient(ellipse at 50% 45%, #596340, #242a20 74%, #111019); }
+.card-arcana { --card-accent: #e4c57e; }
+.card-arcana.arcana-0, .card-arcana.arcana-16 { --card-accent: #ed876f; background-image: radial-gradient(ellipse at 50% 40%, #703d55, #271824 76%, #100c14); }
+.card-arcana.arcana-17, .card-arcana.arcana-18, .card-arcana.arcana-19, .card-arcana.arcana-21 { --card-accent: #9dd9e7; background-image: radial-gradient(ellipse at 50% 40%, #455f81, #1c1b32 76%, #0d0c15); }
+.card-ribbon, .card-owner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    overflow: hidden;
+    color: var(--card-accent);
+    font: 700 8px/1.2 system-ui, sans-serif;
+    letter-spacing: .16em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.card-owner { width: auto; max-width: 100%; margin: 1px auto 0; font-size: 7px; }
+.card-art {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 89px;
+    height: 96px;
+    flex: 0 0 96px;
+    place-items: center;
+    margin: 8px auto 4px;
+    border: 1px solid color-mix(in srgb, var(--card-accent), transparent 45%);
+    border-radius: 46% 46% 42% 42%;
+    background: radial-gradient(ellipse, color-mix(in srgb, var(--card-accent), transparent 77%), transparent 69%);
+    box-shadow: inset 0 0 20px color-mix(in srgb, var(--card-accent), transparent 91%), 0 0 18px color-mix(in srgb, var(--card-accent), transparent 88%);
+}
+.card-art::before, .card-art::after {
+    content: "✧";
+    position: absolute;
+    color: var(--card-accent);
+    font-size: 12px;
+    opacity: .75;
+}
+.card-art::before { top: 3px; left: 7px; }
+.card-art::after { right: 7px; bottom: 2px; }
+.card-art > span {
+    filter: drop-shadow(0 3px 6px rgb(0 0 0 / 72%));
+    font-size: 42px;
+    line-height: 1;
+    transform: translateZ(12px);
+}
+.card-title {
+    position: relative;
+    z-index: 1;
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--card-ink);
+    font: 700 10px/1.28 Georgia, serif;
+    text-shadow: 0 2px 5px #000;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.card-flourish { position: relative; z-index: 1; margin-top: auto; padding-top: 4px; color: var(--card-accent); font-size: 10px; }
+.card-on-table { flex: 0 0 126px; min-height: 180px; }
+.card-on-table .card-art { margin-top: 9px; }
+.card-flying-in { animation: flyToCenter .65s cubic-bezier(.175,.885,.32,1.275) both; }
+#cards-grid > div {
+    position: relative;
+    overflow: hidden;
+    border-color: rgb(216 189 120 / 28%);
+    background: linear-gradient(145deg, rgb(42 31 53 / 92%), rgb(15 12 21 / 98%));
+    box-shadow: inset 0 1px rgb(246 220 157 / 11%), 0 10px 24px rgb(0 0 0 / 25%);
+    transition: transform .2s ease, border-color .2s ease;
+}
+#cards-grid > div:hover { transform: translateY(-3px); border-color: rgb(216 189 120 / 72%); }
+button, select, input { touch-action: manipulation; }
+button:disabled { filter: saturate(.65); }
+@media (max-width: 640px) {
+    #canvas-container { min-height: 270px; }
+    .stage-3d-wrapper { min-height: 280px !important; }
+    #game-human-hand { justify-content: flex-start; }
+    .occult-card-3d { flex-basis: 112px; width: 112px; min-width: 112px; min-height: 172px; }
+    .card-art { width: 79px; height: 83px; flex-basis: 83px; }
+    .card-art > span { font-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
