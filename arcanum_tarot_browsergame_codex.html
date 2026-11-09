@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="de" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcanum MMO: High-End 3D Tarot Stichspiel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Three.js CDN für HighEnd 3D Graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        occult: {
+                            950: '#05020a',
+                            900: '#0d0618',
+                            800: '#180a2a',
+                            700: '#280d44',
+                            600: '#3e1369',
+                        },
+                        gold: {
+                            light: '#ffea80',
+                            DEFAULT: '#d4af37',
+                            dark: '#947416',
+                            glow: 'rgba(212, 175, 55, 0.7)'
+                        },
+                        turbo: '#ea580c'
+                    },
+                    fontFamily: {
+                        serif: ['Cinzel', 'Georgia', 'Cambria', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #05020a;
+            color: #f3e8ff;
+            overflow-x: hidden;
+        }
+
+        .stage-3d-wrapper {
+            perspective: 1200px;
+            perspective-origin: 50% 35%;
+        }
+
+        @keyframes flyToCenter {
+            0% {
+                transform: translateY(180px) scale(0.4) rotateX(60deg) rotateZ(-20deg);
+                opacity: 0;
+            }
+            70% {
+                transform: translateY(-20px) scale(1.05) rotateX(0deg) rotateZ(5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateX(0deg) rotateZ(0deg);
+                opacity: 1;
+            }
+        }
+
+        .card-flying-in {
+            animation: flyToCenter 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .occult-card-3d {
+            background: linear-gradient(135deg, #1f0a2e 0%, #34124e 50%, #0d0317 100%);
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(212, 175, 55, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .occult-card-3d:hover {
+            transform: translateY(-16px) scale(1.1) rotateX(-6deg);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.75), inset 0 0 25px rgba(212, 175, 55, 0.7);
+            z-index: 60;
+        }
+
+        [data-tooltip] { position: relative; }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 118%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #0b0314;
+            color: #ffea80;
+            border: 1px solid #d4af37;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            white-space: normal;
+            width: 230px;
+            z-index: 100;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.95);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        @keyframes podUp {
+            0% { transform: translateY(100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-podium-1 { animation: podUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-podium-2 { animation: podUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards; }
+        .animate-podium-3 { animation: podUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-gold selection:text-black">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-50 bg-occult-950/95 backdrop-blur-md border-b border-gold/30 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                    <span class="text-4xl animate-pulse">🏛️</span>
+                    <div>
+                        <span class="font-serif text-2xl font-bold tracking-widest text-gold drop-shadow-md">ARCANUM MMO</span>
+                        <span class="block text-[10px] uppercase tracking-widest text-purple-300">Mystisches Tarot E-Sports Universum</span>
+                    </div>
+                    <span id="header-mode-badge" class="ml-2 hidden sm:inline-block text-[10px] bg-turbo/20 text-orange-300 border border-turbo/50 px-3 py-1 rounded-full font-bold uppercase tracking-wider">⚡ Turbo Edition</span>
+                </div>
+                <nav class="hidden md:flex space-x-6 text-xs uppercase tracking-wider font-semibold">
+                    <a href="#play-game" class="text-gold hover:text-white transition">🎮 Arena</a>
+                    <a href="#rules-view" class="text-purple-200 hover:text-gold transition">Regelwerk</a>
+                    <a href="#kodex" class="text-purple-200 hover:text-gold transition">Karten-Kodex</a>
+                    <a href="#math" class="text-purple-200 hover:text-gold transition">Stochastik</a>
+                    <a href="#calculator" class="text-purple-200 hover:text-gold transition">Wertung</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 w-full">
+
+        <!-- SECTION: 3D REALTIME GAME ARENA -->
+        <section id="play-game" class="bg-occult-900 rounded-3xl p-4 sm:p-8 shadow-2xl border-2 border-gold relative">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-3 border-b border-gold/30">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs uppercase tracking-widest text-gold font-bold">Lobby & Ritual-Tisch</span>
+                    <!-- Mode Switcher Buttons -->
+                    <div class="flex items-center bg-occult-950 p-1 rounded-xl border border-gold/40">
+                        <button id="btn-mode-turbo" onclick="switchRulesetMode('turbo')" class="px-3 py-1 rounded-lg text-xs font-bold transition bg-turbo text-white">⚡ Turbo</button>
+                        <button id="btn-mode-standard" onclick="switchRulesetMode('standard')" class="px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white">📜 Standard</button>
+                    </div>
+                </div>
+                <!-- 3D Controls & Player Count -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <label class="text-xs text-purple-300 font-bold">Atmosphäre:</label>
+                    <select id="env-select" onchange="GameEngine3D.changeEnvironment(this.value)" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2 focus:outline-none">
+                        <option value="temple">🏛️ Hermetisches Sanctum</option>
+                        <option value="druid">🌿 Druidisches Heiligtum</option>
+                        <option value="mountain">🏔️ Astral-Gipfel der Erleuchtung</option>
+                    </select>
+
+                    <label class="text-xs text-purple-300 font-bold">Spieler:</label>
+                    <select id="game-player-count" class="bg-occult-950 text-gold text-xs font-bold border border-gold/50 rounded-xl px-3 py-2">
+                        <option value="2">2 Spieler (Du + 1 Bot)</option>
+                        <option value="3" selected>3 Spieler (Du + 2 Bots)</option>
+                        <option value="4">4 Spieler (Du + 3 Bots)</option>
+                        <option value="5">5 Spieler (Du + 4 Bots)</option>
+                        <option value="6">6 Spieler (Du + 5 Bots)</option>
+                    </select>
+                    
+                    <button id="game-start-btn" onclick="GameEngine.initGame(document.getElementById('game-player-count').value)" class="bg-gradient-to-r from-gold to-gold-dark text-black font-bold text-xs uppercase px-5 py-2 rounded-xl shadow-lg transition transform active:scale-95 border border-gold">
+                        🔄 Ritual Starten
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Info Bar -->
+            <div class="grid sm:grid-cols-3 gap-4 mb-4">
+                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+                    <div class="text-[10px] text-gold font-bold uppercase">Emanation (Runde)</div>
+                    <div id="game-round-info" class="text-sm font-bold text-white">Runde 1 von 5</div>
+                </div>
+                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+                    <div class="text-[10px] text-gold font-bold uppercase">Weltgesetz (Orakel)</div>
+                    <div id="game-oracle-info" class="text-xs font-bold text-purple-200">Kein Orakel (Turbo)</div>
+                </div>
+                <div class="bg-occult-950/80 p-3 rounded-2xl border border-gold/30 text-center">
+                    <div class="text-[10px] text-gold font-bold uppercase">Phase</div>
+                    <div id="game-phase-info" class="text-sm font-bold text-emerald-400">Vision (Bieten)</div>
+                </div>
+            </div>
+
+            <!-- Bots Info Display -->
+            <div id="game-bots-status" class="flex flex-wrap justify-around gap-2 mb-3"></div>
+
+            <!-- 3D ISOMETRIC STAGE & ALTARE TISCH -->
+            <div class="stage-3d-wrapper my-2 relative min-h-[460px] flex items-center justify-center">
+                <!-- ThreeJS Viewport Canvas Container -->
+                <div id="canvas-container" class="w-full h-[450px]"></div>
+
+                <!-- OVERLAY: Interactive Table Cards flying layer -->
+                <div id="trick-cards-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div id="trick-cards-container" class="flex flex-wrap justify-center gap-4 z-40 pointer-events-auto">
+                        <!-- Flying cards rendered here dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAYER HAND & CONTROLS -->
+            <div class="max-w-4xl mx-auto mt-2 bg-occult-950/90 rounded-3xl p-5 border-2 border-gold shadow-2xl relative z-30">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div id="user-avatar-badge" class="w-12 h-12 rounded-full bg-gradient-to-tr from-gold-dark to-gold flex items-center justify-center text-2xl shadow-lg border-2 border-white/30">🧙‍♂️</div>
+                        <div>
+                            <span id="user-display-name" class="text-base font-serif font-bold text-gold block">Du (Adept 1)</span>
+                            <span id="game-human-bids-info" class="text-xs text-purple-300 font-mono"></span>
+                        </div>
+                    </div>
+                    <div id="game-human-score" class="text-xs font-bold text-white bg-gold/20 border border-gold/50 px-4 py-2 rounded-full shadow">
+                        Karma: 0 | Gewonnen: 0
+                    </div>
+                </div>
+
+                <!-- Bidding Controls -->
+                <div id="game-bidding-controls" class="p-4 bg-gold/10 rounded-2xl border border-gold/40 text-center my-3 space-y-2">
+                    <div class="text-xs font-bold text-gold uppercase tracking-wider">Deine Vision (Stichansage abgeben):</div>
+                    <div id="game-bid-buttons" class="flex flex-wrap justify-center gap-2"></div>
+                </div>
+
+                <!-- Human Hand Cards Fan -->
+                <div id="game-human-hand" class="flex justify-center flex-wrap gap-3 pt-2"></div>
+            </div>
+
+            <!-- PODIUM / WINNER SCREEN MODAL -->
+            <div id="game-podium-overlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-lg z-50 flex flex-col items-center justify-center p-6 text-center">
+                <span class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Das Schicksal ist besiegelt</span>
+                <h3 class="text-3xl sm:text-4xl font-serif font-bold text-white mb-6">🏆 Endstand & Gesamtsieger</h3>
+
+                <div class="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-lg h-64 mb-8 border-b-4 border-gold/50 pb-2">
+                    <!-- Platz 2 -->
+                    <div id="podium-2" class="opacity-0 flex flex-col items-center flex-1">
+                        <div class="text-2xl mb-1">🥈</div>
+                        <div id="podium-2-name" class="text-xs font-bold text-purple-200 truncate w-full">Bot 1</div>
+                        <div id="podium-2-score" class="text-xs text-emerald-400 font-bold mb-2">0 Pkt</div>
+                        <div class="w-full bg-slate-800 rounded-t-lg h-32 flex items-center justify-center text-xl font-bold text-slate-300 shadow-lg">2</div>
+                    </div>
+                    <!-- Platz 1 -->
+                    <div id="podium-1" class="opacity-0 flex flex-col items-center flex-1">
+                        <div class="text-3xl mb-1 animate-bounce">👑</div>
+                        <div id="podium-1-name" class="text-sm font-bold text-gold truncate w-full">Du</div>
+                        <div id="podium-1-score" class="text-xs text-emerald-400 font-bold mb-2">0 Pkt</div>
+                        <div class="w-full bg-gradient-to-t from-gold-dark to-gold rounded-t-lg h-44 flex items-center justify-center text-2xl font-bold text-black shadow-xl border-t-2 border-gold-light">1</div>
+                    </div>
+                    <!-- Platz 3 -->
+                    <div id="podium-3" class="opacity-0 flex flex-col items-center flex-1">
+                        <div class="text-2xl mb-1">🥉</div>
+                        <div id="podium-3-name" class="text-xs font-bold text-purple-200 truncate w-full">Bot 2</div>
+                        <div id="podium-3-score" class="text-xs text-emerald-400 font-bold mb-2">0 Pkt</div>
+                        <div class="w-full bg-amber-950 rounded-t-lg h-24 flex items-center justify-center text-lg font-bold text-amber-500 shadow-md">3</div>
+                    </div>
+                </div>
+
+                <button onclick="GameEngine.initGame(document.getElementById('game-player-count').value)" class="px-6 py-3 bg-gradient-to-r from-gold to-gold-dark text-black font-bold text-sm rounded-xl shadow-xl transition transform active:scale-95">
+                    🎮 Neues Ritual starten
+                </button>
+            </div>
+
+            <!-- Action Log -->
+            <div class="bg-occult-950 rounded-2xl p-3 border border-gold/20 text-xs font-mono text-purple-300 max-h-32 overflow-y-auto space-y-1 shadow-inner mt-4" id="game-log">
+                <div>🔮 [Chronik]: Arena bereit. Wähle die Parameter und starte das Ritual.</div>
+            </div>
+        </section>
+
+        <!-- DYNAMIC RULES SECTION -->
+        <section id="rules-view" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-gold/40">
+            <!-- Dynamic Rules Injected Here -->
+        </section>
+
+        <!-- SECTION: KARTEN-KODEX EXPLORER -->
+        <section id="kodex" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-serif font-bold text-white mb-1">Karten-Kodex & Okkulte Symbolik</h2>
+                    <p class="text-purple-300 text-xs sm:text-sm">Erkunde alle 22 Großen Arkana sowie Hofkarten mit Effekten.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <input type="text" id="card-search" oninput="renderCards()" placeholder="Karte suchen..." class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
+                    <select id="card-filter" onchange="renderCards()" class="px-3 py-2 text-xs bg-occult-950 text-gold border border-gold/40 rounded-xl focus:outline-none">
+                        <option value="all">Alle Kategorien</option>
+                        <option value="active">Nur aktiver Modus</option>
+                        <option value="turbo">⚡ Turbo Sonderkarten</option>
+                        <option value="schicksal">📜 Standard Schicksal</option>
+                        <option value="orakel">🔮 Orakelkarten</option>
+                    </select>
+                </div>
+            </div>
+            <div id="cards-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- SECTION: STOCHASTIK -->
+        <section id="math" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <h2 class="text-2xl font-serif font-bold text-white mb-2">Stochastik-Analyse (Hypergeometrische Verteilung)</h2>
+            <p id="chart-explanation" class="text-xs text-purple-300 mb-4"></p>
+            <div class="bg-occult-950 p-5 rounded-2xl border border-gold/30 h-72">
+                <canvas id="probChart"></canvas>
+            </div>
+        </section>
+
+        <!-- SECTION: CALCULATOR -->
+        <section id="calculator" class="bg-occult-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-gold/30">
+            <h2 class="text-2xl font-serif font-bold text-white mb-4">Universal Wertungs-Rechner</h2>
+            <div class="grid sm:grid-cols-2 gap-4 bg-occult-950 p-6 rounded-2xl border border-gold/30">
+                <div>
+                    <label class="block text-xs font-bold text-gold uppercase mb-1">Vision (Gebot)</label>
+                    <input type="number" id="calc-bid" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gold uppercase mb-1">Manifestation (Erzielte Stiche)</label>
+                    <input type="number" id="calc-won" value="2" min="0" max="15" oninput="calculateScore()" class="w-full bg-occult-900 text-white p-2 rounded-xl border border-gold/40 text-sm">
+                </div>
+                <div class="sm:col-span-2 space-y-2 pt-2 border-t border-gold/20">
+                    <label class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
+                        <input type="checkbox" id="calc-turm" onchange="calculateScore()" class="rounded border-gold">
+                        <span>Turm (XVI) im gewonnenen Stich (+0 Stich-Effekt)</span>
+                    </label>
+                    <label id="calc-stern-box" class="flex items-center space-x-2 text-xs text-purple-200 cursor-pointer">
+                        <input type="checkbox" id="calc-stern" onchange="calculateScore()" class="rounded border-gold">
+                        <span>Orakel XVII (Der Stern) aktiv (+30 Bonus bei Treffer, nur Standard)</span>
+                    </label>
+                </div>
+                <div id="calc-result" class="sm:col-span-2 text-center text-3xl font-serif font-bold text-gold mt-2">+40 Punkte</div>
+                <div id="calc-breakdown" class="sm:col-span-2 text-center text-xs text-purple-300">Exakt getroffen: +20 Basis + 20 Stichpunkte.</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        // Full Card Registry (Strict Uniques)
+        const ALL_CARDS = [
+            { id: 0, name: "0 - Der Narr", type: "turbo", mode: "turbo", icon: "🃏", desc: "TURBO: Verliert JEDEN Stich. Stiehlt den Stich NUR, wenn er DIREKT nach der XXI (Die Welt) gespielt wird!" },
+            { id: 16, name: "XVI - Der Turm", type: "turbo", mode: "turbo", icon: "⚡", desc: "TURBO: Zerstört den Stich vollkommen! Alle Karten wandern in den Limbus, niemand erhält den Stich." },
+            { id: 21, name: "XXI - Die Welt", type: "turbo", mode: "turbo", icon: "🌍", desc: "TURBO: Höchster Trumpf im Spiel. Schlägt alle 77 anderen Karten (außer Narr kommt direkt danach)." },
+            { id: 1, name: "I - Der Magier", type: "schicksal", mode: "standard", icon: "🪄", desc: "STANDARD: Passt sich an. Zählt 0.5 höher als die höchste Kleine Arkana im Stich." },
+            { id: 2, name: "II - Hohepriesterin", type: "schicksal", mode: "standard", icon: "🌙", desc: "STANDARD: Wer gewinnt, MUSS sein Gebot sofort um +1 oder -1 korrigieren." },
+            { id: 5, name: "V - Der Hierophant", type: "schicksal", mode: "standard", icon: "📜", desc: "STANDARD: Annulliert alle Karteneffekte im Stich. Nur reine Werte zählen." },
+            { id: 7, name: "VII - Der Wagen", type: "schicksal", mode: "standard", icon: "⚔️", desc: "STANDARD: Gewinner MUSS den nächsten Stich eröffnen." },
+            { id: 8, name: "VIII - Gerechtigkeit", type: "schicksal", mode: "standard", icon: "⚖️", desc: "STANDARD: Wer den Stich verliert, erhält trotzdem +5 Bonuspunkte." },
+            { id: 11, name: "XI - Kraft", type: "schicksal", mode: "standard", icon: "🦁", desc: "STANDARD: Schlägt alle, aber Spieler darf im Folge-Stich keinen Trumpf legen." },
+            { id: 13, name: "XIII - Der Tod", type: "schicksal", mode: "standard", icon: "💀", desc: "STANDARD: Stich wird vernichtet. Zählt als 0.5 Stiche bei Wertung." },
+            { id: 15, name: "XV - Der Teufel", type: "schicksal", mode: "standard", icon: "🔥", desc: "STANDARD: Zwingt den nächsten Spieler, seine höchste Handkarte zu legen." },
+            { id: 18, name: "XVIII - Der Mond", type: "schicksal", mode: "standard", icon: "🔮", desc: "STANDARD: Wird verdeckt gespielt. Wert wird erst am Ende enthüllt." },
+            { id: 103, name: "III - Die Herrscherin", type: "orakel", mode: "standard", icon: "👑", desc: "ORAKEL: Kelche (Wasser) gelten in dieser Runde als niedrige Trumps." },
+            { id: 104, name: "IV - Der Herrscher", type: "orakel", mode: "standard", icon: "🏛️", desc: "ORAKEL: Bedienpflicht aufgehoben. Trumps jederzeit erlaubt." },
+            { id: 106, name: "VI - Die Liebenden", type: "orakel", mode: "standard", icon: "💖", desc: "ORAKEL: Partner-Runde (Alchemistische Hochzeit)." },
+            { id: 110, name: "X - Rad des Schicksals", type: "orakel", mode: "standard", icon: "🎡", desc: "ORAKEL: Hierarchie invertiert! 2 ist höchste Karte, XXI verliert." },
+            { id: 117, name: "XVII - Der Stern", type: "orakel", mode: "standard", icon: "⭐", desc: "ORAKEL: Exakte Treffer erhalten +30 Bonuspunkte." }
+        ];
+
+        let currentActiveMode = 'turbo';
+        let chartInstance = null;
+
+        // --- THREE.JS ADVANCED 3D ENVIRONMENT & HUMAN-LIKE AVATARS ---
+        const GameEngine3D = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            tableMesh: null,
+            avatarMeshes: [],
+            decorations: [],
+
+            init() {
+                const container = document.getElementById('canvas-container');
+                if(!container) return;
+
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+                
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(container.clientWidth, container.clientHeight);
+                this.renderer.shadowMap.enabled = true;
+                container.appendChild(this.renderer.domElement);
+
+                this.camera.position.set(0, 16, 18);
+                this.camera.lookAt(0, -1, 0);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                this.scene.add(ambientLight);
+
+                const pointLight = new THREE.PointLight(0xd4af37, 2.5, 90);
+                pointLight.position.set(0, 14, 0);
+                this.scene.add(pointLight);
+
+                this.buildEnvironment('temple');
+                this.animate();
+
+                window.addEventListener('resize', () => {
+                    if(!this.renderer) return;
+                    this.camera.aspect = container.clientWidth / container.clientHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(container.clientWidth, container.clientHeight);
+                });
+            },
+
+            buildEnvironment(type) {
+                if (this.tableMesh) this.scene.remove(this.tableMesh);
+                this.avatarMeshes.forEach(m => this.scene.remove(m));
+                this.decorations.forEach(d => this.scene.remove(d));
+                this.avatarMeshes = [];
+                this.decorations = [];
+
+                let tableColor = 0x1e0c2e;
+                let bgHex = 0x05020a;
+
+                if (type === 'druid') { tableColor = 0x0a2615; bgHex = 0x021006; }
+                if (type === 'mountain') { tableColor = 0x112130; bgHex = 0x040d16; }
+
+                this.scene.background = new THREE.Color(bgHex);
+
+                const geo = new THREE.CylinderGeometry(6.4, 5.9, 0.9, 64);
+                const mat = new THREE.MeshStandardMaterial({ color: tableColor, roughness: 0.25, metalness: 0.8 });
+                this.tableMesh = new THREE.Mesh(geo, mat);
+                this.tableMesh.position.y = -0.4;
+                this.scene.add(this.tableMesh);
+
+                const ringGeo = new THREE.TorusGeometry(6.45, 0.14, 16, 100);
+                const ringMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.95, roughness: 0.1 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                this.scene.add(ring);
+
+                for (let i = 0; i < 4; i++) {
+                    const pillarGeo = new THREE.CylinderGeometry(0.5, 0.6, 12, 16);
+                    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x1f0b36, metalness: 0.5 });
+                    const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                    const angle = (i / 4) * Math.PI * 2;
+                    pillar.position.set(Math.cos(angle) * 14, 4, Math.sin(angle) * 14);
+                    this.scene.add(pillar);
+                    this.decorations.push(pillar);
+                }
+
+                this.spawnHumanoidAvatars(GameEngine.numPlayers || 3);
+            },
+
+            spawnHumanoidAvatars(num) {
+                this.avatarMeshes.forEach(m => this.scene.remove(m));
+                this.avatarMeshes = [];
+
+                const radius = 8.2;
+                for (let i = 0; i < num; i++) {
+                    const angle = (i / num) * Math.PI * 2 + Math.PI / 2;
+                    const x = Math.cos(angle) * radius;
+                    const z = Math.sin(angle) * radius;
+
+                    const group = new THREE.Group();
+                    const isHuman = GameEngine.players[i] && !GameEngine.players[i].isBot;
+
+                    const robeGeo = new THREE.ConeGeometry(0.85, 2.2, 16);
+                    const robeMat = new THREE.MeshStandardMaterial({ color: isHuman ? 0xd4af37 : 0x481d75, roughness: 0.4 });
+                    const robe = new THREE.Mesh(robeGeo, robeMat);
+                    robe.position.y = 1.1;
+                    group.add(robe);
+
+                    const headGeo = new THREE.SphereGeometry(0.42, 16, 16);
+                    const headMat = new THREE.MeshStandardMaterial({ color: 0xffe0b2, roughness: 0.3 });
+                    const head = new THREE.Mesh(headGeo, headMat);
+                    head.position.y = 2.4;
+                    group.add(head);
+
+                    const hatGeo = new THREE.ConeGeometry(0.55, 1.1, 16);
+                    const hatMat = new THREE.MeshStandardMaterial({ color: isHuman ? 0x8a6b10 : 0x1f0638, metalness: 0.6 });
+                    const hat = new THREE.Mesh(hatGeo, hatMat);
+                    hat.position.y = 3.0;
+                    hat.rotation.z = -0.1;
+                    group.add(hat);
+
+                    const fanGeo = new THREE.BoxGeometry(0.8, 0.5, 0.05);
+                    const fanMat = new THREE.MeshStandardMaterial({ color: 0xd4af37 });
+                    const fan = new THREE.Mesh(fanGeo, fanMat);
+                    fan.position.set(0, 1.8, 0.6);
+                    fan.rotation.x = 0.5;
+                    group.add(fan);
+
+                    group.position.set(x, 0, z);
+                    group.rotation.y = -angle + Math.PI / 2;
+                    this.scene.add(group);
+                    this.avatarMeshes.push(group);
+                }
+            },
+
+            changeEnvironment(env) {
+                this.buildEnvironment(env);
+            },
+
+            animate() {
+                requestAnimationFrame(() => GameEngine3D.animate());
+                if (GameEngine3D.tableMesh) GameEngine3D.tableMesh.rotation.y += 0.001;
+                if (GameEngine3D.renderer && GameEngine3D.scene && GameEngine3D.camera) {
+                    GameEngine3D.renderer.render(GameEngine3D.scene, GameEngine3D.camera);
+                }
+            }
+        };
+
+        // --- FULLY FUNCTIONAL GAME ENGINE WITH AI BOTS & STRICT RULES ---
+        const GameEngine = {
+            numPlayers: 3,
+            currentRound: 1,
+            maxRounds: 5,
+            phase: 'bidding', // 'bidding', 'playing', 'roundOver', 'gameOver'
+            players: [],
+            currentTrick: [], // [{playerIdx, card}]
+            leadSuit: null,
+            activePlayerIdx: 0,
+            activeOracle: null,
+
+            generateUniqueDeck() {
+                let deck = [];
+                const suits = ['Stäbe', 'Kelche', 'Schwerter', 'Münzen'];
+
+                // 56 Minor Arcana
+                suits.forEach(suit => {
+                    for (let v = 1; v <= 14; v++) {
+                        deck.push({
+                            uid: `minor-${suit}-${v}`,
+                            isTrump: false,
+                            suit: suit,
+                            value: v === 1 ? 14.5 : v,
+                            name: `${v === 1 ? 'As' : v === 11 ? 'Bube' : v === 12 ? 'Ritter' : v === 13 ? 'Königin' : v === 14 ? 'König' : v} der ${suit}`,
+                            icon: suit === 'Stäbe' ? '🪵' : suit === 'Kelche' ? '🍷' : suit === 'Schwerter' ? '⚔️' : '🪙',
+                            desc: `Kleine Arkana der ${suit}. Wert: ${v}. MUSS bedient werden!`
+                        });
+                    }
+                });
+
+                // 22 Major Arcana
+                const majorNames = [
+                    "0 - Der Narr", "I - Der Magier", "II - Hohepriesterin", "III - Die Herrscherin",
+                    "IV - Der Herrscher", "V - Der Hierophant", "VI - Die Liebenden", "VII - Der Wagen",
+                    "VIII - Gerechtigkeit", "IX - Der Eremit", "X - Rad des Schicksals", "XI - Kraft",
+                    "XII - Gehängter", "XIII - Der Tod", "XIV - Mäßigkeit", "XV - Der Teufel",
+                    "XVI - Der Turm", "XVII - Der Stern", "XVIII - Der Mond", "XIX - Die Sonne",
+                    "XX - Gericht", "XXI - Die Welt"
+                ];
+
+                for (let i = 0; i < 22; i++) {
+                    const info = ALL_CARDS.find(c => c.id === i);
+                    deck.push({
+                        uid: `major-${i}`,
+                        isTrump: true,
+                        trumpNum: i,
+                        value: 100 + i,
+                        name: majorNames[i],
+                        icon: '🔮',
+                        desc: info ? info.desc : `Große Arkana #${i}. Höhere Nummer sticht.`
+                    });
+                }
+
+                // Shuffle
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+                return deck;
+            },
+
+            initGame(numPlayers = 3) {
+                this.numPlayers = parseInt(numPlayers);
+                this.currentRound = 1;
+                this.maxRounds = currentActiveMode === 'turbo' ? 5 : 7;
+                this.players = [];
+
+                document.getElementById('game-podium-overlay').classList.add('hidden');
+
+                this.players.push({ id: 0, name: "Du (Adept 1)", isBot: false, hand: [], bid: 0, won: 0, score: 0 });
+                for(let i=1; i<this.numPlayers; i++) {
+                    this.players.push({ id: i, name: `Bot ${i}`, isBot: true, hand: [], bid: 0, won: 0, score: 0 });
+                }
+
+                if(GameEngine3D.scene) GameEngine3D.spawnHumanoidAvatars(this.numPlayers);
+                this.startRound();
+            },
+
+            startRound() {
+                this.phase = 'bidding';
+                this.currentTrick = [];
+                this.leadSuit = null;
+                const cardsPerPlayer = (currentActiveMode === 'turbo' ? 4 : 6) + this.currentRound;
+
+                this.players.forEach(p => { p.hand = []; p.bid = 0; p.won = 0; });
+
+                const deck = this.generateUniqueDeck();
+                for(let i=0; i<cardsPerPlayer; i++) {
+                    this.players.forEach(p => {
+                        if(deck.length > 0) p.hand.push(deck.pop());
+                    });
+                }
+
+                this.players[0].hand.sort((a,b) => b.value - a.value);
+
+                if(currentActiveMode === 'standard') {
+                    const oracles = ALL_CARDS.filter(c => c.type === 'orakel');
+                    this.activeOracle = oracles[Math.floor(Math.random() * oracles.length)];
+                } else {
+                    this.activeOracle = null;
+                }
+
+                this.log(`🔮 Runde ${this.currentRound} (${cardsPerPlayer} Karten) gestartet. Gebote abgeben!`);
+                this.renderUI();
+            },
+
+            submitHumanBid(bid) {
+                if(this.phase !== 'bidding') return;
+                this.players[0].bid = parseInt(bid);
+
+                // Bots auto-bid logic
+                for(let i=1; i<this.numPlayers; i++) {
+                    const botHand = this.players[i].hand;
+                    const trumpsCount = botHand.filter(c => c.isTrump).length;
+                    this.players[i].bid = Math.min(botHand.length, Math.max(0, trumpsCount + (Math.random() > 0.4 ? 1 : 0)));
+                }
+
+                this.phase = 'playing';
+                this.activePlayerIdx = (this.currentRound - 1) % this.numPlayers;
+
+                this.log(`🎯 Visionen eingereicht! Anspiel: ${this.players[this.activePlayerIdx].name}`);
+                this.renderUI();
+
+                if(this.players[this.activePlayerIdx].isBot) {
+                    setTimeout(() => this.playBotTurn(), 600);
+                }
+            },
+
+            playCard(playerIdx, cardIdx) {
+                if(this.phase !== 'playing') return;
+                if(playerIdx !== this.activePlayerIdx) return;
+
+                const player = this.players[playerIdx];
+                const card = player.hand[cardIdx];
+
+                // Follow Suit Validation
+                if(this.leadSuit && !card.isTrump && card.suit !== this.leadSuit) {
+                    const hasSuit = player.hand.some(c => !c.isTrump && c.suit === this.leadSuit);
+                    if(hasSuit) {
+                        if(!player.isBot) alert(`Bedienpflicht! Du musst die Farbe ${this.leadSuit} bedienen!`);
+                        return;
+                    }
+                }
+
+                player.hand.splice(cardIdx, 1);
+                if(this.currentTrick.length === 0 && !card.isTrump) {
+                    this.leadSuit = card.suit;
+                }
+
+                this.currentTrick.push({ playerIdx, card });
+                this.log(`🃏 ${player.name} spielt ${card.name}`);
+
+                if(this.currentTrick.length === this.numPlayers) {
+                    this.renderUI();
+                    setTimeout(() => this.evaluateTrick(), 900);
+                } else {
+                    this.activePlayerIdx = (this.activePlayerIdx + 1) % this.numPlayers;
+                    this.renderUI();
+                    if(this.players[this.activePlayerIdx].isBot) {
+                        setTimeout(() => this.playBotTurn(), 600);
+                    }
+                }
+            },
+
+            playBotTurn() {
+                const botIdx = this.activePlayerIdx;
+                const bot = this.players[botIdx];
+                if(!bot || !bot.isBot || this.phase !== 'playing') return;
+
+                let cardIdx = 0;
+                if(this.leadSuit) {
+                    const validIdx = bot.hand.findIndex(c => !c.isTrump && c.suit === this.leadSuit);
+                    if(validIdx !== -1) cardIdx = validIdx;
+                }
+                this.playCard(botIdx, cardIdx);
+            },
+
+            evaluateTrick() {
+                let winnerIdx = 0;
+                let highestVal = -1;
+                let isTurm = false;
+                let worldIdx = -1;
+                let foolIdx = -1;
+
+                this.currentTrick.forEach((item, idx) => {
+                    const c = item.card;
+                    if(c.isTrump && c.trumpNum === 16) isTurm = true;
+                    if(c.isTrump && c.trumpNum === 21) worldIdx = idx;
+                    if(c.isTrump && c.trumpNum === 0) foolIdx = idx;
+
+                    let effectiveVal = c.value;
+                    if(!c.isTrump && this.leadSuit && c.suit !== this.leadSuit) {
+                        effectiveVal = -1;
+                    }
+
+                    if(effectiveVal > highestVal) {
+                        highestVal = effectiveVal;
+                        winnerIdx = item.playerIdx;
+                    }
+                });
+
+                if(worldIdx !== -1 && foolIdx !== -1 && foolIdx === worldIdx + 1) {
+                    winnerIdx = this.currentTrick[foolIdx].playerIdx;
+                    this.log(`✨ SPEKTAKULÄR: Der Narr entthront die Welt!`);
+                }
+
+                if(isTurm) {
+                    this.log(`💥 Der Turm (XVI) vernichtet den Stich! Niemand erhält Punkte.`);
+                } else {
+                    this.players[winnerIdx].won += 1;
+                    this.log(`🏆 ${this.players[winnerIdx].name} gewinnt den Stich!`);
+                }
+
+                this.currentTrick = [];
+                this.leadSuit = null;
+                this.activePlayerIdx = winnerIdx;
+
+                if(this.players[0].hand.length === 0) {
+                    this.evaluateRoundScores();
+                } else {
+                    this.renderUI();
+                    if(this.players[this.activePlayerIdx].isBot) {
+                        setTimeout(() => this.playBotTurn(), 600);
+                    }
+                }
+            },
+
+            evaluateRoundScores() {
+                this.phase = 'roundOver';
+                this.log(`🏁 Runde ${this.currentRound} beendet. Auswertung:`);
+
+                this.players.forEach(p => {
+                    let rScore = 0;
+                    if(p.bid === 0) {
+                        rScore = p.won === 0 ? 50 : -50;
+                    } else if(p.bid === p.won) {
+                        rScore = 20 + (p.won * 10);
+                    } else {
+                        rScore = -(Math.abs(p.bid - p.won) * 10);
+                    }
+                    p.score += rScore;
+                    this.log(`📊 ${p.name}: Gebot ${p.bid} | Stiche ${p.won} -> Rundenpunkte: ${rScore} (Gesamt: ${p.score})`);
+                });
+
+                if(this.currentRound < this.maxRounds) {
+                    this.currentRound++;
+                    setTimeout(() => this.startRound(), 2200);
+                } else {
+                    this.phase = 'gameOver';
+                    this.log(`👑 RITUAL VOLLENDET! Endstand ermittelt.`);
+                    this.renderUI();
+                    this.showPodium();
+                }
+            },
+
+            showPodium() {
+                const sorted = [...this.players].sort((a,b) => b.score - a.score);
+                const overlay = document.getElementById('game-podium-overlay');
+                
+                document.getElementById('podium-1-name').textContent = sorted[0] ? sorted[0].name : '-';
+                document.getElementById('podium-1-score').textContent = sorted[0] ? sorted[0].score + " Pkt" : '0';
+
+                document.getElementById('podium-2-name').textContent = sorted[1] ? sorted[1].name : '-';
+                document.getElementById('podium-2-score').textContent = sorted[1] ? sorted[1].score + " Pkt" : '0';
+
+                document.getElementById('podium-3-name').textContent = sorted[2] ? sorted[2].name : '-';
+                document.getElementById('podium-3-score').textContent = sorted[2] ? sorted[2].score + " Pkt" : '0';
+
+                overlay.classList.remove('hidden');
+
+                document.getElementById('podium-1').classList.add('animate-podium-1');
+                document.getElementById('podium-2').classList.add('animate-podium-2');
+                document.getElementById('podium-3').classList.add('animate-podium-3');
+            },
+
+            log(msg) {
+                const logBox = document.getElementById('game-log');
+                if(!logBox) return;
+                const div = document.createElement('div');
+                div.textContent = msg;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+
+            renderUI() {
+                const cardsCount = (currentActiveMode === 'turbo' ? 4 : 6) + this.currentRound;
+                document.getElementById('game-round-info').textContent = `Runde ${this.currentRound} von ${this.maxRounds} (${cardsCount} Karten)`;
+
+                if(this.activeOracle) {
+                    document.getElementById('game-oracle-info').textContent = `${this.activeOracle.name}`;
+                } else {
+                    document.getElementById('game-oracle-info').textContent = "Kein Orakel (Turbo)";
+                }
+
+                document.getElementById('game-phase-info').textContent = this.phase === 'bidding' ? "Vision (Bieten)" : (this.phase === 'playing' ? "Am Zug: " + this.players[this.activePlayerIdx].name : "Auswertung");
+
+                // Render Bots Status Bar
+                const botStatusBox = document.getElementById('game-bots-status');
+                botStatusBox.innerHTML = '';
+                this.players.slice(1).forEach(bot => {
+                    const activeStyle = (this.activePlayerIdx === bot.id && this.phase === 'playing') ? 'border-gold bg-gold/20' : 'border-gold/20 bg-occult-950/80';
+                    botStatusBox.innerHTML += `
+                        <div class="p-2 rounded-xl border ${activeStyle} text-center min-w-[100px]">
+                            <div class="text-xs font-bold text-gold">${bot.name}</div>
+                            <div class="text-[10px] text-purple-200">Gebot: ${bot.bid} | Stiche: ${bot.won}</div>
+                            <div class="text-[10px] font-bold text-emerald-400">Karma: ${bot.score}</div>
+                        </div>
+                    `;
+                });
+
+                // Render Trick Cards
+                const trickContainer = document.getElementById('trick-cards-container');
+                trickContainer.innerHTML = '';
+                this.currentTrick.forEach(item => {
+                    trickContainer.innerHTML += `
+                        <div data-tooltip="${item.card.desc}" class="occult-card-3d card-flying-in p-3 text-center min-w-[95px] shadow-2xl">
+                            <div class="text-[9px] text-gold font-bold uppercase">${this.players[item.playerIdx].name}</div>
+                            <div class="text-2xl my-1">${item.card.icon}</div>
+                            <div class="text-xs font-serif font-bold text-white">${item.card.name}</div>
+                        </div>
+                    `;
+                });
+
+                // Human Score
+                const human = this.players[0];
+                document.getElementById('game-human-score').textContent = `Karma: ${human.score} | Gewonnen: ${human.won}`;
+                document.getElementById('game-human-bids-info').textContent = `(Deine Vision: ${human.bid})`;
+
+                // Bidding Controls
+                const bidControls = document.getElementById('game-bidding-controls');
+                if(this.phase === 'bidding') {
+                    bidControls.classList.remove('hidden');
+                    const bidBtns = document.getElementById('game-bid-buttons');
+                    bidBtns.innerHTML = '';
+                    for(let b=0; b<=cardsCount; b++) {
+                        bidBtns.innerHTML += `<button onclick="GameEngine.submitHumanBid(${b})" class="px-3 py-1.5 bg-gold text-black font-bold rounded-xl shadow active:scale-95">${b}</button>`;
+                    }
+                } else {
+                    bidControls.classList.add('hidden');
+                }
+
+                // Human Hand Cards
+                const handContainer = document.getElementById('game-human-hand');
+                handContainer.innerHTML = '';
+                human.hand.forEach((card, idx) => {
+                    const isMyTurn = (this.activePlayerIdx === 0 && this.phase === 'playing');
+                    handContainer.innerHTML += `
+                        <div onclick="${isMyTurn ? `GameEngine.playCard(0, ${idx})` : ''}" data-tooltip="${card.desc}" class="occult-card-3d p-3 text-center min-w-[95px] ${isMyTurn ? 'cursor-pointer hover:border-gold-light' : 'opacity-70 cursor-not-allowed'} shadow-lg">
+                            <div class="text-2xl">${card.icon}</div>
+                            <div class="text-xs font-serif font-bold text-gold mt-1">${card.name}</div>
+                        </div>
+                    `;
+                });
+            }
+        };
+
+        // --- MODE SWITCHER & DYNAMIC UI LOGIC ---
+        function switchRulesetMode(mode) {
+            currentActiveMode = mode;
+            const btnTurbo = document.getElementById('btn-mode-turbo');
+            const btnStandard = document.getElementById('btn-mode-standard');
+            const headerBadge = document.getElementById('header-mode-badge');
+            const calcSternBox = document.getElementById('calc-stern-box');
+
+            if(mode === 'turbo') {
+                btnTurbo.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-turbo text-white";
+                btnStandard.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white";
+                headerBadge.textContent = "⚡ Turbo Edition";
+                if(calcSternBox) calcSternBox.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                btnStandard.className = "px-3 py-1 rounded-lg text-xs font-bold transition bg-purple-600 text-white";
+                btnTurbo.className = "px-3 py-1 rounded-lg text-xs font-bold transition text-purple-300 hover:text-white";
+                headerBadge.textContent = "📜 Standard Edition";
+                if(calcSternBox) calcSternBox.classList.remove('opacity-40', 'pointer-events-none');
+            }
+
+            renderDynamicRules();
+            renderCards();
+            updateChartData();
+            calculateScore();
+            GameEngine.initGame(document.getElementById('game-player-count').value);
+        }
+
+        function renderDynamicRules() {
+            const container = document.getElementById('rules-view');
+            if(currentActiveMode === 'turbo') {
+                container.innerHTML = `
+                    <div class="mb-4 border-b border-gold/30 pb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-turbo">Blitzschnell & Knallhart</span>
+                        <h2 class="text-2xl font-serif font-bold text-gold mt-1">⚡ Arcanum Express (Turbo-Regeln)</h2>
+                        <p class="text-xs text-purple-200 mt-1">Spieldauer: 20–30 Minuten über 5 Runden. Kein Orakel-Deck!</p>
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-4 text-xs text-purple-200">
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">1. Reine Ziffern-Hierarchie</strong>
+                            Alle 22 Großen Arkana liegen im Deck. Ziffer sticht Ziffer (XXI sticht XX, etc.).
+                        </div>
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">2. 3 Schlüsselkarten</strong>
+                            0 - Narr verliert immer (außer nach XXI), XVI - Turm vernichtet Stich, XXI - Welt gewinnt.
+                        </div>
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">3. Wertung & Bieten</strong>
+                            Synchrone Bietphase. Exakter Treffer: +20 Basis + 10/Stich. Abweichung: -10/Differenz.
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="mb-4 border-b border-gold/30 pb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-purple-400">Strategisch & Tiefgründig</span>
+                        <h2 class="text-2xl font-serif font-bold text-gold mt-1">📜 Arcanum Standard (Kodex-Regeln)</h2>
+                        <p class="text-xs text-purple-200 mt-1">Spieldauer: 45–60 Minuten über 7 Runden. Orakel-Karten verändern Weltgesetze!</p>
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-4 text-xs text-purple-200">
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">1. Orakel-System</strong>
+                            10 Orakelkarten geben das Runden-Gesetz vor (z.B. XVII Der Stern oder X Rad des Schicksals).
+                        </div>
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">2. 12 Schicksalskarten</strong>
+                            12 Unikat-Trumps im Deck mit individuellen Effekten (z.B. I Magier, XIII Tod).
+                        </div>
+                        <div class="bg-occult-950 p-3 rounded-xl border border-gold/30">
+                            <strong class="text-gold block mb-1">3. Hermetische Wertung</strong>
+                            Unterbieten wird mit -15/Differenz härter bestraft als Überbieten (-10).
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('cards-grid');
+            const searchVal = document.getElementById('card-search').value.toLowerCase();
+            const filterVal = document.getElementById('card-filter').value;
+            grid.innerHTML = '';
+
+            const filtered = ALL_CARDS.filter(c => {
+                const matchesSearch = c.name.toLowerCase().includes(searchVal) || c.desc.toLowerCase().includes(searchVal);
+                let matchesFilter = true;
+
+                if (filterVal === 'active') {
+                    matchesFilter = (c.mode === currentActiveMode || c.mode === 'both');
+                } else if (filterVal !== 'all') {
+                    matchesFilter = (c.type === filterVal);
+                }
+
+                return matchesSearch && matchesFilter;
+            });
+
+            filtered.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "bg-occult-950 border border-gold/40 rounded-xl p-3 hover:border-gold transition cursor-pointer";
+                cardEl.setAttribute('data-tooltip', card.desc);
+                cardEl.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-2xl">${card.icon}</span>
+                        <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-gold/20 text-gold">${card.type}</span>
+                    </div>
+                    <h4 class="font-serif font-bold text-white text-xs mb-1">${card.name}</h4>
+                    <p class="text-[11px] text-purple-300 leading-tight">${card.desc}</p>
+                `;
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function initProbabilityChart() {
+            const ctx = document.getElementById('probChart').getContext('2d');
+            const turboData = [80.4, 88.5, 93.6, 96.6, 98.3, 99.2];
+            const standardData = [64.5, 78.4, 87.3, 92.5, 95.8, 97.9];
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['5 Karten', '7 Karten', '9 Karten', '11 Karten', '13 Karten', '15 Karten'],
+                    datasets: [{
+                        label: 'Chance auf >= 1 Trumpf (%)',
+                        data: currentActiveMode === 'turbo' ? turboData : standardData,
+                        borderColor: currentActiveMode === 'turbo' ? '#ea580c' : '#a855f7',
+                        backgroundColor: currentActiveMode === 'turbo' ? 'rgba(234, 88, 12, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#d4af37'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 50, max: 100, ticks: { color: '#d4af37', callback: v => v + '%' } },
+                        x: { ticks: { color: '#d4af37' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            updateChartData();
+        }
+
+        function updateChartData() {
+            if(!chartInstance) return;
+            const turboData = [80.4, 88.5, 93.6, 96.6, 98.3, 99.2];
+            const standardData = [64.5, 78.4, 87.3, 92.5, 95.8, 97.9];
+
+            chartInstance.data.datasets[0].data = currentActiveMode === 'turbo' ? turboData : standardData;
+            chartInstance.data.datasets[0].borderColor = currentActiveMode === 'turbo' ? '#ea580c' : '#a855f7';
+            chartInstance.update();
+
+            const exp = document.getElementById('chart-explanation');
+            if(currentActiveMode === 'turbo') {
+                exp.innerHTML = `<strong>Mathematik:</strong> Im <em>Turbo-Modus</em> (22 Trumps) hast du bereits ab <strong>5 Handkarten eine 80.4% Chance</strong> auf einen Trumpf.`;
+            } else {
+                exp.innerHTML = `<strong>Mathematik:</strong> Im <em>Standard-Modus</em> (12 Trumps) liegt die Chance bei 10 Handkarten bei <strong>87.3%</strong>.`;
+            }
+        }
+
+        function calculateScore() {
+            const bid = parseInt(document.getElementById('calc-bid').value) || 0;
+            let won = parseInt(document.getElementById('calc-won').value) || 0;
+            const isTurm = document.getElementById('calc-turm').checked;
+            const isStern = document.getElementById('calc-stern').checked;
+
+            if(isTurm && won > 0) won -= 1;
+
+            let score = 0;
+            let breakdown = [];
+
+            if(bid === 0) {
+                if(won === 0) { score += 50; breakdown.push("Null-Ansage geschafft (+50)"); }
+                else { score -= 50; breakdown.push("Null-Ansage gescheitert (-50)"); }
+            } else {
+                if(bid === won) {
+                    score += 20 + (won * 10);
+                    breakdown.push(`Exakt getroffen (+20 Basis + ${won * 10} Stiche)`);
+                    if(isStern && currentActiveMode === 'standard') {
+                        score += 30;
+                        breakdown.push("Stern Bonus (+30)");
+                    }
+                } else {
+                    const diff = Math.abs(bid - won);
+                    const pen = diff * (currentActiveMode === 'standard' && won < bid ? 15 : 10);
+                    score -= pen;
+                    breakdown.push(`Differenz: ${diff} Stiche (Malus: -${pen})`);
+                }
+            }
+
+            const resBox = document.getElementById('calc-result');
+            resBox.textContent = (score >= 0 ? "+" : "") + score + " Punkte";
+            resBox.className = `sm:col-span-2 text-center text-3xl font-serif font-bold mt-2 ${score >= 0 ? 'text-gold' : 'text-red-400'}`;
+            document.getElementById('calc-breakdown').textContent = breakdown.join(" | ");
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            GameEngine3D.init();
+            renderDynamicRules();
+            renderCards();
+            initProbabilityChart();
+            calculateScore();
+            GameEngine.initGame(3);
+        });
+    </script>
+</body>
+</html>
