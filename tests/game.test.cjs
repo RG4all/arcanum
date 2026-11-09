@@ -2,8 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const html = fs.readFileSync('arcanum_tarot_browsergame_codex.html', 'utf8');
-const script = html.match(/<!-- JavaScript Application Engine -->\s*<script>([\s\S]*?)<\/script>/)[1];
+const script = ['js/cards.js', 'js/scene3d.js', 'js/game-engine.js', 'js/app.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n');
 const context = { document: { addEventListener() {} }, setTimeout, clearTimeout, Math, console };
 vm.createContext(context);
 vm.runInContext(script + '\nthis.engine = GameEngine; this.probability = trumpProbability; this.setMode = mode => currentActiveMode = mode;', context);
@@ -16,6 +15,12 @@ test('Deck enthält 78 eindeutige Karten und 22 Trümpfe', () => {
   assert.equal(deck.length, 78);
   assert.equal(new Set(deck.map(c => c.uid)).size, 78);
   assert.equal(deck.filter(c => c.isTrump).length, 22);
+});
+
+test('Große Arkana besitzen jeweils ein individuelles Spielkartensymbol', () => {
+  const majors = game.generateUniqueDeck().filter(card => card.isTrump);
+  assert.equal(majors.length, 22);
+  assert.equal(new Set(majors.map(card => card.icon)).size, 22);
 });
 
 test('Wahrscheinlichkeit entspricht Ziehen ohne Zurücklegen', () => {
