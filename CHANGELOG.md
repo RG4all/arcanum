@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen werden hier dokumentiert. Die Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
 
+## 0.6.0-beta.2 – 2026-11-21
+
+Korrektur des Regelwerks **RAW – Die Nackte Zahl**: komplettes Deck statt nur Große Arkana.
+
+### Geändert
+- **RAW spielt jetzt mit dem kompletten 78-Karten-Deck** – Große und Kleine Arkana – statt nur mit den 22 Großen Arkana. Es gibt weiterhin keine Orakel und keine Sonderkarten.
+- **Eindeutige Wertigkeit.** Jede Große Arkana schlägt jede Kleine Arkana (auch der Narr schlägt ein Ass). Unter Großen Arkana zählt allein die Zahl 0–XXI; unter Kleinen Arkana gewinnt die höchste Karte der angespielten Farbe (Ass 14,5 > König … > 2), andere Farben sind wertlos. Kein Welt-Narr-Trick, kein Magier, keine Kraft, kein Turm, kein Tod, kein Hierophant, kein Hofkarten-Segen.
+- **Bedienpflicht in RAW** wie im Turbo: angespielte Farbe bedienen, sofern möglich; Große Arkana dürfen jederzeit gelegt werden. Kraftverbot, Teufelszwang und Herrscher-Freiheit werden in RAW ignoriert.
+- **Geben.** Weiterhin `2 + Rundennummer` Karten (3–7); der frühere Deckel `⌊22 / Spieler:innen⌋` entfällt, da das Volldeck die Hände immer hergibt.
+- **Regelkern (`js/rules.js`).** `createDeck` liefert in allen Modi das 78-Karten-Deck (`createRawDeck` ist ein Alias), `createRanker` nutzt in RAW `200 + trumpNum` für Trümpfe und den Farbwert für bediente Kleine Arkana, `legalCardIndices` kennt in RAW nur die Bedienpflicht. `RULESET_VERSION` auf `0.6.0` erhöht.
+- **Engine und Oberfläche.** Bot-Gebotsheuristik für gemischte RAW-Hände (hohe Trümpfe voll, niedrige halb, Asse/Könige anteilig), Regelwerk-Reiter, HUD-Texte, Hinweiskarten und Stochastik-Diagramm (78 Karten, 22 Trümpfe) angepasst.
+- **Dokumentation und Tests.** `README.md`, `docs/RULES.md` (Abschnitt 10 mit Beispielstichen, FAQ) und `docs/ARCHITECTURE.md` aktualisiert; RAW-Tests auf Volldeck, Trumpf-über-Farbe-Hierarchie und Bedienpflicht umgestellt (79 Tests insgesamt).
+- Version auf `0.6.0-beta.2` angehoben (Meta-Tag, README, Changelog, `package.json`, Footer).
+
 ## 0.6.0-beta.1 – 2026-11-21
 
 Schwerpunkt dieser Version ist das dritte Regelwerk: **RAW – Die Nackte Zahl**.

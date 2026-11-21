@@ -106,7 +106,7 @@
       return RULES.cardsPerPlayer(this.mode, this.currentRound, this.players.length);
     },
 
-    /** Baut ein frisches Deck (gemischt, optional mit Seed); im RAW-Modus nur die 22 Großen Arkana. */
+    /** Baut ein frisches 78-Karten-Deck (gemischt, optional mit Seed) – in allen Modi, auch RAW. */
     generateUniqueDeck() {
       return RULES.createDeck(this.rng, this.mode);
     },
@@ -198,8 +198,14 @@
      */
     estimateBotBid(hand) {
       if (this.mode === 'raw') {
-        // RAW: reine Trumpfwertung – hohe Arkana (XI bis XXI) gewinnen meist.
-        return Math.max(0, Math.min(hand.length, hand.filter(card => (card.trumpNum ?? 0) >= 11).length));
+        // RAW: Jede Große Arkana schlägt jede Kleine Arkana – hohe Trümpfe
+        // (XI bis XXI) gewinnen fast sicher, niedrige zur Hälfte; Asse und
+        // Könige der Farben zählen anteilig.
+        const highTrumps = hand.filter(card => card.isTrump && card.trumpNum >= 11).length;
+        const lowTrumps = hand.filter(card => card.isTrump && card.trumpNum < 11).length;
+        const topMinor = hand.filter(card => !card.isTrump && card.value >= 14).length;
+        const estimate = highTrumps + Math.round(lowTrumps * 0.5) + Math.round(topMinor * 0.3);
+        return Math.max(0, Math.min(hand.length, estimate));
       }
       const trumps = hand.filter(card => card.isTrump).length;
       const courts = hand.filter(card => Boolean(card.court)).length;
@@ -712,7 +718,7 @@
           oracleBox.dataset.active = 'true';
         } else {
           const note = this.mode === 'raw'
-            ? 'RAW – Die Nackte Zahl: keine Orakel, nur Zahlen'
+            ? 'RAW – Die Nackte Zahl: keine Orakel, keine Sonderkarten'
             : 'Turbo-Modus: reine Zahlenhierarchie';
           oracleBox.innerHTML = `<span class="hud-oracle__icon" aria-hidden="true">◌</span>
             <span class="hud-oracle__text"><b>Kein Orakel</b><small>${note}</small></span>`;

@@ -105,12 +105,12 @@ Alle Spielregeln sind reine Funktionen. `RULESET_VERSION` wird bei jeder Regelä
 | Funktion | Aufgabe |
 | --- | --- |
 | `CONFIG` | Alle Regelparameter (Spielerzahl, Modi, Wertung, Rangschalter) an einer Stelle |
-| `cardsPerPlayer(mode, round, playerCount)` | Rundengröße (Turbo 4+n, Standard 6+n, RAW 2+n – in RAW gedeckelt auf ⌊22 / Spieler:innen⌋) |
+| `cardsPerPlayer(mode, round, playerCount)` | Rundengröße (Turbo 4+n, Standard 6+n, RAW 2+n); `playerCount` bleibt aus Kompatibilitätsgründen Teil der Signatur |
 | `createRng(seed)` | deterministischer Zufall (mulberry32) für reproduzierbare Partien |
-| `shuffle`, `createDeck`, `deal` | Mischen, Deck, Verteilung ohne Mutation (RAW: `createDeck(rng, 'raw')` bzw. `createRawDeck` erzeugt ein 22-Karten-Trumpfdeck) |
+| `shuffle`, `createDeck`, `deal` | Mischen, Deck, Verteilung ohne Mutation – in allen Modi das vollständige 78-Karten-Deck (`createRawDeck` ist ein Alias) |
 | `pickOracle(rng)` | Orakel der Runde (nur Standard) |
-| `createRanker({ leadSuit, oracleUid, cancelled, maxMinor, mode })` | Rangfunktion eines Stichs (`mode: 'raw'` liefert reinen Zahlenwertrang) |
-| `legalCardIndices(hand, ctx)` | Bedienpflicht, Kraftverbot, Teufelszwang (RAW: jede Karte legal – alle sind Trümpfe) |
+| `createRanker({ leadSuit, oracleUid, cancelled, maxMinor, mode })` | Rangfunktion eines Stichs (`mode: 'raw'`: Trumpf > Farbe, ohne Sonderfälle) |
+| `legalCardIndices(hand, ctx)` | Bedienpflicht, Kraftverbot, Teufelszwang (RAW: nur Bedienpflicht, Trümpfe jederzeit) |
 | `describeConstraint` | Klartext-Hinweis für die Oberfläche |
 | `resolveTrick(trick, ctx)` | Stichauswertung inklusive aller Effekte |
 | `courtKarmaOf` | Hofkarten-Segen |
@@ -132,15 +132,17 @@ Alle Spielregeln sind reine Funktionen. `RULESET_VERSION` wird bei jeder Regelä
 | Herrscherin aktiv, Kelche | `100 + value` (niedere Trümpfe) |
 | Kleine Arkana der angespielten Farbe | `value` (Ass 14,5) |
 | Kleine Arkana anderer Farbe | `−500 + value` (wertlos) |
-| RAW – Die Nackte Zahl (`mode: 'raw'`) | `trumpNum` (0–XXI), höher sticht niedriger, sonst nichts |
+| RAW – Die Nackte Zahl (`mode: 'raw'`) | Große Arkana `200 + trumpNum` (auch Narr, Magier, Kraft), angespielte Farbe `value`, andere Farbe `−500 + value` – keine Sonderfälle |
 
 Sonderfälle in `resolveTrick`: Der Narr entthront die Welt, wenn er **unmittelbar** nach ihr fällt (und keine Kraft im Stich liegt). Der Turm vernichtet den Stich (`won = 0`), der Tod halbiert ihn (`won = 0,5`), der Turm hat Vorrang. Der Hierophant setzt `cancelled = true` und schaltet alle Karteneffekte ab – Orakel bleiben aktiv.
 
 ### RAW – Die Nackte Zahl (dritter Modus)
 
-RAW ist die radikale Reduktion neben Turbo und Standard: **nur die 22 Großen Arkana**, **keine Orakel**, **keine Sonderkarten**, **keine Kartenfunktionen**. Das Deck wird pro Runde als reine Trumpfmischung erzeugt (`createRawDeck`); `deal` teilt `2 + Rundennummer` Karten (3–7), gedeckelt auf `⌊22 / Spieler:innen⌋`, damit das Deck die Hände immer hergibt (bei 3 Spielenden bis zu 7, bei 4 bis zu 5, bei 6 bis zu 3). Die Wertung entspricht dem Turbo (`−10` je Abweichungsschritt, Null `±50`), ohne Hofkarten-Segen und ohne Stern.
+RAW ist die radikale Reduktion neben Turbo und Standard: das **komplette 78-Karten-Deck** (22 Große + 56 Kleine Arkana), **keine Orakel**, **keine Sonderkarten**, **keine Kartenfunktionen**. `deal` teilt `2 + Rundennummer` Karten (3–7) aus dem gemischten Volldeck. Die Wertung entspricht dem Turbo (`−10` je Abweichungsschritt, Null `±50`), ohne Hofkarten-Segen und ohne Stern.
 
-Im Regelkern greift RAW auf drei Stellen durch, ohne den Turbo-/Standard-Pfad zu verändern: `createRanker` liefert bei `mode: 'raw'` schlicht `trumpNum` (höher sticht niedriger, 0–XXI), `legalCardIndices` gibt alle Karten als legal zurück (jede Karte ist ein Trumpf und umgeht damit die Bedienpflicht – Kraftverbot und Teufelszwang existieren in RAW nicht), und `resolveTrick` schaltet in RAW sämtliche Sonderfälle ab: kein Narr-Entthronung der Welt, kein Turm, kein Tod, kein Hierophant, keine Gerechtigkeit/Liebe/Hohepriesterin, kein Hofkarten-Segen. `RULESET_VERSION` wurde dafür auf `0.5.0` erhöht.
+Die Wertigkeit ist eindeutig und dreistufig: **Jede Große Arkana schlägt jede Kleine Arkana.** Unter Großen Arkana entscheidet allein die Zahl 0–XXI (der Narr ist die niedrigste Große Arkana, Magier und Kraft sind gewöhnliche Trümpfe ihrer Zahl). Unter Kleinen Arkana gewinnt die höchste Karte der angespielten Farbe (Ass 14,5 > König 14 > … > 2); andere Farben sind wertlos.
+
+Im Regelkern greift RAW auf drei Stellen durch, ohne den Turbo-/Standard-Pfad zu verändern: `createRanker` liefert bei `mode: 'raw'` `200 + trumpNum` für Große Arkana und den Farbwert für bediente Kleine Arkana – ohne Narr-, Magier-, Kraft- oder Orakelsonderfälle; `legalCardIndices` kennt in RAW nur die Bedienpflicht (Trümpfe jederzeit erlaubt; Kraftverbot, Teufelszwang und Herrscher-Freiheit werden ignoriert); `resolveTrick` schaltet in RAW sämtliche Sonderfälle ab: keine Narr-Entthronung der Welt, kein Turm, kein Tod, kein Hierophant, keine Gerechtigkeit/Liebe/Hohepriesterin, kein Hofkarten-Segen. `RULESET_VERSION` steht dafür auf `0.6.0`.
 
 ### Wertungsmathematik
 
@@ -162,7 +164,7 @@ Alle Konstanten liegen in `CONFIG.scoring` und werden von Partie, Rechner und Te
 
 ### Stochastik
 
-`chanceOfAtLeastOneTrump(n, deck, trumps) = 1 − Π (deck−trumps−i)/(deck−i)` für `i < n` – exakt hypergeometrisch, auf Hundertstelprozent gerundet. Bei 78 Karten und 22 Trümpfen: 1 Karte 28,21 %, 5 Karten 81,91 %, ab 57 Karten 100 %. Das Diagramm zeigt zusätzlich `P(≥ 2 Trümpfe)` über `1 − P(X ≤ 1)` und passt die Werte an die Rundengrößen des aktiven Modus an; im RAW-Modus rechnet es mit dem 22-Karten-Deck (22 Trümpfe) – jede gezogene Karte ist dort ein Trumpf, die Kurve liegt bei 100 %.
+`chanceOfAtLeastOneTrump(n, deck, trumps) = 1 − Π (deck−trumps−i)/(deck−i)` für `i < n` – exakt hypergeometrisch, auf Hundertstelprozent gerundet. Bei 78 Karten und 22 Trümpfen: 1 Karte 28,21 %, 5 Karten 81,91 %, ab 57 Karten 100 %. Das Diagramm zeigt zusätzlich `P(≥ 2 Trümpfe)` über `1 − P(X ≤ 1)` und passt die Werte an die Rundengrößen des aktiven Modus an. RAW nutzt dasselbe 78-Karten-Deck, daher gelten dort dieselben Wahrscheinlichkeiten für die Rundengrößen 3–7.
 
 ## 5 · Spielablauf (`js/engine.js`)
 
@@ -177,7 +179,7 @@ Zustandsmaschine: `bidding → playing → roundOver → (bidding | gameOver)`.
 
 Alle Timer laufen über `schedule()` und werden bei Neustart oder Moduswechsel über `clearTimers()` verworfen. Effekte wirken ausschließlich hier – die UI entscheidet nie über Gültigkeit oder Wertung.
 
-**Bot-Heuristik:** `Trümpfe + gerundet(Hofkarten · 0,34) + gerundet(hohe Farbkarten · 0,25)`, begrenzt auf die Rundengröße. Bots spielen die höchste zulässige **Nicht-Trumpf-Karte**, wenn möglich, sonst den höchsten zulässigen Trumpf. Im RAW-Modus schätzt die Heuristik die Stiche über Karten mit `trumpNum ≥ 11`; da jede Karte ein Trumpf ist, spielt der Bot die höchste zulässige Karte.
+**Bot-Heuristik:** `Trümpfe + gerundet(Hofkarten · 0,34) + gerundet(hohe Farbkarten · 0,25)`, begrenzt auf die Rundengröße. Bots spielen die höchste zulässige **Nicht-Trumpf-Karte**, wenn möglich, sonst den höchsten zulässigen Trumpf. Im RAW-Modus schätzt die Heuristik `hohe Trümpfe (≥ XI) + gerundet(niedrige Trümpfe · 0,5) + gerundet(Asse/Könige · 0,3)`; das Zugverhalten ist dasselbe wie im Turbo.
 
 ## 6 · HUD und Darstellung
 
@@ -329,7 +331,7 @@ Neue UI- und Renderfunktionen sollen die Regeln nicht duplizieren: Regeln änder
 - Jede Regel und jeden Sonderfall: Narr/Welt, Magier, Kraft, Turm, Tod, Hierophant, Gerechtigkeit, Mond, Herrscherin, Rad, Liebende, Hofkarten-Segen.
 - Wertung inklusive halber Stiche, Stern und Hofkarten – zusätzlich gegen den Engine-Pfad.
 - Determinismus (gleicher Seed, gleiche Partie) und eine komplette Runde, die regelkonform terminiert.
-- RAW – Die Nackte Zahl: 22-Karten-Trumpfdeck, Rundengrößen und ⌊22/Spieler:innen⌋-Deckel, reiner Zahlenwertrang (0–XXI) ohne Kartenfunktionen (Narr/Welt, Turm, Tod, Kraft, Magier, Hierophant), Bedienpflicht-Ausnahme für Trümpfe, Turbo-hafte Wertung und eine komplette RAW-Runde in der Engine ohne Orakel.
+- RAW – Die Nackte Zahl: 78-Karten-Volldeck (Große und Kleine Arkana), Rundengrößen 3–7, Trumpf-über-Farbe-Hierarchie (Große Arkana schlägt jede Kleine Arkana, 0–XXI unter Trümpfen, angespielte Farbe unter Farbkarten) ohne Kartenfunktionen (Narr/Welt, Turm, Tod, Kraft, Magier, Hierophant, Hofkarten-Segen), Bedienpflicht mit jederzeit erlaubten Trümpfen, Turbo-hafte Wertung und eine komplette RAW-Runde in der Engine ohne Orakel.
 - Hypergeometrische Wahrscheinlichkeit und Monotonie.
 - Animationsmathematik (Federkonvergenz, Bézier-Endpunkte, Fächersymmetrie).
 - Manifest der zehn Orte und drei Welten: Farbtypen, Beschreibungen, Kameraabstände, Weltzuordnung.
