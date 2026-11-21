@@ -1,7 +1,7 @@
 {
   "name": "arcanum",
-  "version": "0.6.0-beta.1",
-  "description": "**Version 0.6.0-beta.1** · Browser-Beta",
+  "version": "0.6.0-beta.2",
+  "description": "**Version 0.6.0-beta.2** · Browser-Beta",
   "main": "index.js",
   "directories": {
     "doc": "docs",

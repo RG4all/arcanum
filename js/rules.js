@@ -16,7 +16,7 @@
   const CARDS = global.ArcanumCards;
 
   /** Version des Regelwerks – erhöhen, wenn sich Spielregeln ändern. */
-  const RULESET_VERSION = '0.5.0';
+  const RULESET_VERSION = '0.6.0';
   /** Version des serialisierbaren Spielstandformats. */
   const STATE_SCHEMA_VERSION = 1;
 
@@ -29,9 +29,11 @@
     modes: {
       turbo: Object.freeze({ label: 'Turbo', maxRounds: 5, baseCards: 4, oracle: false }),
       standard: Object.freeze({ label: 'Standard', maxRounds: 7, baseCards: 6, oracle: true }),
-      // RAW – Die Nackte Zahl: nur die 22 Großen Arkana, reine Zahl 0–XXI,
-      // keine Orakel, keine Sonderkarten, keine Karteneffekte.
-      raw: Object.freeze({ label: 'RAW – Die Nackte Zahl', maxRounds: 5, baseCards: 2, oracle: false, majorsOnly: true })
+      // RAW – Die Nackte Zahl: das komplette 78-Karten-Deck (Große und
+      // Kleine Arkana), keine Orakel, keine Sonderkarten, keine Karteneffekte.
+      // Jede Große Arkana schlägt jede Kleine Arkana; unter Trümpfen zählt
+      // allein 0–XXI, unter Farbkarten die angespielte Farbe.
+      raw: Object.freeze({ label: 'RAW – Die Nackte Zahl', maxRounds: 5, baseCards: 2, oracle: false, fullDeck: true })
     },
     scoring: Object.freeze({
       exactBase: 20,
@@ -60,17 +62,15 @@
   /* Deck und Verteilung                                               */
   /* ---------------------------------------------------------------- */
 
-  /** Anzahl Karten pro Spieler:in in einer Runde. */
-  function cardsPerPlayer(mode, round, playerCount) {
+  /**
+   * Anzahl Karten pro Spieler:in in einer Runde. Alle Modi spielen mit dem
+   * vollständigen 78-Karten-Deck; die Handgröße (max. 13 × 6 = 78) überfordert
+   * das Deck nie. `playerCount` bleibt aus Kompatibilitätsgründen Teil der
+   * Signatur.
+   */
+  function cardsPerPlayer(mode, round, playerCount) { // eslint-disable-line no-unused-vars
     const config = MODES[mode] || MODES.turbo;
-    const wanted = config.baseCards + Math.max(1, Math.min(config.maxRounds, Number(round) || 1));
-    // RAW nutzt nur 22 Große Arkana: Die Hand darf das Deck nicht überfordern.
-    // Turbo/Standard (78 Karten) erreichen diese Grenze nie und bleiben unverändert.
-    if (mode === 'raw' && Number(playerCount) > 0) {
-      const cap = Math.max(1, Math.floor(22 / Number(playerCount)));
-      return Math.min(wanted, cap);
-    }
-    return wanted;
+    return config.baseCards + Math.max(1, Math.min(config.maxRounds, Number(round) || 1));
   }
 
   function maxRounds(mode) {
@@ -107,13 +107,14 @@
     return result;
   }
 
-  /** RAW-Deck: ausschließlich die 22 Großen Arkana (Trümpfe), gemischt. */
+  /** RAW-Deck: das komplette 78-Karten-Deck (22 Große + 56 Kleine Arkana), gemischt. */
   function createRawDeck(rng) {
-    return shuffle(CARDS.TAROT_DECK.filter(card => card.isTrump), rng);
+    return shuffle(CARDS.TAROT_DECK, rng);
   }
 
-  function createDeck(rng, mode) {
-    return mode === 'raw' ? createRawDeck(rng) : shuffle(CARDS.TAROT_DECK, rng);
+  /** Alle Modi nutzen das vollständige 78-Karten-Deck. */
+  function createDeck(rng, mode) { // eslint-disable-line no-unused-vars
+    return shuffle(CARDS.TAROT_DECK, rng);
   }
 
   /**
@@ -167,9 +168,17 @@
     return function rank(card) {
       if (!card) return -Infinity;
 
-      // RAW – Die Nackte Zahl: allein der Zahlenwert 0–XXI entscheidet.
-      // Keine Narr-, Kraft-, Magier- oder sonstige Karteneffekte.
-      if (raw) return card.isTrump ? card.trumpNum : -Infinity;
+      // RAW – Die Nackte Zahl: klare Wertigkeit ohne Karteneffekte.
+      //   · Jede Große Arkana schlägt jede Kleine Arkana.
+      //   · Unter Großen Arkana entscheidet allein die Zahl 0–XXI
+      //     (der Narr ist schlicht die niedrigste Große Arkana).
+      //   · Unter Kleinen Arkana gewinnt die höchste Karte der angespielten
+      //     Farbe (Ass 14,5 > König 14 … 2); andere Farben sind wertlos.
+      if (raw) {
+        if (card.isTrump) return 200 + card.trumpNum;
+        if (leadSuit && card.suit !== leadSuit) return -500 + card.value;
+        return card.value;
+      }
 
       // 1. Der Narr verliert immer gegen jede andere Karte – außer der
       //    Welt-Sonderfall greift (wird separat in resolveTrick geprüft).
@@ -214,25 +223,25 @@
   function legalCardIndices(hand, context) {
     const ctx = context || {};
     if (!hand || !hand.length) return [];
-    // RAW: Jede Karte ist ein Trumpf und darf jederzeit gelegt werden –
-    // die Bedienpflicht wird damit vollständig umgangen. Es gibt keine
-    // Kraft- oder Teufel-Beschränkungen, da es keine Karteneffekte gibt.
-    if (Boolean(ctx.raw) || ctx.mode === 'raw') return hand.map((_, index) => index);
+    // RAW: Es gilt allein die Bedienpflicht – Trümpfe (Große Arkana) dürfen
+    // jederzeit gelegt werden. Kraftverbot, Teufelszwang und Herrscher-
+    // Freiheit existieren nicht, da es keine Karteneffekte und Orakel gibt.
+    const raw = Boolean(ctx.raw) || ctx.mode === 'raw';
     let indices = hand.map((_, index) => index);
 
-    if (ctx.trumpBan) {
+    if (ctx.trumpBan && !raw) {
       const nonTrumps = indices.filter(i => !hand[i].isTrump);
       if (nonTrumps.length) indices = nonTrumps;
     }
 
-    if (ctx.leadSuit && !ctx.freeLead) {
+    if (ctx.leadSuit && (!ctx.freeLead || raw)) {
       const following = indices.filter(i => !hand[i].isTrump && hand[i].suit === ctx.leadSuit);
       if (following.length) {
         indices = indices.filter(i => hand[i].isTrump || hand[i].suit === ctx.leadSuit);
       }
     }
 
-    if (ctx.mustPlayHighest && indices.length) {
+    if (ctx.mustPlayHighest && !raw && indices.length) {
       const highest = Math.max(...indices.map(i => hand[i].value));
       indices = indices.filter(i => hand[i].value === highest);
     }
@@ -247,8 +256,9 @@
     const all = hand.length;
     const legal = legalCardIndices(hand, ctx).length;
     if (legal === all) return '';
-    if (ctx.mustPlayHighest) return 'Der Teufel: höchste zulässige Karte ist Pflicht.';
-    if (ctx.trumpBan) return 'Die Kraft: in diesem Zug darf kein Trumpf gelegt werden.';
+    const raw = Boolean(ctx.raw) || ctx.mode === 'raw';
+    if (ctx.mustPlayHighest && !raw) return 'Der Teufel: höchste zulässige Karte ist Pflicht.';
+    if (ctx.trumpBan && !raw) return 'Die Kraft: in diesem Zug darf kein Trumpf gelegt werden.';
     if (ctx.leadSuit) return `Bedienpflicht: ${ctx.leadSuit} muss bedient werden.`;
     return '';
   }
@@ -285,9 +295,10 @@
       if (rank(item.card) > rank(winner.card)) winner = item;
     }
 
-    // RAW – Die Nackte Zahl: keine Kartenfunktionen, nur der Zahlenwert zählt.
-    // Weder Narr-Entthronung noch Turm oder sonstige Effekte greifen.
-    // Der Narr entthront die Welt, wenn er unmittelbar nach ihr fällt.
+    // RAW – Die Nackte Zahl: keine Kartenfunktionen – weder Narr-Entthronung
+    // noch Turm, Tod oder sonstige Effekte greifen; die Rangfunktion allein
+    // entscheidet. In Turbo/Standard entthront der Narr die Welt, wenn er
+    // unmittelbar nach ihr fällt.
     const worldIdx = trick.findIndex(item => item.card.isTrump && item.card.trumpNum === 21);
     const foolIdx = trick.findIndex(item => item.card.isTrump && item.card.trumpNum === 0);
     const foolBeatWorld = !raw && !cancelled && worldIdx !== -1 && foolIdx === worldIdx + 1 && !(standard && has(11));
@@ -477,6 +488,7 @@
     createRng,
     shuffle,
     createDeck,
+    createRawDeck,
     deal,
     pickOracle,
     createRanker,

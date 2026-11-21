@@ -8,7 +8,7 @@ Das Nachschlagewerk zur Partie. Für Architektur und Formeln siehe [ARCHITECTURE
 
 ## 2 · Rundenablauf
 
-1. **Geben.** Jede:r erhält gleich viele Karten: Turbo `4 + Rundennummer` (5–9), Standard `6 + Rundennummer` (7–13), RAW – Die Nackte Zahl `2 + Rundennummer` (3–7), gedeckelt auf `⌊22 / Spieler:innen⌋`.
+1. **Geben.** Jede:r erhält gleich viele Karten: Turbo `4 + Rundennummer` (5–9), Standard `6 + Rundennummer` (7–13), RAW – Die Nackte Zahl `2 + Rundennummer` (3–7).
 2. **Weltgesetz.** Im Standard wird ein Orakel gezogen und gilt für die ganze Runde (Turbo und RAW kennen keine Orakel).
 3. **Vision.** Alle sagen gleichzeitig an, wie viele Stiche sie gewinnen. Erlaubt ist `0 … Kartenzahl`.
 4. **Stiche.** Die/der erste Spielende spielt aus. Wer anspielt, legt die zu bedienende Farbe fest; ein Trumpf als erste Karte lässt die Farbe offen.
@@ -36,7 +36,7 @@ Das Nachschlagewerk zur Partie. Für Architektur und Formeln siehe [ARCHITECTURE
 ## 4 · Bedienpflicht und Zugbeschränkungen
 
 - Wer eine Farbe anspielt, muss bedient werden, sofern möglich. Trumps dürfen **jederzeit** gelegt werden.
-- **RAW – Die Nackte Zahl:** Die Bedienpflicht entfällt vollständig – jede Karte ist ein Trumpf und darf jederzeit gelegt werden.
+- **RAW – Die Nackte Zahl:** Dieselbe Bedienpflicht wie im Turbo – Große Arkana dürfen jederzeit gelegt werden; Kraft, Teufel und Herrscher wirken nicht.
 - Hat man die Farbe nicht, ist jede Karte erlaubt.
 - **Der Herrscher (IV, Orakel)** hebt die Bedienpflicht für die ganze Runde auf.
 - **Die Kraft (XI)** verbietet ihrem Spieler im **nächsten** Stich Trumpf, solange eine andere Karte vorhanden ist (genau ein Zug).
@@ -131,14 +131,14 @@ Jede Farbe umfasst Ass bis König. Hofkarten tragen zusätzlich den Hofkarten-Se
 | | Turbo | Standard | RAW – Die Nackte Zahl |
 | --- | --- | --- | --- |
 | Runden | 5 | 7 | 5 |
-| Karten | 5, 6, 7, 8, 9 | 7, 8, 9, 10, 11, 12, 13 | 3, 4, 5, 6, 7 – gedeckelt auf `⌊22 / Spieler:innen⌋` |
-| Deck | 78 Karten | 78 Karten | nur die 22 Großen Arkana |
+| Karten | 5, 6, 7, 8, 9 | 7, 8, 9, 10, 11, 12, 13 | 3, 4, 5, 6, 7 |
+| Deck | 78 Karten | 78 Karten | 78 Karten (Große und Kleine Arkana) |
 | Orakel | keine | 5, eines pro Runde | keine |
 | Schicksalskarten | nur Narr, Turm, Welt | alle neun | keine – es gibt keine Kartenfunktionen |
-| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | entfällt – jede Karte ist ein Trumpf |
+| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | wie Turbo |
 | Unterbieten | −10 | −15 | −10 |
-| Hofkarten-Segen | – | aktiv | – (keine Hofkarten) |
-| Spieldauer | kompakt | ausführlich | kompakt, puristisches Zahlenmessen |
+| Hofkarten-Segen | – | aktiv | – |
+| Spieldauer | kompakt | ausführlich | kompakt, puristisches Stichspiel |
 
 ## 10 · RAW – Die Nackte Zahl
 
@@ -146,20 +146,33 @@ RAW (**„Die Nackte Zahl“**) ist die puristische Variante neben Turbo und Sta
 
 ### Deck und Geben
 
-- Verwendet werden **ausschließlich die 22 Großen Arkana** (Trümpfe 0–XXI). Das 78-Karten-Deck kommt nicht zum Einsatz; pro Runde wird ein reines Trumpfdeck gemischt und ausgeteilt.
-- Geben: `2 + Rundennummer` Karten (3 bis 7), gedeckelt auf `⌊22 / Spieler:innen⌋`, damit das Deck die Hände immer hergibt. Bei 3 Spielenden sind das 3–7 Karten, bei 4 Spielenden maximal 5, bei 6 Spielenden maximal 3.
-- Es gibt 5 Runden. Der Reststapel bleibt liegen.
+- Gespielt wird das **komplette 78-Karten-Deck**: die 22 Großen Arkana (Trümpfe 0–XXI) und die 56 Kleinen Arkana in vier Farben (Ass bis König). Pro Runde wird das volle Deck gemischt und ausgeteilt.
+- Geben: `2 + Rundennummer` Karten (3 bis 7). Es gibt 5 Runden. Der Reststapel bleibt liegen.
 
-### Stichermittlung
+### Stichermittlung – die Wertigkeit
 
-- Es zählt **allein der Zahlenwert**, aufsteigend von 0 bis XXI: die höhere Karte sticht die niedrigere (z. B. **IV schlägt II**, XXI schlägt XX, I schlägt 0).
-- Es gibt **keine weiteren Kartenfunktionen**. Narr, Magier, Kraft, Hierophant, Turm, Tod, Gerechtigkeit, Hohepriesterin, Liebende, Mond – keine dieser Karten wirkt in RAW. Der Hierophant kann folglich nichts annullieren, weil es nichts zu annullieren gibt.
-- Gleichstand ist ausgeschlossen: Das Deck enthält jede Zahl genau einmal.
-- Die Wertung kennt keinen Hofkarten-Segen und keinen Stern-Segen – es gibt keine Hofkarten und keine Orakel.
+Die Rangordnung ist dreistufig und ohne Ausnahme:
+
+1. **Jede Große Arkana schlägt jede Kleine Arkana.** Selbst der Narr (0) gewinnt gegen ein Ass.
+2. **Unter Großen Arkana** zählt allein der Zahlenwert, aufsteigend von 0 bis XXI: die höhere Karte sticht die niedrigere (z. B. **IV schlägt II**, XXI schlägt XX, I schlägt 0). Der Narr ist schlicht die niedrigste Große Arkana.
+3. **Unter Kleinen Arkana** gewinnt die höchste Karte der **angespielten Farbe**: Ass (14,5) > König (14) > Königin (13) > Ritter (12) > Bube (11) > 10 … 2. Karten anderer Farben sind wertlos.
+
+Es gibt **keine Sonderkarten und keine Kartenfunktionen**. Narr, Magier, Kraft, Hierophant, Turm, Tod, Gerechtigkeit, Hohepriesterin, Liebende, Mond, Teufel – keine dieser Karten wirkt in RAW. Die Wertung kennt keinen Hofkarten-Segen und keinen Stern-Segen – es gibt keine Orakel.
+
+**Beispiele**
+
+| Stich (in Spielreihenfolge) | Sieger | Warum |
+| --- | --- | --- |
+| Ass der Stäbe, Der Narr (0) | Der Narr | Große Arkana schlägt jede Kleine Arkana |
+| II, IV | IV | höhere Zahl |
+| Die Welt (XXI), Der Narr (0) | Die Welt | kein Welt-Narr-Trick in RAW |
+| König der Kelche, Ass der Kelche | Ass der Kelche | Ass ist die höchste Farbkarte |
+| 7 der Schwerter, König der Münzen | 7 der Schwerter | Münzen bedienen nicht die angespielte Farbe |
+| 5 der Stäbe, Der Turm (XVI), Der Magier (I) | Der Turm | XVI > I; der Turm zerstört in RAW nichts |
 
 ### Bedienpflicht
 
-Die Bedienpflicht entfällt vollständig: **Ein Trumpf (und damit jede Karte) darf jederzeit gelegt werden** und umgeht damit die Pflicht, eine Farbe zu bedienen. Da es in RAW nur Trümpfe gibt, ist grundsätzlich jede Karte jederzeit zulässig; es gibt keine Zugbeschränkungen (keine Kraft, kein Teufel, keine Herrscher-Option).
+Wie im Turbo: Wer eine Farbe anspielt, muss bedient werden, sofern möglich. Eine **Große Arkana darf jederzeit gelegt werden** und umgeht damit die Bedienpflicht. Hat man die Farbe nicht, ist jede Karte erlaubt. Es gibt keine weiteren Zugbeschränkungen (keine Kraft, kein Teufel, keine Herrscher-Option).
 
 ### Wertung
 
@@ -187,6 +200,8 @@ Identisch zum Turbo: Vision `n > 0` exakt erfüllt `+20 + 10 · n`; Vision `0` g
 
 **Wirken Orakel auch im Turbo?** Nein, sie werden dort nicht gezogen und nicht ausgewertet.
 
-**Darf ich in RAW frei legen?** Ja. In RAW gibt es keine Bedienpflicht – jede Karte ist ein Trumpf und darf jederzeit gelegt werden.
+**Darf ich in RAW frei legen?** Nein. Auch in RAW gilt die Bedienpflicht – nur Große Arkana dürfen jederzeit gelegt werden.
 
-**Wirken die Karteneffekte der Großen Arkana in RAW?** Nein. RAW kennt keine Kartenfunktionen; der Stich wird ausschließlich über den Zahlenwert 0–XXI entschieden. Der Stärkste Wille nützt nichts, wenn die Zahl kleiner ist.
+**Wirken die Karteneffekte der Großen Arkana in RAW?** Nein. RAW kennt keine Kartenfunktionen: Jede Große Arkana schlägt jede Kleine Arkana, unter Trümpfen entscheidet allein die Zahl 0–XXI, unter Farbkarten die angespielte Farbe.
+
+**Schlägt in RAW der Narr ein Ass?** Ja. Der Narr ist eine Große Arkana und schlägt damit jede Kleine Arkana – er verliert nur gegen höhere Große Arkana.

@@ -52,11 +52,11 @@
   /* Modus                                                             */
   /* ---------------------------------------------------------------- */
 
-  // RAW – Die Nackte Zahl: reine Zahlenhierarchie 0–XXI, nur Große Arkana.
+  // RAW – Die Nackte Zahl: komplettes Deck, Große Arkana schlägt jede Kleine Arkana, keine Sonderkarten.
   const MODE_META = Object.freeze({
     turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie` },
     standard: { badge: '📜 Standard Edition', name: 'Standard', detail: () => `${RULES.maxRounds('standard')} Runden · Orakel & Schicksal` },
-    raw: { badge: '✧ RAW – Die Nackte Zahl', name: 'RAW', detail: () => `${RULES.maxRounds('raw')} Runden · nur Zahl 0–XXI` }
+    raw: { badge: '✧ RAW – Die Nackte Zahl', name: 'RAW', detail: () => `${RULES.maxRounds('raw')} Runden · 78 Karten · keine Sonderkarten` }
   });
 
   function applyMode(mode) {
@@ -134,7 +134,7 @@
           <span class="section-eyebrow">${raw ? 'Reduziert & kompromisslos' : standard ? 'Strategisch & tiefgründig' : 'Schnell & kompromisslos'}</span>
           <h2 id="rules-title">${raw ? '✧ Arcanum RAW – Die Nackte Zahl' : standard ? '📜 Arcanum Standard (Kodex-Regeln)' : '⚡ Arcanum Turbo'}</h2>
           <p class="section-lede">${raw
-            ? `${cardsRange.maxRounds} Runden · ausschließlich die 22 Großen Arkana · nur der Zahlenwert 0–XXI zählt · keine Orakel`
+            ? `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · komplettes 78-Karten-Deck · keine Orakel, keine Sonderkarten`
             : standard
               ? `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · ein Orakel pro Runde`
               : `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · keine Orakel`}</p>
@@ -154,10 +154,10 @@
           <h3>2 · Rangordnung</h3>
           <ol class="rules-list">
             ${raw
-              ? `<li>Es zählt allein der Zahlenwert – aufsteigend von <b>0 bis XXI</b>.</li>
-            <li>Die höhere Karte sticht die niedrigere (z. B. <b>IV schlägt II</b>).</li>
-            <li>Der Narr (0) ist die niedrigste Karte – ohne Ausnahme.</li>
-            <li>Es gibt keine weiteren Kartenfunktionen; der Stich wird ausschließlich über den Zahlenwert entschieden.</li>`
+              ? `<li><b>Jede Große Arkana schlägt jede Kleine Arkana</b> – ohne Ausnahme.</li>
+            <li>Unter Großen Arkana zählt allein die Zahl <b>0 bis XXI</b>: die höhere sticht (z. B. <b>IV schlägt II</b>); der Narr (0) ist die niedrigste.</li>
+            <li>Unter Kleinen Arkana gewinnt die höchste Karte der angespielten Farbe: Ass <b>14,5</b> > König 14 > Königin 13 > Ritter 12 > Bube 11 > 10 … 2. Andere Farben sind wertlos.</li>
+            <li>Es gibt keine Sonderkarten und keine Kartenfunktionen.</li>`
               : `<li>Höchster Trumpf gewinnt, sonst höchste Karte der angespielten Farbe.</li>
             <li>Ass zählt <b>14,5</b> und schlägt den König; Hofkarten bleiben Bube 11 bis König 14.</li>
             <li>Der Narr (0) verliert immer – außer er fällt direkt nach der Welt (XXI).</li>
@@ -168,9 +168,9 @@
           <h3>3 · ${raw ? 'Karten' : standard ? 'Orakel & Schicksal' : 'Schlüsselkarten'}</h3>
           <ol class="rules-list">
             ${raw ? `
-              <li>Verwendet werden ausschließlich die <b>22 Großen Arkana (Trümpfe 0–XXI)</b>.</li>
+              <li>Gespielt wird das <b>komplette Deck</b>: 22 Große Arkana (Trümpfe 0–XXI) und 56 Kleine Arkana in vier Farben.</li>
               <li>Es gibt <b>keine Orakel und keine Sonderkarten</b> – keine Kartenfunktion verändert den Stich.</li>
-              <li>Ein Trumpf darf <b>jederzeit</b> gelegt werden und umgeht damit die Bedienpflicht.</li>` : standard ? `
+              <li>Bedienpflicht wie im Turbo: Die angespielte Farbe muss bedient werden, sofern möglich; eine Große Arkana darf <b>jederzeit</b> gelegt werden.</li>` : standard ? `
               <li>Fünf Orakel verändern das Weltgesetz einer Runde: Kelche als Trümpfe, freie Wahl, Partnerstiche, das Rad oder der Stern.</li>
               <li>Schicksalskarten wirken beim Auswerten eines Stichs – der Hierophant annulliert sie alle.</li>
               <li>Jede gewonnene Hofkarte zahlt zusätzlich Karma (Hofkarten-Segen).</li>` : `
@@ -183,7 +183,7 @@
           <h3>4 · Wertung im Detail</h3>
           <table class="rules-table"><tbody>${table}</tbody></table>
           <p class="rules-note">${raw
-            ? 'RAW kennt keine halben Stiche und keine Kartenfunktionen; eine Abweichung zählt −10 je Stich, ganzzahlig.'
+            ? 'RAW kennt keine halben Stiche, keine Sonderkarten und keinen Hofkarten-Segen; eine Abweichung zählt −10 je Stich, ganzzahlig.'
             : 'Halbe Stiche (Tod) sind zulässig; eine Abweichung wird auf ganze Stiche aufgerundet, damit alle Punktzahlen ganzzahlig bleiben.'}</p>
         </article>
       </div>`;
@@ -305,10 +305,6 @@
   }
 
   function deckStats() {
-    if (app.mode === 'raw') {
-      // RAW – Die Nackte Zahl: nur die 22 Großen Arkana, alle Trumpf.
-      return { total: 22, trumps: 22 };
-    }
     return {
       total: CARDS.TAROT_DECK.length,
       trumps: CARDS.TAROT_DECK.filter(card => card.isTrump).length

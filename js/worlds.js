@@ -338,10 +338,10 @@
   const HOVER_HINTS = {
     'mode-turbo': { title: 'Regelwerk · Turbo', short: 'Fünf schnelle Runden, reine Zahlenhierarchie.', action: 'Schaltet auf Turbo und gibt ein frisches Ritual mit 5 Runden aus.' },
     'mode-standard': { title: 'Regelwerk · Standard', short: 'Sieben Runden mit Weltgesetzen und Hofkarten-Segen.', action: 'Schaltet auf Standard und gibt ein frisches Ritual mit 7 Runden aus.' },
-    'mode-raw': { title: 'Regelwerk · RAW – Die Nackte Zahl', short: 'Nur die 22 Großen Arkana – es zählt allein der Zahlenwert 0–XXI.', action: 'Schaltet auf RAW – Die Nackte Zahl und gibt ein frisches Ritual mit 5 Runden aus; jederzeit spielbare Trümpfe umgehen die Bedienpflicht.' },
+    'mode-raw': { title: 'Regelwerk · RAW – Die Nackte Zahl', short: 'Komplettes 78-Karten-Deck ohne Sonderkarten – jede Große Arkana schlägt jede Kleine Arkana.', action: 'Schaltet auf RAW – Die Nackte Zahl und gibt ein frisches Ritual mit 5 Runden aus; Große Arkana dürfen jederzeit gelegt werden, sonst gilt die Bedienpflicht.' },
     'env-select': { title: 'Ort der Begegnung', short: 'Zehn Ritualorte, jeder mit eigener Architektur.', action: 'Wechselt die 3D-Bühne; Materialien, Licht und Atmosphäre folgen dem Ort.' },
     'player-count': { title: 'Spielende', short: 'Zwei bis sechs Sitze am Ritualtisch.', action: 'Bestimmt, wie viele Bots beim nächsten Ritual mitspielen.' },
-    'start-ritual': { title: 'Ritual starten', short: 'Beginnt ein neues Spiel mit den gewählten Parametern.', action: 'Mischt das Deck (in RAW nur die 22 Großen Arkana), setzt Karma zurück und öffnet die Vision.' },
+    'start-ritual': { title: 'Ritual starten', short: 'Beginnt ein neues Spiel mit den gewählten Parametern.', action: 'Mischt das komplette 78-Karten-Deck, setzt Karma zurück und öffnet die Vision.' },
     'restart': { title: 'Neu geben', short: 'Gleiche Einstellungen, neue Karten.', action: 'Verwirft den aktuellen Verlauf und startet sofort ein frisches Ritual.' },
     'round-tile': { title: 'Emanation (Runde)', short: 'Aktuelle Runde und Kartenzahl je Hand.', action: 'Zeigt den Fortschritt der Partie; der Balken füllt sich bis zur letzten Runde.' },
     'oracle-tile': { title: 'Weltgesetz', short: 'Das Orakel, das diese Runde regiert.', action: 'Ändert Rangordnung oder Wertung – nur im Standard-Regelwerk.' },

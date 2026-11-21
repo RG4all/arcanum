@@ -1,12 +1,12 @@
 # Arcanum
 
-**Version 0.6.0-beta.1** · Browser-Beta
+**Version 0.6.0-beta.2** · Browser-Beta
 
 Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex, wähle zwischen den Regelwerken **Turbo**, **Standard** und **RAW – Die Nackte Zahl** und trete an einem von zehn Ritualorten an.
 
 ## Was diese Version bringt
 
-- **Drittes Regelwerk: RAW – Die Nackte Zahl.** Neben Turbo und Standard steht ab sofort **RAW – Die Nackte Zahl** bereit: ausschließlich die 22 Großen Arkana, keine Orakel, keine Sonderkarten, keine Kartenfunktionen – es zählt allein der aufsteigende Zahlenwert 0–XXI (IV schlägt II), und jeder Trumpf darf jederzeit gelegt werden und umgeht damit die Bedienpflicht. Fünf Runden, Wertung wie im Turbo.
+- **Drittes Regelwerk: RAW – Die Nackte Zahl.** Neben Turbo und Standard steht **RAW – Die Nackte Zahl** bereit: das **komplette 78-Karten-Deck** (Große und Kleine Arkana), keine Orakel, keine Sonderkarten, keine Kartenfunktionen. Die Wertigkeit ist eindeutig: **Jede Große Arkana schlägt jede Kleine Arkana**; unter Großen Arkana zählt allein die Zahl 0–XXI (IV schlägt II, der Narr ist die niedrigste), unter Kleinen Arkana gewinnt die höchste Karte der angespielten Farbe (Ass 14,5). Bedienpflicht wie im Turbo, Trümpfe jederzeit erlaubt. Fünf Runden, Wertung wie im Turbo.
 - **Zehn begehbare 3D-Ritualorte.** Jede Bühne ist eine eigene Architektur aus Three.js-Primitiven – Apsis und Sternrosette im Sanctum, Wurzelkreis im Hain, Armillarsphäre auf dem Himmelsgrat, Korallenpfeiler in der Tiefenströmung, Glutofen in der Phönixschmiede, Eisprismen im Nordlicht. Dazu prozedurale Materialien (Marmor, Moos, Sand, Eis, Wasser), Lichtstimmungen, Nebel, Partikel und drei Himmelswelten – **Sternendom**, **Schwebeinseln** und **Sternenorbit** – zwischen denen sich live wechseln lässt.
 - **Zwölf gezeichnete Charaktere.** `js/avatars.js` rendert Porträts als deterministisches SVG: Gesicht, Iris, Brauen, Robe mit Kragen und Stickerei, sechs Frisuren, Kapuzen und Schleier, Kopfbedeckungen von Diadem bis Krone und zwölf eigene Sigille. Jede Figur hat ihren eigenen Farbklang; `paletteOf()` leitet daraus Hauttöne, Robentiefe und Iris ab – dieselbe Figur bleibt überall erkennbar, und nichts wird nachgeladen.
 - **Hinweiskarte statt Tooltip.** Fährt die Maus über Kacheln, Orte, Karten oder Bedienelemente, beschreibt ein Overlay **was es ist** (Kurzbeschreibung) und **was es tut** (Funktion) – deutsch, vollständig tastaturzugänglich und mit `aria-describedby` verbunden.
@@ -28,13 +28,13 @@ Drei Regelwerke stehen bereit:
 | | Turbo | Standard | RAW – Die Nackte Zahl |
 | --- | --- | --- | --- |
 | Runden | 5 | 7 | 5 |
-| Karten pro Runde | 5 … 9 | 7 … 13 | 3 … 7, gedeckelt auf ⌊22/Spieler:innen⌋ |
-| Deck | 78 Karten | 78 Karten + 5 Orakel | ausschließlich die 22 Großen Arkana |
+| Karten pro Runde | 5 … 9 | 7 … 13 | 3 … 7 |
+| Deck | 78 Karten | 78 Karten + 5 Orakel | 78 Karten (Große und Kleine Arkana) |
 | Orakel & Schicksal | – | volle Wirkung | keine – es gibt keine Kartenfunktionen |
-| Stichermittlung | Trumpf schlägt Farbe; Spezialregeln (Narr, Turm u. a.) | wie Turbo, plus Orakel | allein der Zahlenwert 0–XXI, höher sticht niedriger |
-| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | entfällt – jede Karte ist ein Trumpf |
+| Stichermittlung | Trumpf schlägt Farbe; Spezialregeln (Narr, Turm u. a.) | wie Turbo, plus Orakel | Große Arkana schlägt jede Kleine Arkana; unter Trümpfen 0–XXI, unter Farbkarten die angespielte Farbe – keine Sonderkarten |
+| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | wie Turbo |
 | Unterbieten | −10 je Stich | −15 je Stich | −10 je Stich |
-| Hofkarten-Segen | – | +1 bis +4 Karma je gewonnener Hofkarte | – (keine Hofkarten) |
+| Hofkarten-Segen | – | +1 bis +4 Karma je gewonnener Hofkarte | – |
 
 Details, Sonderfälle und die vollständige Punktemathematik stehen in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) und [docs/RULES.md](docs/RULES.md).
 

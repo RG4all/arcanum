@@ -8,7 +8,7 @@
  *   · Kartenkunst (78 individuelle SVG-Motive, Rückseite, Beschriftung)
  *   · Kodex-Gruppierung, Suche, Filter und Sortierung
  *   · Rangordnung, Bedienpflicht und alle Spezialeffekte
- *   · RAW – Die Nackte Zahl (nur Große Arkana, reiner Zahlenwert, Bedienpflicht-Ausnahme)
+ *   · RAW – Die Nackte Zahl (komplettes Deck, Große Arkana über Kleine Arkana, keine Sonderkarten)
  *   · Wertung inklusive Hofkarten-Segen und halber Stiche
  *   · Stochastik, Determinismus und Animationsmathematik
  *   · HTML-, CSS- und Dokumentationsintegrität
@@ -454,13 +454,13 @@ test('Rundengrößen folgen Modus und Rundennummer', () => {
   assert.equal(Rules.maxRounds('turbo'), 5);
   assert.equal(Rules.maxRounds('standard'), 7);
   assert.equal(Rules.maxRounds('raw'), 5);
-  // RAW (nur 22 Große Arkana): baseCards 2 + Rundenzahl, gedeckelt auf ⌊22 / Spieler:innen⌋.
+  // RAW (komplettes Deck): baseCards 2 + Rundenzahl, unabhängig von der Spielerzahl.
   assert.equal(Rules.cardsPerPlayer('raw', 1, 3), 3);
   assert.equal(Rules.cardsPerPlayer('raw', 5, 3), 7);
   assert.equal(Rules.cardsPerPlayer('raw', 4, 2), 6);
-  assert.equal(Rules.cardsPerPlayer('raw', 5, 6), 3);
-  assert.equal(Rules.cardsPerPlayer('raw', 5, 4), 5);
-  assert.equal(Rules.maxBid('raw', 5, 6), 3);
+  assert.equal(Rules.cardsPerPlayer('raw', 5, 6), 7);
+  assert.equal(Rules.cardsPerPlayer('raw', 5, 4), 7);
+  assert.equal(Rules.maxBid('raw', 5, 6), 7);
 });
 
 test('Verteilen gibt jedem Spieler gleich viele, eindeutige Karten', () => {
@@ -572,29 +572,43 @@ test('Spielstand lässt sich versioniert serialisieren', () => {
 /* RAW – Die Nackte Zahl                                            */
 /* ================================================================ */
 
-test('RAW-Deck enthält ausschließlich die 22 Großen Arkana (0–XXI)', () => {
+test('RAW-Deck ist das komplette 78-Karten-Deck (22 Große + 56 Kleine Arkana)', () => {
   const deck = Rules.createDeck(Rules.createRng(42), 'raw');
-  assert.equal(deck.length, 22);
-  assert.ok(deck.every(card => card.isTrump), 'RAW kennt nur Trümpfe');
-  assert.deepEqual([...deck.map(card => card.trumpNum)].sort((a, b) => a - b),
-    Array.from({ length: 22 }, (_, index) => index));
+  assert.equal(deck.length, 78);
+  assert.equal(deck.filter(card => card.isTrump).length, 22, 'alle Großen Arkana');
+  assert.equal(deck.filter(card => !card.isTrump).length, 56, 'alle Kleinen Arkana');
+  assert.equal(new Set(deck.map(card => card.uid)).size, 78, 'keine Dubletten');
+  assert.equal(Rules.createRawDeck(Rules.createRng(42)).length, 78);
   const again = Rules.createDeck(Rules.createRng(42), 'raw');
   assert.deepEqual(deck.map(card => card.uid), again.map(card => card.uid), 'Seed muss reproduzierbar sein');
 });
 
-test('RAW: Geben verteilt eindeutige, vollständige Große Arkana', () => {
+test('RAW: Geben verteilt eindeutige Karten aus dem Volldeck (auch bei 6 Spielenden)', () => {
   const deck = Rules.createDeck(Rules.createRng(7), 'raw');
   const { hands, dealt } = Rules.deal({ deck, playerCount: 3, cardsEach: Rules.cardsPerPlayer('raw', 1, 3) });
   assert.equal(dealt, 3);
-  hands.forEach(hand => {
-    assert.equal(hand.length, 3);
-    assert.ok(hand.every(card => card.isTrump));
-  });
+  hands.forEach(hand => assert.equal(hand.length, 3));
+  const six = Rules.deal({ deck, playerCount: 6, cardsEach: Rules.cardsPerPlayer('raw', 5, 6) });
+  assert.equal(six.dealt, 7, '6 × 7 = 42 Karten passen ins Volldeck');
   const uids = hands.flat().map(card => card.uid);
   assert.equal(new Set(uids).size, uids.length);
 });
 
-test('RAW: Stich wird allein nach Zahlenwert entschieden (0–XXI, höher sticht niedriger)', () => {
+test('RAW: Jede Große Arkana schlägt jede Kleine Arkana', () => {
+  assert.equal(resolve([MINOR('Stäbe', 1), MAJOR(0)], { mode: 'raw', leadSuit: 'Stäbe' }).winnerIdx, 1, 'der Narr schlägt ein Ass');
+  assert.equal(resolve([MAJOR(0), MINOR('Stäbe', 1)], { mode: 'raw', leadSuit: null }).winnerIdx, 0, 'auch wenn der Narr anspielt');
+  assert.equal(resolve([MINOR('Kelche', 14), MINOR('Kelche', 1), MAJOR(1)], { mode: 'raw', leadSuit: 'Kelche' }).winnerIdx, 2, 'der Magier ist ein gewöhnlicher Trumpf');
+  assert.equal(resolve([MINOR('Münzen', 10), MAJOR(3), MAJOR(11)], { mode: 'raw', leadSuit: 'Münzen' }).winnerIdx, 2, 'unter Trümpfen zählt die Zahl');
+  assert.equal(resolve([MINOR('Münzen', 10), MAJOR(13), MAJOR(11)], { mode: 'raw', leadSuit: 'Münzen' }).winnerIdx, 1, 'die Kraft hat keinen Sonderstatus');
+});
+
+test('RAW: Unter Kleinen Arkana gewinnt die höchste Karte der angespielten Farbe', () => {
+  assert.equal(resolve([MINOR('Kelche', 14), MINOR('Kelche', 1)], { mode: 'raw', leadSuit: 'Kelche' }).winnerIdx, 1, 'Ass schlägt König');
+  assert.equal(resolve([MINOR('Schwerter', 7), MINOR('Münzen', 14)], { mode: 'raw', leadSuit: 'Schwerter' }).winnerIdx, 0, 'andere Farbe ist wertlos');
+  assert.equal(resolve([MINOR('Stäbe', 2), MINOR('Stäbe', 11), MINOR('Stäbe', 9)], { mode: 'raw', leadSuit: 'Stäbe' }).winnerIdx, 1, 'Bube schlägt 9 und 2');
+});
+
+test('RAW: Unter Großen Arkana zählt allein der Zahlenwert (0–XXI, höher sticht niedriger)', () => {
   assert.equal(resolve([MAJOR(2), MAJOR(4)], { mode: 'raw', leadSuit: null }).winnerIdx, 1, 'IV schlägt II');
   assert.equal(resolve([MAJOR(4), MAJOR(2)], { mode: 'raw', leadSuit: null }).winnerIdx, 0, 'IV schlägt II (Reihenfolge egal)');
   assert.equal(resolve([MAJOR(21), MAJOR(0)], { mode: 'raw', leadSuit: null }).winnerIdx, 0, 'XXI schlägt 0');
@@ -634,15 +648,19 @@ test('RAW: Keine Kartenfunktionen – Turm, Tod, Kraft, Magier und Hierophant wi
   assert.equal(court.courtKarma, 0, 'Es gibt keinen Hofkarten-Segen in RAW');
 });
 
-test('RAW: Trumpf-Ausnahme von der Bedienpflicht – jede Karte ist jederzeit legal', () => {
-  const hand = [MAJOR(0), MAJOR(7), MAJOR(21)];
-  // Eine angesagte Farbe (theoretisch) sperrt in RAW nichts: alles ist Trumpf.
-  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', mode: 'raw' })), [0, 1, 2]);
-  // Auch Kraftverbot, Teufelszwang und Hierophant-Logik greifen nicht.
-  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', trumpBan: true, mode: 'raw' })), [0, 1, 2]);
-  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { mustPlayHighest: true, mode: 'raw' })), [0, 1, 2]);
-  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { raw: true })), [0, 1, 2]);
-  assert.equal(Rules.describeConstraint(hand, { leadSuit: 'Stäbe', mode: 'raw' }), '');
+test('RAW: Bedienpflicht wie im Turbo – Trümpfe jederzeit, keine Kraft-/Teufel-/Herrscher-Regeln', () => {
+  const hand = [MAJOR(0), MINOR('Stäbe', 5), MINOR('Kelche', 14), MAJOR(21)];
+  // Stäbe angespielt: Stäbe oder Trumpf, keine Kelche.
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', mode: 'raw' })), [0, 1, 3]);
+  assert.match(Rules.describeConstraint(hand, { leadSuit: 'Stäbe', mode: 'raw' }), /Bedienpflicht/);
+  // Farbe nicht vorhanden: alles erlaubt.
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Münzen', mode: 'raw' })), [0, 1, 2, 3]);
+  // Kraftverbot, Teufelszwang und Herrscher-Freiheit existieren in RAW nicht.
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', trumpBan: true, mode: 'raw' })), [0, 1, 3]);
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', freeLead: true, mode: 'raw' })), [0, 1, 3]);
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { mustPlayHighest: true, mode: 'raw' })), [0, 1, 2, 3]);
+  assert.deepEqual(Array.from(Rules.legalCardIndices(hand, { leadSuit: 'Stäbe', raw: true })), [0, 1, 3]);
+  assert.equal(Rules.describeConstraint(hand, { mustPlayHighest: true, mode: 'raw' }), '');
 });
 
 test('RAW: Wertung nutzt dieselbe Formel wie Turbo (−10 je Stich, Null ±50)', () => {
@@ -655,7 +673,7 @@ test('RAW: Wertung nutzt dieselbe Formel wie Turbo (−10 je Stich, Null ±50)',
   assert.equal(Rules.scoreRound({ mode: 'raw', bid: 0, won: 1 }).points, -50);
 });
 
-test('Engine spielt eine RAW-Runde komplett regelkonform (kein Orakel, nur Trümpfe)', () => {
+test('Engine spielt eine RAW-Runde komplett regelkonform (kein Orakel, Volldeck)', () => {
   mode('raw');
   Game.rng = Rules.createRng(11);
   Game.numPlayers = 3;
@@ -676,7 +694,8 @@ test('Engine spielt eine RAW-Runde komplett regelkonform (kein Orakel, nur Trüm
   assert.equal(Game.phase, 'bidding');
   assert.equal(Game.activeOracle, null, 'RAW zieht kein Orakel');
   assert.equal(Game.players[0].hand.length, 3, 'Runde 1: 2 + 1 Basiskarte');
-  Game.players.forEach(player => assert.ok(player.hand.every(card => card.isTrump), 'RAW-Hand enthält nur Große Arkana'));
+  const dealtUids = Game.players.flatMap(player => player.hand.map(card => card.uid));
+  assert.equal(new Set(dealtUids).size, 9, 'neun eindeutige Karten aus dem Volldeck');
 
   Game.submitHumanBid(1);
   assert.equal(Game.phase, 'playing');
@@ -689,7 +708,11 @@ test('Engine spielt eine RAW-Runde komplett regelkonform (kein Orakel, nur Trüm
     }
     const playerIdx = Game.activePlayerIdx;
     const legal = Game.legalCardIndices(playerIdx);
-    assert.equal(legal.length, Game.players[playerIdx].hand.length, 'RAW: keine Karte ist gesperrt');
+    const hand = Game.players[playerIdx].hand;
+    assert.ok(legal.length > 0, 'RAW: es gibt immer einen zulässigen Zug');
+    if (Game.leadSuit && hand.some(card => !card.isTrump && card.suit === Game.leadSuit)) {
+      assert.ok(legal.every(i => hand[i].isTrump || hand[i].suit === Game.leadSuit), 'RAW: Bedienpflicht greift');
+    }
     Game.playCard(playerIdx, legal[0]);
   }
 
