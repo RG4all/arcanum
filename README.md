@@ -1,11 +1,12 @@
 # Arcanum
 
-**Version 0.5.0-beta.1** · Browser-Beta
+**Version 0.6.0-beta.1** · Browser-Beta
 
-Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex und trete an einem von zehn Ritualorten an.
+Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex, wähle zwischen den Regelwerken **Turbo**, **Standard** und **RAW – Die Nackte Zahl** und trete an einem von zehn Ritualorten an.
 
 ## Was diese Version bringt
 
+- **Drittes Regelwerk: RAW – Die Nackte Zahl.** Neben Turbo und Standard steht ab sofort **RAW – Die Nackte Zahl** bereit: ausschließlich die 22 Großen Arkana, keine Orakel, keine Sonderkarten, keine Kartenfunktionen – es zählt allein der aufsteigende Zahlenwert 0–XXI (IV schlägt II), und jeder Trumpf darf jederzeit gelegt werden und umgeht damit die Bedienpflicht. Fünf Runden, Wertung wie im Turbo.
 - **Zehn begehbare 3D-Ritualorte.** Jede Bühne ist eine eigene Architektur aus Three.js-Primitiven – Apsis und Sternrosette im Sanctum, Wurzelkreis im Hain, Armillarsphäre auf dem Himmelsgrat, Korallenpfeiler in der Tiefenströmung, Glutofen in der Phönixschmiede, Eisprismen im Nordlicht. Dazu prozedurale Materialien (Marmor, Moos, Sand, Eis, Wasser), Lichtstimmungen, Nebel, Partikel und drei Himmelswelten – **Sternendom**, **Schwebeinseln** und **Sternenorbit** – zwischen denen sich live wechseln lässt.
 - **Zwölf gezeichnete Charaktere.** `js/avatars.js` rendert Porträts als deterministisches SVG: Gesicht, Iris, Brauen, Robe mit Kragen und Stickerei, sechs Frisuren, Kapuzen und Schleier, Kopfbedeckungen von Diadem bis Krone und zwölf eigene Sigille. Jede Figur hat ihren eigenen Farbklang; `paletteOf()` leitet daraus Hauttöne, Robentiefe und Iris ab – dieselbe Figur bleibt überall erkennbar, und nichts wird nachgeladen.
 - **Hinweiskarte statt Tooltip.** Fährt die Maus über Kacheln, Orte, Karten oder Bedienelemente, beschreibt ein Overlay **was es ist** (Kurzbeschreibung) und **was es tut** (Funktion) – deutsch, vollständig tastaturzugänglich und mit `aria-describedby` verbunden.
@@ -22,15 +23,18 @@ Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele
 
 Zwei bis sechs Spielende sagen voraus, wie viele Stiche sie gewinnen (**Vision**). Wer anspielt, legt die zu bedienende Farbe fest; Trümpfe sind immer erlaubt. Höchster Trumpf gewinnt, sonst die höchste Karte der angespielten Farbe – das Ass zählt dabei 14,5. Exakte Visionen zahlen Karma, Abweichungen kosten.
 
-Zwei Regelwerke stehen bereit:
+Drei Regelwerke stehen bereit:
 
-| | Turbo | Standard |
-| --- | --- | --- |
-| Runden | 5 | 7 |
-| Karten pro Runde | 5 … 9 | 7 … 13 |
-| Orakel | – | 5 Weltgesetze zur Auswahl pro Runde |
-| Unterbieten | −10 je Stich | −15 je Stich |
-| Hofkarten-Segen | – | +1 bis +4 Karma je gewonnener Hofkarte |
+| | Turbo | Standard | RAW – Die Nackte Zahl |
+| --- | --- | --- | --- |
+| Runden | 5 | 7 | 5 |
+| Karten pro Runde | 5 … 9 | 7 … 13 | 3 … 7, gedeckelt auf ⌊22/Spieler:innen⌋ |
+| Deck | 78 Karten | 78 Karten + 5 Orakel | ausschließlich die 22 Großen Arkana |
+| Orakel & Schicksal | – | volle Wirkung | keine – es gibt keine Kartenfunktionen |
+| Stichermittlung | Trumpf schlägt Farbe; Spezialregeln (Narr, Turm u. a.) | wie Turbo, plus Orakel | allein der Zahlenwert 0–XXI, höher sticht niedriger |
+| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | entfällt – jede Karte ist ein Trumpf |
+| Unterbieten | −10 je Stich | −15 je Stich | −10 je Stich |
+| Hofkarten-Segen | – | +1 bis +4 Karma je gewonnener Hofkarte | – (keine Hofkarten) |
 
 Details, Sonderfälle und die vollständige Punktemathematik stehen in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) und [docs/RULES.md](docs/RULES.md).
 
@@ -65,7 +69,7 @@ Chart.js und Three.js liegen einbettbar unter `vendor/` und werden lokal geladen
 node --test tests/*.test.cjs
 ```
 
-Die Tests laufen ohne Browser und prüfen Kartenregister, alle 78 SVG-Motive, Kodex-Sortierung und -Filter, jede Regel und jeden Spezialeffekt, die Wertungsformel (auch gegen die Engine), Determinismus per Seed, die hypergeometrische Wahrscheinlichkeit, die Animationsmathematik, die Manifeste der zehn Orte und drei Welten, alle zwölf Avatar-Porträts samt Palette und Sigillen, die Vollständigkeit der Hinweiskarte sowie die Konsistenz von HTML-IDs, CSS-Breakpoints und Versionsangaben (69 Tests).
+Die Tests laufen ohne Browser und prüfen Kartenregister, alle 78 SVG-Motive, Kodex-Sortierung und -Filter, jede Regel und jeden Spezialeffekt, die Wertungsformel (auch gegen die Engine), Determinismus per Seed, die hypergeometrische Wahrscheinlichkeit, die Animationsmathematik, die Manifeste der zehn Orte und drei Welten, alle zwölf Avatar-Porträts samt Palette und Sigillen, die Vollständigkeit der Hinweiskarte, die RAW-Regeln (reiner Zahlenwertrang, Bedienpflicht-Ausnahme, 22-Karten-Trumpfdeck) sowie die Konsistenz von HTML-IDs, CSS-Breakpoints und Versionsangaben (77 Tests).
 
 Zusätzlich im Browser prüfen: schmales Hochformat, Tablet, Desktop und breiter Monitor; Navigation öffnen, Hand horizontal durchsehen, bieten und Karten spielen, alle zehn Orte wechseln, Modus wechseln, Kodex durchsuchen, Karten-Dialog per Tastatur schließen, Neustart während eines Bot-Zugs.
 

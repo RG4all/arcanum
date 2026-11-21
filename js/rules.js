@@ -16,7 +16,7 @@
   const CARDS = global.ArcanumCards;
 
   /** Version des Regelwerks – erhöhen, wenn sich Spielregeln ändern. */
-  const RULESET_VERSION = '0.4.0';
+  const RULESET_VERSION = '0.5.0';
   /** Version des serialisierbaren Spielstandformats. */
   const STATE_SCHEMA_VERSION = 1;
 
@@ -28,7 +28,10 @@
     players: { min: 2, max: 6 },
     modes: {
       turbo: Object.freeze({ label: 'Turbo', maxRounds: 5, baseCards: 4, oracle: false }),
-      standard: Object.freeze({ label: 'Standard', maxRounds: 7, baseCards: 6, oracle: true })
+      standard: Object.freeze({ label: 'Standard', maxRounds: 7, baseCards: 6, oracle: true }),
+      // RAW – Die Nackte Zahl: nur die 22 Großen Arkana, reine Zahl 0–XXI,
+      // keine Orakel, keine Sonderkarten, keine Karteneffekte.
+      raw: Object.freeze({ label: 'RAW – Die Nackte Zahl', maxRounds: 5, baseCards: 2, oracle: false, majorsOnly: true })
     },
     scoring: Object.freeze({
       exactBase: 20,
@@ -58,9 +61,16 @@
   /* ---------------------------------------------------------------- */
 
   /** Anzahl Karten pro Spieler:in in einer Runde. */
-  function cardsPerPlayer(mode, round) {
+  function cardsPerPlayer(mode, round, playerCount) {
     const config = MODES[mode] || MODES.turbo;
-    return config.baseCards + Math.max(1, Math.min(config.maxRounds, Number(round) || 1));
+    const wanted = config.baseCards + Math.max(1, Math.min(config.maxRounds, Number(round) || 1));
+    // RAW nutzt nur 22 Große Arkana: Die Hand darf das Deck nicht überfordern.
+    // Turbo/Standard (78 Karten) erreichen diese Grenze nie und bleiben unverändert.
+    if (mode === 'raw' && Number(playerCount) > 0) {
+      const cap = Math.max(1, Math.floor(22 / Number(playerCount)));
+      return Math.min(wanted, cap);
+    }
+    return wanted;
   }
 
   function maxRounds(mode) {
@@ -97,8 +107,13 @@
     return result;
   }
 
-  function createDeck(rng) {
-    return shuffle(CARDS.TAROT_DECK, rng);
+  /** RAW-Deck: ausschließlich die 22 Großen Arkana (Trümpfe), gemischt. */
+  function createRawDeck(rng) {
+    return shuffle(CARDS.TAROT_DECK.filter(card => card.isTrump), rng);
+  }
+
+  function createDeck(rng, mode) {
+    return mode === 'raw' ? createRawDeck(rng) : shuffle(CARDS.TAROT_DECK, rng);
   }
 
   /**
@@ -147,9 +162,14 @@
     const maxMinor = Number.isFinite(ctx.maxMinor) ? ctx.maxMinor : 0;
     const wheel = oracleUid === 'major-10' && !cancelled;
     const empress = oracleUid === 'major-3' && !cancelled;
+    const raw = Boolean(ctx.raw) || ctx.mode === 'raw';
 
     return function rank(card) {
       if (!card) return -Infinity;
+
+      // RAW – Die Nackte Zahl: allein der Zahlenwert 0–XXI entscheidet.
+      // Keine Narr-, Kraft-, Magier- oder sonstige Karteneffekte.
+      if (raw) return card.isTrump ? card.trumpNum : -Infinity;
 
       // 1. Der Narr verliert immer gegen jede andere Karte – außer der
       //    Welt-Sonderfall greift (wird separat in resolveTrick geprüft).
@@ -194,6 +214,10 @@
   function legalCardIndices(hand, context) {
     const ctx = context || {};
     if (!hand || !hand.length) return [];
+    // RAW: Jede Karte ist ein Trumpf und darf jederzeit gelegt werden –
+    // die Bedienpflicht wird damit vollständig umgangen. Es gibt keine
+    // Kraft- oder Teufel-Beschränkungen, da es keine Karteneffekte gibt.
+    if (Boolean(ctx.raw) || ctx.mode === 'raw') return hand.map((_, index) => index);
     let indices = hand.map((_, index) => index);
 
     if (ctx.trumpBan) {
@@ -243,6 +267,7 @@
   function resolveTrick(trick, context) {
     const ctx = context || {};
     const mode = ctx.mode || 'turbo';
+    const raw = mode === 'raw' || Boolean(ctx.raw);
     const standard = mode === 'standard';
     const oracleUid = standard ? (ctx.oracleUid || null) : null;
     const playerCount = ctx.playerCount || trick.length;
@@ -253,21 +278,23 @@
 
     const minorValues = trick.filter(item => !item.card.isTrump).map(item => item.card.value);
     const maxMinor = minorValues.length ? Math.max(...minorValues) : 0;
-    const rank = createRanker({ leadSuit: ctx.leadSuit || null, oracleUid, cancelled, maxMinor });
+    const rank = createRanker({ leadSuit: ctx.leadSuit || null, oracleUid, cancelled, maxMinor, mode, raw });
 
     let winner = trick[0];
     for (const item of trick.slice(1)) {
       if (rank(item.card) > rank(winner.card)) winner = item;
     }
 
+    // RAW – Die Nackte Zahl: keine Kartenfunktionen, nur der Zahlenwert zählt.
+    // Weder Narr-Entthronung noch Turm oder sonstige Effekte greifen.
     // Der Narr entthront die Welt, wenn er unmittelbar nach ihr fällt.
     const worldIdx = trick.findIndex(item => item.card.isTrump && item.card.trumpNum === 21);
     const foolIdx = trick.findIndex(item => item.card.isTrump && item.card.trumpNum === 0);
-    const foolBeatWorld = !cancelled && worldIdx !== -1 && foolIdx === worldIdx + 1 && !(standard && has(11));
+    const foolBeatWorld = !raw && !cancelled && worldIdx !== -1 && foolIdx === worldIdx + 1 && !(standard && has(11));
     if (foolBeatWorld) winner = trick[foolIdx];
 
-    const destroyed = !cancelled && has(16);
-    const deathHalf = !cancelled && standard && has(13);
+    const destroyed = !raw && !cancelled && has(16);
+    const deathHalf = !raw && !cancelled && standard && has(13);
     const won = destroyed ? 0 : deathHalf ? 0.5 : 1;
 
     // Paarung der Liebenden: 0/1, 2/3, 4/5 – bei ungerader Zahl allein.
@@ -383,8 +410,8 @@
   }
 
   /** Maximales Gebot einer Runde. */
-  function maxBid(mode, round) {
-    return cardsPerPlayer(mode, round);
+  function maxBid(mode, round, playerCount) {
+    return cardsPerPlayer(mode, round, playerCount);
   }
 
   /* ---------------------------------------------------------------- */

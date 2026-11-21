@@ -8,8 +8,8 @@ Das Nachschlagewerk zur Partie. Für Architektur und Formeln siehe [ARCHITECTURE
 
 ## 2 · Rundenablauf
 
-1. **Geben.** Jede:r erhält gleich viele Karten: Turbo `4 + Rundennummer` (5–9), Standard `6 + Rundennummer` (7–13).
-2. **Weltgesetz.** Im Standard wird ein Orakel gezogen und gilt für die ganze Runde (Turbo kennt keine Orakel).
+1. **Geben.** Jede:r erhält gleich viele Karten: Turbo `4 + Rundennummer` (5–9), Standard `6 + Rundennummer` (7–13), RAW – Die Nackte Zahl `2 + Rundennummer` (3–7), gedeckelt auf `⌊22 / Spieler:innen⌋`.
+2. **Weltgesetz.** Im Standard wird ein Orakel gezogen und gilt für die ganze Runde (Turbo und RAW kennen keine Orakel).
 3. **Vision.** Alle sagen gleichzeitig an, wie viele Stiche sie gewinnen. Erlaubt ist `0 … Kartenzahl`.
 4. **Stiche.** Die/der erste Spielende spielt aus. Wer anspielt, legt die zu bedienende Farbe fest; ein Trumpf als erste Karte lässt die Farbe offen.
 5. **Auswertung.** Nach der letzten Karte wird der Stich entschieden, Effekte werden angewandt, der Gewinner eröffnet den nächsten Stich.
@@ -36,6 +36,7 @@ Das Nachschlagewerk zur Partie. Für Architektur und Formeln siehe [ARCHITECTURE
 ## 4 · Bedienpflicht und Zugbeschränkungen
 
 - Wer eine Farbe anspielt, muss bedient werden, sofern möglich. Trumps dürfen **jederzeit** gelegt werden.
+- **RAW – Die Nackte Zahl:** Die Bedienpflicht entfällt vollständig – jede Karte ist ein Trumpf und darf jederzeit gelegt werden.
 - Hat man die Farbe nicht, ist jede Karte erlaubt.
 - **Der Herrscher (IV, Orakel)** hebt die Bedienpflicht für die ganze Runde auf.
 - **Die Kraft (XI)** verbietet ihrem Spieler im **nächsten** Stich Trumpf, solange eine andere Karte vorhanden ist (genau ein Zug).
@@ -93,6 +94,7 @@ Der Segen zählt nur im Standard, nur für den Stichsieger und nur bei gewonnene
 | Überbieten (mehr Stiche als angesagt) | `−10` je gerundetem Schritt |
 | Unterbieten im Standard | `−15` je gerundetem Schritt |
 | Unterbieten im Turbo | `−10` je gerundetem Schritt |
+| Unterbieten im RAW – Die Nackte Zahl | `−10` je gerundetem Schritt |
 | Orakel **Stern** aktiv und exakt | `+30` zusätzlich |
 | Hofkarten-Segen (Standard) | `+1 … +4` je gewonnener Hofkarte |
 
@@ -107,6 +109,7 @@ Der Segen zählt nur im Standard, nur für den Stichsieger und nur bei gewonnene
 | 0 | 1 | beide | −50 |
 | 3 | 1 | Turbo | −20 |
 | 3 | 1 | Standard | −30 |
+| 3 | 1 | RAW | −20 |
 | 1 | 2 | Standard | −10 |
 | 1 | 0,5 (Tod) | Standard | −15 |
 | 2 | 2 | Standard + Stern | +70 |
@@ -125,17 +128,52 @@ Jede Farbe umfasst Ass bis König. Hofkarten tragen zusätzlich den Hofkarten-Se
 
 ## 9 · Modi im Vergleich
 
-| | Turbo | Standard |
-| --- | --- | --- |
-| Runden | 5 | 7 |
-| Karten | 5, 6, 7, 8, 9 | 7, 8, 9, 10, 11, 12, 13 |
-| Orakel | keine | 5, eines pro Runde |
-| Schicksalskarten | nur Narr, Turm, Welt | alle neun |
-| Unterbieten | −10 | −15 |
-| Hofkarten-Segen | – | aktiv |
-| Spieldauer | kompakt | ausführlich |
+| | Turbo | Standard | RAW – Die Nackte Zahl |
+| --- | --- | --- | --- |
+| Runden | 5 | 7 | 5 |
+| Karten | 5, 6, 7, 8, 9 | 7, 8, 9, 10, 11, 12, 13 | 3, 4, 5, 6, 7 – gedeckelt auf `⌊22 / Spieler:innen⌋` |
+| Deck | 78 Karten | 78 Karten | nur die 22 Großen Arkana |
+| Orakel | keine | 5, eines pro Runde | keine |
+| Schicksalskarten | nur Narr, Turm, Welt | alle neun | keine – es gibt keine Kartenfunktionen |
+| Bedienpflicht | Trumpf immer erlaubt | wie Turbo | entfällt – jede Karte ist ein Trumpf |
+| Unterbieten | −10 | −15 | −10 |
+| Hofkarten-Segen | – | aktiv | – (keine Hofkarten) |
+| Spieldauer | kompakt | ausführlich | kompakt, puristisches Zahlenmessen |
 
-## 10 · Häufige Fragen
+## 10 · RAW – Die Nackte Zahl
+
+RAW (**„Die Nackte Zahl“**) ist die puristische Variante neben Turbo und Standard – für alle, die die Arkana ohne Beiwerk lesen wollen.
+
+### Deck und Geben
+
+- Verwendet werden **ausschließlich die 22 Großen Arkana** (Trümpfe 0–XXI). Das 78-Karten-Deck kommt nicht zum Einsatz; pro Runde wird ein reines Trumpfdeck gemischt und ausgeteilt.
+- Geben: `2 + Rundennummer` Karten (3 bis 7), gedeckelt auf `⌊22 / Spieler:innen⌋`, damit das Deck die Hände immer hergibt. Bei 3 Spielenden sind das 3–7 Karten, bei 4 Spielenden maximal 5, bei 6 Spielenden maximal 3.
+- Es gibt 5 Runden. Der Reststapel bleibt liegen.
+
+### Stichermittlung
+
+- Es zählt **allein der Zahlenwert**, aufsteigend von 0 bis XXI: die höhere Karte sticht die niedrigere (z. B. **IV schlägt II**, XXI schlägt XX, I schlägt 0).
+- Es gibt **keine weiteren Kartenfunktionen**. Narr, Magier, Kraft, Hierophant, Turm, Tod, Gerechtigkeit, Hohepriesterin, Liebende, Mond – keine dieser Karten wirkt in RAW. Der Hierophant kann folglich nichts annullieren, weil es nichts zu annullieren gibt.
+- Gleichstand ist ausgeschlossen: Das Deck enthält jede Zahl genau einmal.
+- Die Wertung kennt keinen Hofkarten-Segen und keinen Stern-Segen – es gibt keine Hofkarten und keine Orakel.
+
+### Bedienpflicht
+
+Die Bedienpflicht entfällt vollständig: **Ein Trumpf (und damit jede Karte) darf jederzeit gelegt werden** und umgeht damit die Pflicht, eine Farbe zu bedienen. Da es in RAW nur Trümpfe gibt, ist grundsätzlich jede Karte jederzeit zulässig; es gibt keine Zugbeschränkungen (keine Kraft, kein Teufel, keine Herrscher-Option).
+
+### Wertung
+
+Identisch zum Turbo: Vision `n > 0` exakt erfüllt `+20 + 10 · n`; Vision `0` gehalten `+50`, gescheitert `−50`; Abweichung `−10` je gerundetem Schritt; halbe Stiche existieren nicht (kein Tod), eine Abweichung zählt ganzzahlig.
+
+**Beispiel**
+
+| Vision | Stiche | Modus | Karma |
+| --- | --- | --- | --- |
+| 2 | 2 | RAW | +40 |
+| 0 | 0 | RAW | +50 |
+| 1 | 3 | RAW | −20 |
+
+## 11 · Häufige Fragen
 
 **Darf ich einen Trumpf legen, obwohl ich bedienen könnte?** Ja. Trumps sind immer erlaubt, außer die Kraft verbietet es dir.
 
@@ -148,3 +186,7 @@ Jede Farbe umfasst Ass bis König. Hofkarten tragen zusätzlich den Hofkarten-Se
 **Kann ich mit Vision 0 und einem halben Stich (Tod) die Null-Ansage halten?** Nein. Die Null-Ansage verlangt exakt `0` Stiche.
 
 **Wirken Orakel auch im Turbo?** Nein, sie werden dort nicht gezogen und nicht ausgewertet.
+
+**Darf ich in RAW frei legen?** Ja. In RAW gibt es keine Bedienpflicht – jede Karte ist ein Trumpf und darf jederzeit gelegt werden.
+
+**Wirken die Karteneffekte der Großen Arkana in RAW?** Nein. RAW kennt keine Kartenfunktionen; der Stich wird ausschließlich über den Zahlenwert 0–XXI entschieden. Der Stärkste Wille nützt nichts, wenn die Zahl kleiner ist.

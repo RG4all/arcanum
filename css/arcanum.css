@@ -278,6 +278,12 @@ img, svg, canvas { display: block; max-width: 100%; }
     color: #e0ccff;
 }
 
+.header-mode-badge[data-mode="raw"] {
+    border-color: rgb(232 228 216 / 60%);
+    background: rgb(232 228 216 / 14%);
+    color: #f5f2e8;
+}
+
 .primary-nav {
     display: flex;
     align-items: center;
@@ -1990,7 +1996,8 @@ body.has-dialog { overflow: hidden; }
     #play-game, #rules-view, #kodex, #math, #calculator { padding: 14px 12px; border-radius: 20px; }
     .section-head h2 { font-size: clamp(20px, 5.6vw, 26px); }
     .arena-toolbar-heading { flex-wrap: wrap; align-items: flex-start; gap: 10px; }
-    .mode-switcher { max-width: 100%; }
+    .mode-switcher { max-width: 100%; overflow-x: auto; }
+    .mode-switcher button { padding-inline: 11px; font-size: 10px; }
     .arena-controls { grid-template-columns: 1fr 1fr; }
     .control-field--environment { grid-column: 1 / -1; }
     .start-ritual-button, .restart-button { grid-column: 1 / -1; min-height: 50px; }
