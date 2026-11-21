@@ -2,6 +2,23 @@
 
 Alle nennenswerten Änderungen werden hier dokumentiert. Die Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
 
+## 0.6.0-beta.1 – 2026-11-21
+
+Schwerpunkt dieser Version ist das dritte Regelwerk: **RAW – Die Nackte Zahl**.
+
+### Hinzugefügt
+- **RAW – Die Nackte Zahl** als dritte Spielvariante neben Turbo und Standard. Es werden ausschließlich die 22 Großen Arkana (Trümpfe 0–XXI) verwendet; es gibt keine Orakel und keine Sonderkarten, und der Stich wird **ausschließlich über den Zahlenwert** entschieden – aufsteigend von 0 bis XXI, die höhere Karte sticht die niedrigere (z. B. IV schlägt II). Es gibt keine weiteren Kartenfunktionen; weder Narr/Welt-Sonderregel noch Turm, Tod, Kraft, Magier noch Hierophant wirken in RAW. **Ein Trumpf darf jederzeit gelegt werden** und umgeht damit die Bedienpflicht – da jede Karte ein Trumpf ist, ist grundsätzlich jede Karte jederzeit zulässig.
+- **Geben und Deckelung.** `2 + Rundennummer` Karten (3–7), gedeckelt auf `⌊22 / Spieler:innen⌋`, damit das reine Trumpfdeck die Hände immer hergibt (bei 3 Spielenden 3–7 Karten, bei 4 maximal 5, bei 6 maximal 3). Fünf Runden; die Wertung entspricht dem Turbo (`+20 + 10 · Stiche` bei exakter Vision, Null `±50`, Abweichung `−10` je gerundetem Schritt).
+- **Oberfläche.** Dritter Modusknopf `✧ RAW` in der Arena-Umschaltung, eigener Header-Badge (`data-mode="raw"`), HUD-Texte für das Regelwerk, dritter Reiter im Regelwerk-Abschnitt mit eigener Rangordnungs- und Kartenerklärung, Hinweiskarte `mode-raw` sowie ein Stochastik-Diagramm, das im RAW-Modus mit dem 22-Karten-Deck rechnet.
+- **Regelkern (`js/rules.js`).** `CONFIG.modes.raw`, `createRawDeck()` (22 gemischte Große Arkana), `cardsPerPlayer(mode, round, playerCount)` mit RAW-Deckel (in Turbo/Standard ohne Wirkung), RAW-Pfade in `createRanker` (Rang = `trumpNum`), `legalCardIndices` (alle Karten legal) und `resolveTrick` (alle Sonderfälle und Hofkarten-Segen deaktiviert). `maxBid` reicht die Spielerzahl durch.
+- **Engine (`js/engine.js`).** Modusdurchgereicht (`createDeck(rng, mode)`, `cardsPerPlayer` mit Spielerzahl, `mode` im Constraint-Kontext), Orakel-Hinweis "Kein Orakel" nennt im RAW-Modus die reinen Zahlregeln, Bot-Gebotsheuristik für reine Trumpfhände (`trumpNum ≥ 11`).
+- **Dokumentation.** `docs/RULES.md` (eigener RAW-Abschnitt, Modi-Vergleich, Wertungstabelle, FAQ, Bedienpflicht-Regel) und `docs/ARCHITECTURE.md` (RAW-Abschnitt im Regelkern, Rangtabelle, Bot-Heuristik, Testliste) um die Variante ergänzt; README mit Modus-Vergleichstabelle und Versionshinweis.
+- Tests für RAW: 22-Karten-Trumpfdeck und Seed-Determinismus, Rundengrößen mit ⌊22/Spieler:innen⌋-Deckel, Stichermittlung rein nach Zahlenwert (inkl. Reihenfolge-Unabhängigkeit und Gleichstandsregel), Abschaltung aller Kartenfunktionen (Narr/Welt, Turm, Tod, Kraft, Magier, Hierophant, Hofkarten-Segen), Trumpf-Ausnahme von der Bedienpflicht (auch unter Kraftverbot/Teufelszwang), Turbo-hafte Wertung (−10 je Abweichung, Null ±50) sowie eine komplette RAW-Runde in der Engine ohne Orakel (77 Tests insgesamt).
+
+### Geändert
+- Version auf `0.6.0-beta.1` angehoben (Meta-Tag, README, Changelog, `package.json`, Footer); der Regelkern steht auf `0.5.0`, da sich die Regeln mit dem neuen Regelwerk erweitert haben (bestehende Regeln unverändert).
+- Turbo- und Standard-Pfade im Regelkern bleiben funktionsgleich; der RAW-Modus ist additiv über `mode: 'raw'` bzw. `raw: true` im Kontext erreichbar.
+
 ## 0.5.0-beta.1 – 2026-11-09
 
 Schwerpunkt dieser Version ist die Bühne: Räume, Figuren, Licht und die Erklärung der Oberfläche beim Darüberfahren.

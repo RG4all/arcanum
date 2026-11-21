@@ -52,12 +52,24 @@
   /* Modus                                                             */
   /* ---------------------------------------------------------------- */
 
+  // RAW – Die Nackte Zahl: reine Zahlenhierarchie 0–XXI, nur Große Arkana.
+  const MODE_META = Object.freeze({
+    turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie` },
+    standard: { badge: '📜 Standard Edition', name: 'Standard', detail: () => `${RULES.maxRounds('standard')} Runden · Orakel & Schicksal` },
+    raw: { badge: '✧ RAW – Die Nackte Zahl', name: 'RAW', detail: () => `${RULES.maxRounds('raw')} Runden · nur Zahl 0–XXI` }
+  });
+
   function applyMode(mode) {
-    const next = mode === 'standard' ? 'standard' : 'turbo';
+    const next = mode === 'standard' ? 'standard' : mode === 'raw' ? 'raw' : 'turbo';
     app.mode = next;
     global.currentActiveMode = next;
+    const meta = MODE_META[next];
 
-    const buttons = { turbo: document.getElementById('btn-mode-turbo'), standard: document.getElementById('btn-mode-standard') };
+    const buttons = {
+      turbo: document.getElementById('btn-mode-turbo'),
+      standard: document.getElementById('btn-mode-standard'),
+      raw: document.getElementById('btn-mode-raw')
+    };
     Object.entries(buttons).forEach(([key, button]) => {
       if (!button) return;
       const active = key === next;
@@ -67,15 +79,13 @@
 
     const badge = document.getElementById('header-mode-badge');
     if (badge) {
-      badge.textContent = next === 'turbo' ? '⚡ Turbo Edition' : '📜 Standard Edition';
+      badge.textContent = meta.badge;
       badge.dataset.mode = next;
     }
 
     document.documentElement.dataset.mode = next;
-    setText('hud-mode-name', next === 'turbo' ? 'Turbo' : 'Standard');
-    setText('hud-mode-detail', next === 'turbo'
-      ? `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie`
-      : `${RULES.maxRounds('standard')} Runden · Orakel & Schicksal`);
+    setText('hud-mode-name', meta.name);
+    setText('hud-mode-detail', meta.detail());
 
     renderRules();
     renderCodex();
@@ -101,6 +111,7 @@
       ['Null-Ansage gehalten', `+${s.nullBonus}`],
       ['Null-Ansage gescheitert', `${s.nullPenalty}`],
       ['Abweichung (Turbo, Über-/Unterbieten)', `−${s.missPerTrick} je Stich`],
+      ['Abweichung (RAW – Die Nackte Zahl)', `−${s.missPerTrick} je Stich`],
       ['Unterbieten (Standard)', `−${s.underbidRateStandard} je Stich`],
       ['Überbieten (Standard)', `−${s.missPerTrick} je Stich`],
       ['Stern-Orakel aktiv', `+${s.starBonus} bei exaktem Gebot`],
@@ -112,6 +123,7 @@
     const container = document.getElementById('rules-view');
     if (!container) return;
     const standard = app.mode === 'standard';
+    const raw = app.mode === 'raw';
     const cardsRange = RULES.MODES[app.mode];
     const table = scoringTable().map(([label, value]) =>
       `<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('');
@@ -119,11 +131,13 @@
     container.innerHTML = `
       <div class="section-head">
         <div>
-          <span class="section-eyebrow">${standard ? 'Strategisch & tiefgründig' : 'Schnell & kompromisslos'}</span>
-          <h2 id="rules-title">${standard ? '📜 Arcanum Standard (Kodex-Regeln)' : '⚡ Arcanum Turbo'}</h2>
-          <p class="section-lede">${standard
-            ? `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · ein Orakel pro Runde`
-            : `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · keine Orakel`}</p>
+          <span class="section-eyebrow">${raw ? 'Reduziert & kompromisslos' : standard ? 'Strategisch & tiefgründig' : 'Schnell & kompromisslos'}</span>
+          <h2 id="rules-title">${raw ? '✧ Arcanum RAW – Die Nackte Zahl' : standard ? '📜 Arcanum Standard (Kodex-Regeln)' : '⚡ Arcanum Turbo'}</h2>
+          <p class="section-lede">${raw
+            ? `${cardsRange.maxRounds} Runden · ausschließlich die 22 Großen Arkana · nur der Zahlenwert 0–XXI zählt · keine Orakel`
+            : standard
+              ? `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · ein Orakel pro Runde`
+              : `${cardsRange.maxRounds} Runden · ${cardsRange.baseCards + 1}–${cardsRange.baseCards + cardsRange.maxRounds} Karten · keine Orakel`}</p>
         </div>
         <button type="button" class="ghost-button" id="rules-open-codex">Zum Karten-Kodex →</button>
       </div>
@@ -139,16 +153,24 @@
         <article class="rules-card">
           <h3>2 · Rangordnung</h3>
           <ol class="rules-list">
-            <li>Höchster Trumpf gewinnt, sonst höchste Karte der angespielten Farbe.</li>
+            ${raw
+              ? `<li>Es zählt allein der Zahlenwert – aufsteigend von <b>0 bis XXI</b>.</li>
+            <li>Die höhere Karte sticht die niedrigere (z. B. <b>IV schlägt II</b>).</li>
+            <li>Der Narr (0) ist die niedrigste Karte – ohne Ausnahme.</li>
+            <li>Es gibt keine weiteren Kartenfunktionen; der Stich wird ausschließlich über den Zahlenwert entschieden.</li>`
+              : `<li>Höchster Trumpf gewinnt, sonst höchste Karte der angespielten Farbe.</li>
             <li>Ass zählt <b>14,5</b> und schlägt den König; Hofkarten bleiben Bube 11 bis König 14.</li>
             <li>Der Narr (0) verliert immer – außer er fällt direkt nach der Welt (XXI).</li>
-            <li>Der Turm (XVI) vernichtet den Stich; der Tod (XIII) halbiert ihn.</li>
+            <li>Der Turm (XVI) vernichtet den Stich; der Tod (XIII) halbiert ihn.</li>`}
           </ol>
         </article>
         <article class="rules-card">
-          <h3>3 · ${standard ? 'Orakel & Schicksal' : 'Schlüsselkarten'}</h3>
+          <h3>3 · ${raw ? 'Karten' : standard ? 'Orakel & Schicksal' : 'Schlüsselkarten'}</h3>
           <ol class="rules-list">
-            ${standard ? `
+            ${raw ? `
+              <li>Verwendet werden ausschließlich die <b>22 Großen Arkana (Trümpfe 0–XXI)</b>.</li>
+              <li>Es gibt <b>keine Orakel und keine Sonderkarten</b> – keine Kartenfunktion verändert den Stich.</li>
+              <li>Ein Trumpf darf <b>jederzeit</b> gelegt werden und umgeht damit die Bedienpflicht.</li>` : standard ? `
               <li>Fünf Orakel verändern das Weltgesetz einer Runde: Kelche als Trümpfe, freie Wahl, Partnerstiche, das Rad oder der Stern.</li>
               <li>Schicksalskarten wirken beim Auswerten eines Stichs – der Hierophant annulliert sie alle.</li>
               <li>Jede gewonnene Hofkarte zahlt zusätzlich Karma (Hofkarten-Segen).</li>` : `
@@ -160,7 +182,9 @@
         <article class="rules-card rules-card--wide">
           <h3>4 · Wertung im Detail</h3>
           <table class="rules-table"><tbody>${table}</tbody></table>
-          <p class="rules-note">Halbe Stiche (Tod) sind zulässig; eine Abweichung wird auf ganze Stiche aufgerundet, damit alle Punktzahlen ganzzahlig bleiben.</p>
+          <p class="rules-note">${raw
+            ? 'RAW kennt keine halben Stiche und keine Kartenfunktionen; eine Abweichung zählt −10 je Stich, ganzzahlig.'
+            : 'Halbe Stiche (Tod) sind zulässig; eine Abweichung wird auf ganze Stiche aufgerundet, damit alle Punktzahlen ganzzahlig bleiben.'}</p>
         </article>
       </div>`;
 
@@ -276,10 +300,15 @@
 
   function handSizes(mode) {
     const config = RULES.MODES[mode];
-    return Array.from({ length: config.maxRounds }, (_, index) => RULES.cardsPerPlayer(mode, index + 1));
+    const players = Number(document.getElementById('game-player-count')?.value) || 3;
+    return Array.from({ length: config.maxRounds }, (_, index) => RULES.cardsPerPlayer(mode, index + 1, players));
   }
 
   function deckStats() {
+    if (app.mode === 'raw') {
+      // RAW – Die Nackte Zahl: nur die 22 Großen Arkana, alle Trumpf.
+      return { total: 22, trumps: 22 };
+    }
     return {
       total: CARDS.TAROT_DECK.length,
       trumps: CARDS.TAROT_DECK.filter(card => card.isTrump).length
@@ -400,7 +429,7 @@
     app.chart.data.labels = sizes.map(size => `${size} Karten`);
     app.chart.data.datasets[0].data = sizes.map(size => RULES.chanceOfAtLeastOneTrump(size, total, trumps));
     app.chart.data.datasets[1].data = sizes.map(size => Math.round((1 - hypergeometricAtMost(size, total, trumps, 1)) * 1000) / 10);
-    app.chart.data.datasets[0].borderColor = app.mode === 'turbo' ? '#ffb066' : '#f2dda3';
+    app.chart.data.datasets[0].borderColor = app.mode === 'turbo' ? '#ffb066' : app.mode === 'raw' ? '#e8e4d8' : '#f2dda3';
     app.chart.update();
   }
 

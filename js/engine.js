@@ -103,12 +103,12 @@
     },
 
     cardsPerPlayer() {
-      return RULES.cardsPerPlayer(this.mode, this.currentRound);
+      return RULES.cardsPerPlayer(this.mode, this.currentRound, this.players.length);
     },
 
-    /** Baut ein frisches 78-Karten-Deck (gemischt, optional mit Seed). */
+    /** Baut ein frisches Deck (gemischt, optional mit Seed); im RAW-Modus nur die 22 Großen Arkana. */
     generateUniqueDeck() {
-      return RULES.createDeck(this.rng);
+      return RULES.createDeck(this.rng, this.mode);
     },
 
     initGame(numPlayers = 3) {
@@ -162,7 +162,7 @@
       });
 
       const deal = RULES.deal({
-        deck: RULES.createDeck(this.rng),
+        deck: RULES.createDeck(this.rng, this.mode),
         playerCount: this.players.length,
         cardsEach
       });
@@ -197,6 +197,10 @@
      * (kein Trumpf, keine Karte ab Rang 12) – sonst verschenken sie Karma.
      */
     estimateBotBid(hand) {
+      if (this.mode === 'raw') {
+        // RAW: reine Trumpfwertung – hohe Arkana (XI bis XXI) gewinnen meist.
+        return Math.max(0, Math.min(hand.length, hand.filter(card => (card.trumpNum ?? 0) >= 11).length));
+      }
       const trumps = hand.filter(card => card.isTrump).length;
       const courts = hand.filter(card => Boolean(card.court)).length;
       const highMinor = hand.filter(card => !card.isTrump && card.value >= 12).length;
@@ -234,7 +238,8 @@
         leadSuit: this.leadSuit,
         freeLead: this.activeOracle?.uid === 'major-4',
         trumpBan: this.trumpBan === playerIdx,
-        mustPlayHighest: this.forcedPlayer === playerIdx
+        mustPlayHighest: this.forcedPlayer === playerIdx,
+        mode: this.mode
       };
     },
 
@@ -706,8 +711,11 @@
             <span class="hud-oracle__text"><b>${this.activeOracle.title}</b><small>${this.activeOracle.short}</small></span>`;
           oracleBox.dataset.active = 'true';
         } else {
+          const note = this.mode === 'raw'
+            ? 'RAW – Die Nackte Zahl: keine Orakel, nur Zahlen'
+            : 'Turbo-Modus: reine Zahlenhierarchie';
           oracleBox.innerHTML = `<span class="hud-oracle__icon" aria-hidden="true">◌</span>
-            <span class="hud-oracle__text"><b>Kein Orakel</b><small>Turbo-Modus: reine Zahlenhierarchie</small></span>`;
+            <span class="hud-oracle__text"><b>Kein Orakel</b><small>${note}</small></span>`;
           oracleBox.dataset.active = 'false';
         }
       }
@@ -743,7 +751,7 @@
         setText('hud-name', human.name);
         const targetEl = document.getElementById('hud-target');
         if (targetEl) {
-          const remaining = RULES.maxBid(this.mode, this.currentRound) - human.won;
+          const remaining = RULES.maxBid(this.mode, this.currentRound, this.players.length) - human.won;
           targetEl.textContent = human.bid === 0
             ? (human.won === 0 ? 'Null-Ansage gehalten' : 'Null-Ansage gefährdet')
             : human.won === human.bid

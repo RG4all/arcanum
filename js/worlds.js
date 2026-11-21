@@ -338,9 +338,10 @@
   const HOVER_HINTS = {
     'mode-turbo': { title: 'Regelwerk · Turbo', short: 'Fünf schnelle Runden, reine Zahlenhierarchie.', action: 'Schaltet auf Turbo und gibt ein frisches Ritual mit 5 Runden aus.' },
     'mode-standard': { title: 'Regelwerk · Standard', short: 'Sieben Runden mit Weltgesetzen und Hofkarten-Segen.', action: 'Schaltet auf Standard und gibt ein frisches Ritual mit 7 Runden aus.' },
+    'mode-raw': { title: 'Regelwerk · RAW – Die Nackte Zahl', short: 'Nur die 22 Großen Arkana – es zählt allein der Zahlenwert 0–XXI.', action: 'Schaltet auf RAW – Die Nackte Zahl und gibt ein frisches Ritual mit 5 Runden aus; jederzeit spielbare Trümpfe umgehen die Bedienpflicht.' },
     'env-select': { title: 'Ort der Begegnung', short: 'Zehn Ritualorte, jeder mit eigener Architektur.', action: 'Wechselt die 3D-Bühne; Materialien, Licht und Atmosphäre folgen dem Ort.' },
     'player-count': { title: 'Spielende', short: 'Zwei bis sechs Sitze am Ritualtisch.', action: 'Bestimmt, wie viele Bots beim nächsten Ritual mitspielen.' },
-    'start-ritual': { title: 'Ritual starten', short: 'Beginnt ein neues Spiel mit den gewählten Parametern.', action: 'Mischt das 78-Karten-Deck, setzt Karma zurück und öffnet die Vision.' },
+    'start-ritual': { title: 'Ritual starten', short: 'Beginnt ein neues Spiel mit den gewählten Parametern.', action: 'Mischt das Deck (in RAW nur die 22 Großen Arkana), setzt Karma zurück und öffnet die Vision.' },
     'restart': { title: 'Neu geben', short: 'Gleiche Einstellungen, neue Karten.', action: 'Verwirft den aktuellen Verlauf und startet sofort ein frisches Ritual.' },
     'round-tile': { title: 'Emanation (Runde)', short: 'Aktuelle Runde und Kartenzahl je Hand.', action: 'Zeigt den Fortschritt der Partie; der Balken füllt sich bis zur letzten Runde.' },
     'oracle-tile': { title: 'Weltgesetz', short: 'Das Orakel, das diese Runde regiert.', action: 'Ändert Rangordnung oder Wertung – nur im Standard-Regelwerk.' },
@@ -361,7 +362,7 @@
     'log': { title: 'Chronik', short: 'Jedes Ereignis der Partie.', action: 'Scrollt mit; die letzten Einträge stehen unten.' },
     'summary': { title: 'Rundenbilanz', short: 'Punktedelta und Begründung je Spieler:in.', action: 'Erscheint nach jeder ausgewerteten Runde.' },
     'codex-card': { title: 'Kartenkodex', short: 'Motiv, Symbolik und Effekt einer Karte.', action: 'Öffnet den Detaildialog; Escape schließt ihn wieder.' },
-    'chart': { title: 'Stochastik', short: 'Chance auf Trümpfe nach Handkartenzahl.', action: 'Hypergeometrisch berechnet aus dem echten 78-Karten-Deck.' },
+    'chart': { title: 'Stochastik', short: 'Chance auf Trümpfe nach Handkartenzahl.', action: 'Hypergeometrisch berechnet aus dem Deck des aktiven Modus.' },
     'calc': { title: 'Wertungsrechner', short: 'Karma aus Vision und Stichen.', action: 'Nutzt dieselbe Formel wie die Partie, inklusive Orakel und Hofkarten.' },
     'nav': { title: 'Navigation', short: 'Sprungmarken der Seite.', action: 'Springt weich zum gewählten Abschnitt.' }
   };
