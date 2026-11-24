@@ -1,6 +1,6 @@
 # ADR 0002 — Engine-Migration und Kompatibilitätsvertrag
 
-- Status: Entwurf
+- Status: Angenommen; Browser-Core-Migration implementiert und über Node-CI geprüft
 - Datum: 2026-11-24
 
 ## Ziel
@@ -26,3 +26,11 @@ Die bestehende Browser-Engine (`js/engine.js`) wird schrittweise als Adapter des
 ## Grenze
 
 WebRTC-Transport, Lobby, Accounts, Reconnect und PWA-Installation sind nicht Teil dieses ADR.
+
+## Implementierungsnachweis (2026-11-24)
+
+- Der DOM-freie Reducer ist über `js/core/legacy-adapter.js` in die bestehende Browser-Engine integriert; Bot- und menschliche Commands teilen sich dieselbe Validierung.
+- Die bisherigen 3 Spielmodi und 2/3/6 Spieler wurden mit realen Kartendaten und Regeln per Node-VM getestet.
+- Legacy/Core-Parität: identische Seeds und Zugfolgen in 18 Konfigurationen; vollständige Suite 115/115 grün (GitHub Actions Lauf [45395085369](https://github.com/RG4all/arcanum/actions/runs/45395085369)).
+- Echte Browser-/Endgeräte-Smoketests bleiben vor dem Merge empfohlen. Der neue Core stellt noch keinen Netzwerktransport dar.
+- Die Prüfung sämtlicher denkbarer Kombinationen von Sonderkarten ist durch deterministische Stichproben und vorhandene Regel-Unit-Tests gestützt, aber nicht mathematisch erschöpfend.
