@@ -37,6 +37,9 @@
       // After resolution a Moon card is public and can be revealed in the replay.
       lastTrick: state.lastTrick ? {
         winnerIdx: state.lastTrick.winnerIdx, won: state.lastTrick.won,
+        destroyed: Boolean(state.lastTrick.destroyed), cancelled: Boolean(state.lastTrick.cancelled),
+        deathHalf: Boolean(state.lastTrick.deathHalf), foolBeatWorld: Boolean(state.lastTrick.foolBeatWorld),
+        ranks: (state.lastTrick.ranks || []).map(item => ({ ...item })),
         cards: state.lastTrick.cards.map(item => ({ playerIdx: item.playerIdx, uid: item.uid }))
       } : null,
       players: state.players.map(player => ({
