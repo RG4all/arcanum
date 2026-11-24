@@ -1,6 +1,12 @@
 # Arcanum
 
-**Version 0.7.0-beta.1** · Browser-Beta
+**Version 0.7.1-beta.1** · Browser-Beta
+
+**Neue Oberfläche (0.7.1-beta.1):** Vier klar getrennte Bereiche in der Hauptnavigation: Lokal/Bots, Multiplayer, Kodex & Stochastik, Wertung. Desktop, Tablet und Smartphone besitzen eine responsive Navigation. Hinweiskarten berücksichtigen den aktiven Spielmodus.
+
+**Standard-Regelkorrektur (Regelversion 0.6.1):** Der Hierophant schaltet Sonderkarteneffekte aus, **nicht** den Stichgewinn. Die stärkste reguläre Karte erhält weiterhin den Stich; die Rundenorakel bleiben aktiv. Der Online-Tisch zeigt Gewinner, Gewinnkarte und berechnete Rangwerte, damit die Reihenfolge nachprüfbar ist.
+
+**Öffentliche WebRTC-Verbindungen:** STUN stellt nur erreichbare Adressen bereit; es ist kein Relay. Die neue ICE-Diagnose zeigt lokale/STUN-/TURN-Kandidaten und Verbindungsfehler. Als optionaler Fallback können die Teilnehmer eigene TURN-Zugangsdaten eingeben; die Anwendung stellt keinen kostenpflichtigen Server und speichert diese Daten nicht. Bei restriktiven NATs kann ein TURN-Relay notwendig sein.
 
 Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex, wähle zwischen den Regelwerken **Turbo**, **Standard** und **RAW – Die Nackte Zahl** und trete an einem von zehn Ritualorten an.
 
