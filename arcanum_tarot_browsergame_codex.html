@@ -36,17 +36,18 @@
             <button id="mobile-nav-toggle" class="mobile-nav-toggle md:hidden" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Navigation öffnen">
                 <span></span><span></span><span></span>
             </button>
-            <nav id="primary-nav" class="primary-nav" aria-label="Hauptnavigation">
-                <a href="#play-game" data-hint="nav">Arena</a>
-                <a href="#rules-view" data-hint="nav">Regelwerk</a>
-                <a href="#kodex" data-hint="nav">Karten-Kodex</a>
-                <a href="#math" data-hint="nav">Stochastik</a>
-                <a href="#calculator" data-hint="nav">Wertung</a>
+            <nav id="primary-nav" class="primary-nav workspace-tabs" aria-label="Bereiche" role="tablist">
+                <button id="tab-nav-bot" class="workspace-tab is-active" type="button" data-workspace-tab="bot" role="tab" aria-controls="tab-bot" aria-selected="true" tabindex="0">Lokal / Bots</button>
+                <button id="tab-nav-multiplayer" class="workspace-tab" type="button" data-workspace-tab="multiplayer" role="tab" aria-controls="tab-multiplayer" aria-selected="false" tabindex="-1">Multiplayer</button>
+                <button id="tab-nav-codex" class="workspace-tab" type="button" data-workspace-tab="codex" role="tab" aria-controls="tab-codex" aria-selected="false" tabindex="-1">Kodex &amp; Stochastik</button>
+                <button id="tab-nav-scoring" class="workspace-tab" type="button" data-workspace-tab="scoring" role="tab" aria-controls="tab-scoring" aria-selected="false" tabindex="-1">Wertung</button>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main id="workspace-main" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <section class="workspace-panel" id="tab-bot" role="tabpanel" aria-labelledby="tab-nav-bot">
+          <div class="workspace-intro"><span class="workspace-eyebrow">01 · Solo-Arena</span><p>Training gegen Bots – alle drei Regelwerke und zehn Ritualorte.</p></div>
 
         <!-- ================= ARENA ================= -->
         <section id="play-game" aria-labelledby="arena-title">
@@ -300,6 +301,12 @@
             </div>
         </section>
 
+        </section>
+        <section class="workspace-panel" id="tab-multiplayer" role="tabpanel" aria-labelledby="tab-nav-multiplayer" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">02 · Private Tische</span><p>Ungewertete Online-Partien mit 2–6 Spielern, ohne eigenen Spielserver.</p></div>
+        </section>
+        <section class="workspace-panel workspace-panel--reference" id="tab-codex" role="tabpanel" aria-labelledby="tab-nav-codex" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">03 · Wissen</span><p>Regelwerk, alle 78 Karten und Wahrscheinlichkeiten auf einen Blick.</p></div>
         <!-- ================= REGELWERK ================= -->
         <section id="rules-view" aria-labelledby="rules-title"></section>
 
@@ -363,6 +370,9 @@
             </div>
         </section>
 
+        </section>
+        <section class="workspace-panel workspace-panel--scoring" id="tab-scoring" role="tabpanel" aria-labelledby="tab-nav-scoring" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">04 · Analyse</span><p>Stichgebote, Karma und detaillierte Rundenwertung berechnen.</p></div>
         <!-- ================= RECHNER ================= -->
         <section id="calculator" aria-labelledby="calc-title">
             <div class="section-head">
@@ -390,11 +400,12 @@
                 <ul id="calc-breakdown" class="calc-breakdown"></ul>
             </div>
         </section>
+        </section>
     </main>
 
     <footer class="site-footer">
         <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.0-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.0</span></p>
-        <p class="site-footer__note">Lokale Beta ohne Online-Multiplayer. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
+        <p class="site-footer__note">Offline-Botmodus und private P2P-Partien verfügbar. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
     </footer>
 
     <!-- ================= PODIUM ================= -->
@@ -454,6 +465,7 @@
     <script src="js/net/webrtc.js" defer></script>
     <script src="js/net/private-room.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/workspace-tabs.js" defer></script>
     <script src="js/net/online-ui.js" defer></script>
 </body>
 </html>
