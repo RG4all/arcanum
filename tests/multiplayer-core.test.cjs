@@ -102,3 +102,19 @@ test('network commands require the correct protocol version', () => {
   const view = snapshotFor(newMatch(), 'alice');
   assert.equal(view.protocolVersion, PROTOCOL_VERSION);
 });
+
+test('resolved trick can reveal a previously concealed Moon without exposing hands', () => {
+  const state = newMatch();
+  state.lastTrick = {
+    winnerIdx: 0, won: 1,
+    cards: [{ playerIdx: 0, uid: 'card-18', hidden: true }]
+  };
+  const view = snapshotFor(state, 'bob');
+  assert.equal(view.lastTrick.cards[0].uid, 'card-18');
+  assert.equal(Object.hasOwn(view.players[0], 'hand'), false);
+  const ongoing = snapshotFor({
+    ...state, lastTrick: null,
+    currentTrick: [{ playerIdx: 0, uid: 'card-18', hidden: true }]
+  }, 'bob');
+  assert.equal(Object.hasOwn(ongoing.currentTrick[0], 'uid'), false);
+});
