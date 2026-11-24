@@ -6,11 +6,11 @@
 - **Multiplayer-Architekturentscheidung:** ADR 0001 für Hybrid-P2P, private ungewertete WebRTC-Partien und spätere Serverautorität; ADR 0002 für die Migration der Legacy-Engine.
 - **DOM-freier Multiplayer-Spielkern:** versioniertes Game-State-Modell, validierte Commands, deterministischer Reducer und empfänger-spezifische Snapshots unter `js/core/`.
 - **Browser-Integration:** `legacy-adapter.js` routet Menschen- und Botaktionen über denselben Core; die bestehende UI- und Rendering-Schnittstelle bleibt erhalten.
-- **Tests:** isolierte Core-Tests und Integrations-/Paritätstests mit echtem Regelwerk für Turbo, Standard und RAW sowie 2, 3 und 6 Spieler.
+- **Tests:** 243 bestandene Node-Tests, darunter 144 deterministische Legacy-/Core-Vergleichsszenarien mit echtem Regelwerk (Turbo, Standard, RAW; 2, 3, 6 Sitze; 16 Seeds) sowie 2 erfolgreiche Chromium-Browser-Smoke-Läufe für Desktop- und Mobile-Viewport.
 - **Sicherheitsabgrenzung:** private Karten und RNG-Interna werden nicht als öffentlicher Snapshot verschickt; P2P-Host ist nicht vertrauenswürdig.
 
 ### Geändert
-- Browser lädt den neuen Core vor der Legacy-Engine-Adapterinitialisierung.
+- Browser lädt den neuen Core vor der Legacy-Engine-Adapterinitialisierung; der CI-Workflow prüft zusätzlich die Live-Darstellung/Spielsteuerung auf Desktop- und Smartphone-Viewport.
 - Version in HTML, README, `package.json` und Lockfile auf `0.6.0-beta.3` erhöht; Regelwerksversion bleibt `0.6.0`, da keine Spielregeländerung beabsichtigt ist.
 - Dokumentation ergänzt; unveränderte Anforderungen an kostenfreien Start.
 

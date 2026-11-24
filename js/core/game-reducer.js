@@ -65,7 +65,9 @@
     events.push({ type: 'TrickResolved', winnerIdx: result.winnerIdx, won: result.won,
       destroyed: result.destroyed, cancelled: result.cancelled,
       deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld,
-      moonRevealed: result.moonRevealed });
+      moonRevealed: result.moonRevealed,
+      // Complete tricks are public; Moon is revealed only after resolution.
+      cards: state.lastTrick.cards.map(item => ({ playerIdx: item.playerIdx, uid: item.uid })) });
     if (!result.cancelled && result.priestess) {
       state.phase = PHASE.PRIESTESS;
       state.pendingPriestess = { playerIdx: result.winnerIdx };
