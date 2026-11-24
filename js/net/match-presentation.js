@@ -51,7 +51,7 @@
       case 'CardPlayed':
         return { tone: 'card', title: name(event.actorId) + ' spielt ' +
           (event.hidden ? 'eine verdeckte Karte' : cardName(cards, event.uid)),
-          detail: event.hidden ? 'Mond bleibt bis zur Stichauflösung verborgen' : 'Karte gelegt' };
+          detail: event.hidden ? 'Kartenidentität bleibt bis zur Stichauflösung verborgen' : 'Karte gelegt' };
       case 'TrickResolved': {
         const card = (event.cards || []).find(c => c.playerIdx === event.winnerIdx);
         let detail = card ? cardName(cards, card.uid) : 'Stich aufgelöst';
