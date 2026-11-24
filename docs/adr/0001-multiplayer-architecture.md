@@ -1,6 +1,6 @@
 # ADR 0001 — Hybrid-Multiplayer und DOM-freier Spielkern
 
-- **Status:** Angenommen für den ersten Entwicklungsabschnitt (Implementierung noch nicht in die Browser-Engine verdrahtet)
+- **Status:** Angenommen; DOM-freier Core und Browser-Adapter implementiert, WebRTC noch nicht
 - **Datum:** 2026-11-24
 - **Bezug:** ARCANUM 0.6.0-beta.2, `main` bei `aa5045b06b6d39071fbf252d02b24016f27cf560`
 
@@ -18,7 +18,7 @@ Entscheidungen des Projekts: **Hybrid-Multiplayer**, **PWA**, später **kosmetis
 4. Die Clients erhalten **recipient-spezifische** Snapshots. Eigene Karten dürfen im privaten Snapshot erscheinen; Hände anderer Spieler nicht. Ein verdeckter Mond darf auch nicht durch die öffentliche Eventprojektion verraten werden. Es ist untersagt, interne vollständige `state`-Objekte zu broadcasten.
 5. Die PWA bleibt ein statischer Client (voraussichtlich GitHub Pages). Offline-Spiel gegen Bots wird erhalten. Installierbarkeit/Service-Worker sind ein späteres, separates Arbeitspaket.
 6. Für Ranked, Turniere oder handelbare/kaufbare Belohnungen wird eine **serverautoritative** Spielinstanz vorausgesetzt. P2P-Host ist nicht vertrauenswürdig; lokale Validierung ersetzt keine Host-Autorität.
-7. Aktuelle Renderer, `js/app.js` und Legacy-`GameEngine` bleiben vorerst unangetastet. Die Migration erfolgt stufenweise hinter einem Feature-Flag; die Core-Basis wird zunächst separat getestet. Damit ist Issue 2 erst mit vollständiger UI-Integration abschließbar.
+7. Der bestehende Renderer und `js/app.js` bleiben erhalten. `js/core/legacy-adapter.js` wird in der HTML-Ladereihenfolge zwischen `engine.js` und `app.js` eingefügt und ersetzt die zustandsverändernden Methoden durch Commands an den Core. Es gibt derzeit keinen Runtime-Feature-Flag; die Legacy-Engine dient als Regressionstest-Referenz. Die Rückfallstrategie erfolgt über Git-/Release-Rollback.
 
 ## Game-Core-API v1
 
@@ -115,7 +115,8 @@ Die Datei `LICENSE` enthält GPL-2.0-Text, `package.json` gibt dagegen `ISC` an.
 - [x] Architekturentscheidung und Ziel-API dokumentiert.
 - [x] DOM-unabhängige Zustands-/Command-/Reducer-Module als additive Grundlage.
 - [x] Isolierte Unit-Tests für Determinismus, Datenschutz und Übergänge.
-- [ ] Gegen den vollständigen bestehenden Spiel-/Regeltestkatalog auf Repo-Checkout getestet.
-- [ ] Browser-Engine und Bot-Adapter auf den Reducer umgestellt.
-- [ ] Vollständige Parität aller Spezialeﬀekte und Spielabläufe gegen Legacy-Engine nachgewiesen.
+- [x] Vollständiger Node-Spiel-/Regeltestkatalog in GitHub Actions geprüft (115/115 Tests, Lauf 45395085369 vom 2026-11-24).
+- [x] Browser-Engine und Bot-Adapter durch `js/core/legacy-adapter.js` auf den Reducer umgestellt.
+- [x] Deterministische Engine-Parität über Turbo, Standard und RAW sowie 2, 3, 6 Spieler und zwei Seeds per Integrationstest nachgewiesen; zusätzlich bestehende Sonderregeltests grün. Kombinationen aller Sonderereignisse und echte Browser-Smoke-Tests bleiben als weitergehende Qualitätssicherung offen.
+- [ ] Echte Browser-Smoke-Tests auf Mobilgeräten/Browsern (außerhalb Node-CI).
 - [ ] WebRTC-Lobby, Signalisierung, Reconnect (separate Issues).
