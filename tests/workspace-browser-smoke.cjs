@@ -37,6 +37,7 @@ async function run() {
         if (name === 'multiplayer') {
           assert.equal(await page.locator('#online-lobby').count(), 1);
           assert.equal(await page.locator('#tab-multiplayer #online-lobby').count(), 1);
+          await page.locator('.online-ice-settings summary').click();
           assert.ok(await page.locator('#online-stun-urls').isVisible());
         }
         if (name === 'codex') {
