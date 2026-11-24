@@ -5,6 +5,7 @@
 ### Regelwerk und Erklärung (RULESET_VERSION 0.6.2)
 - Die internen Compare-Keys (`−500 + value`, `200 + Trumpfnummer`, Sonderrang `5000`) werden **nicht mehr als „Stichrang“** im Multiplayer ausgegeben. Stattdessen werden Grundwert, Bedienfarbe, Trumpfkategorie sowie Sonder- und Orakelwirkung beschrieben. Der bestehende Vergleichsalgorithmus bleibt dort unverändert, wo er korrekt war.
 - **Standard-Bugfix:** Orakel **Die Liebenden** bleibt auch bei einem Hierophanten-Stich wirksam. Karteneffekte werden weiterhin unterdrückt; der reguläre Stich wird korrekt vergeben. Stich-Anspielfarbe wird im Ergebnis-Snapshot gespeichert.
+- **Hofkarten-Segen mit Liebenden:** Jeder Partner erhält jetzt das Karma seiner **eigenen** gewonnenen Hofkarten; bislang landete der gemeinsame Bonus unzutreffend allein beim Stichgewinner. Gilt für Bot- und Multiplayer-Engine.
 - Tests für Kraft gegen Hierophant, Trumpf gegen Farbe, off-suit Wert, Orakel-Liebende, verdeckten Mond und Sieger bei unterschiedlichen Sitzplätzen.
 
 ### Multiplayer-Oberfläche
