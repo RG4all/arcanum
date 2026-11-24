@@ -364,3 +364,14 @@ Die Anwendung besitzt vier zugängliche Panels unter `js/workspace-tabs.js`: **L
 **Regelkorrektur 0.6.1:** `ArcanumRules.resolveTrick` wertet beim Hierophanten den regulären Kartensieger weiterhin aus. Oracle-Rangwirkungen bleiben aktiv; nur Stich-Karteneffekte werden ausgeschaltet. `GameEngine` und `ArcanumGameReducer` schreiben auch dann den gewonnenen Stich gut. Das letzte öffentliche Stich-Snapshot enthält Sieger, gewonnene Stiche und die Rangwerte aller gespielten Karten.
 
 **ICE-Diagnostik:** `js/net/webrtc.js` zählt host/srflx/relay/prflx ICE-Kandidaten, meldet Gathering- und Connection-Zustände und unterstützt benutzerkonfigurierten STUN sowie optional TURN mit eigenen Zugangsdaten. Diese Daten werden nicht im SDP-Signaling übertragen oder gespeichert. TURN verursacht nur Kosten, wenn jemand einen Relay-Dienst betreibt/benutzt; es bleibt freiwillig und ist nicht im Projekt enthalten.
+
+
+## 0.7.2-beta.1 – Bewertungsdarstellung und öffentliches Match-Protokoll
+
+`ArcanumRules.createRanker()` liefert interne relative Vergleichswerte (unter anderem −500 + Farbwert, 200 + Trumpfnummer, Kraft-Sonderwert 5000). **Diese Zahlen sind kein Bestandteil des kanonischen Kartengrundwerts.** `ArcanumRules.describeTrickCard(card, context)` stellt die Bedeutung nach Modus, Anspielfarbe, Weltgesetz und Hierophant für die Anzeige dar; die eigentliche Vergleichslogik bleibt in `resolveTrick`. `lastTrick.leadSuit` wird als öffentliches Metadatum übertragen.
+
+**Regel-Fix 0.6.2:** Das Liebende-Orakel bleibt bei Hierophant-Stichen wirksam. `resolveTrick` liefert weiterhin `loversPartner`; der Core schreibt den Partner-Stich auch bei `cancelled = true` gut. Karten-Sondereffekte bleiben annulliert. Der Legacy-Botpfad verwendet denselben reinen Regelkern.
+
+**Öffentliche Chronik:** `ArcanumGameReducer.publicEvents()` entfernt bei `CardPlayed.hidden` die verdeckte UID. Der Host speichert höchstens 180 freigegebene Events im Arbeitsspeicher und überträgt an Gäste ausschließlich neue `events` zusammen mit dem per Empfänger projizierten `view`; die Sequenz muss übereinstimmen. Die Gäste bauen daraus ihr lokales Protokoll auf. Der Formatierer `js/net/match-presentation.js` erzeugt sichere textuelle Ereigniszeilen. **Keine geheime Hand, kein Seed, keine vorherige Mondidentität und keine dauerhafte Speicherung.**
+
+**HUD:** `js/net/online-ui.js` rendert aus `view.players` pro Sitz ein eigenes Karten- und Karma-Summary sowie eine inkrementell ergänzte Chronik. Scores kommen unverändert aus den bestehenden Reducer-States. Keine unabhängige Berechnung im Browser-HUD.
