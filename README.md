@@ -12,7 +12,7 @@ Die Browser-Engine verwendet über `js/core/legacy-adapter.js` einen DOM-freien 
 - Kernmodule: `js/core/game-state.js`, `game-commands.js`, `game-reducer.js`.
 - Versionierter Spielstand, Seed-basierte Zufallsfolge und Empfänger-spezifische Snapshots.
 - Keine laufenden Serverkosten: der Spielkern läuft vollständig im Browser.
-- Tests: `npm test`, insbesondere `tests/multiplayer-integration.test.cjs` und `tests/multiplayer-parity.test.cjs`; GitHub Actions prüft außerdem `node --check`.
+- Tests: `npm test` (243 Tests, darunter 144 deterministische Paritätsfälle) und realer Chromium-Smoke-Test für Desktop und Mobile-Viewport über GitHub Actions; zusätzlich `node --check`.
 
 **Lizenzhinweis:** `LICENSE` enthält GPL-2.0-Text, während das Paket ISC ausweist. Ein erster, ausdrücklich unvollständiger Befund steht in [docs/LICENSING-AUDIT.md](docs/LICENSING-AUDIT.md). Die kommerzielle Rechteklärung steht weiter aus; keine kommerzielle Freigabe ist erteilt.
 
