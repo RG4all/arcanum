@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: |
-          for f in js/*.js js/core/*.js; do node --check "$f"; done
+          for f in js/*.js js/core/*.js js/net/*.js; do node --check "$f"; done
 
   browser-smoke:
     runs-on: ubuntu-latest
