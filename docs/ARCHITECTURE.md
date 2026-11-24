@@ -339,3 +339,10 @@ Neue UI- und Renderfunktionen sollen die Regeln nicht duplizieren: Regeln änder
 - Hinweiskarte: jeder Schlüssel hat Titel, Kurzbeschreibung und Funktion; jedes `data-hint` im HTML existiert im Wörterbuch.
 - 3D-Manifeste ohne WebGL (`Scene.environments`, `Scene.worlds`), Kameraabstand über sechs Seitenverhältnisse, Kartenhand-Layout in fünf Breiten.
 - Konsistenz von HTML-IDs, Skriptreihenfolge, CSS-Breakpoints und Versionsangaben.
+
+
+## Multiplayer-Core-Integration (0.6.0-beta.3)
+
+Der neue DOM-freie Kern in `js/core/game-state.js`, `game-commands.js` und `game-reducer.js` modelliert Spielzustand, Commands und deterministische Übergänge. Ein Browser-Adapter (`js/core/legacy-adapter.js`) überführt Zustand in die bisherige `GameEngine`-Schnittstelle und übernimmt UI, Timer und Bot-Heuristik. Die Regeln bleiben ausschließlich in `js/rules.js`. Neu sind die explizite Hohepriesterin-Wahl und Empfänger-spezifische Snapshots. Die Netzwerkebene ist noch nicht vorhanden.
+
+Siehe [ADR 0001](adr/0001-multiplayer-architecture.md) und [ADR 0002](adr/0002-multiplayer-core-migration.md). `GameEngine.serialize()` projiziert nach Adapterinstallation den sichtbaren Zustand des lokalen Spielers und darf nicht als vollständiger Reconnect-Snapshot interpretiert werden. Die alte Beschreibung unter §8 dokumentiert den Stand vor dem Adapter.
