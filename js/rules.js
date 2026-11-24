@@ -16,7 +16,7 @@
   const CARDS = global.ArcanumCards;
 
   /** Version des Regelwerks – erhöhen, wenn sich Spielregeln ändern. */
-  const RULESET_VERSION = '0.6.1';
+  const RULESET_VERSION = '0.6.2';
   /** Version des serialisierbaren Spielstandformats. */
   const STATE_SCHEMA_VERSION = 1;
 
@@ -212,6 +212,47 @@
     };
   }
 
+  /**
+   * Human-readable EFFECTIVE card role in the completed trick, not a numeric
+   * scoring key. The ranker uses sentinel offsets (-500/200/5000) internally;
+   * these MUST NOT be shown to players as intrinsic card strength.
+   * Returns only publicly available, post-resolution information.
+   */
+  function describeTrickCard(card, context) {
+    if (!card) return '';
+    const ctx = context || {};
+    const mode = ctx.mode || 'turbo';
+    const cancelled = Boolean(ctx.cancelled);
+    const oracleUid = mode === 'standard' ? (ctx.oracleUid || null) : null;
+    const leadSuit = ctx.leadSuit || null;
+    const cardValue = Number.isFinite(card.value) ? formatNumber(card.value) : '?';
+    const num = Number.isInteger(card.trumpNum) ? card.trumpNum : '?';
+    if (mode === 'raw') {
+      if (card.isTrump) return 'Große Arkana · Trumpf ' + num + ' (ohne Effekt)';
+      return leadSuit && card.suit !== leadSuit
+        ? 'Fremdfarbe · kein Stichrecht (Wert ' + cardValue + ')'
+        : 'Farbkarte · Wert ' + cardValue + (leadSuit ? ' · ' + leadSuit + ' bedient' : '');
+    }
+    if (!cancelled && card.isTrump && card.trumpNum === 0)
+      return 'Narr · verliert regulär; Welt-Sonderfall möglich';
+    if (!cancelled && card.isTrump && card.trumpNum === 11)
+      return 'Kraft · Sonderregel: höchster Stichrang';
+    if (!cancelled && card.isTrump && card.trumpNum === 1)
+      return 'Magier · 0,5 über der höchsten Kleinen Arkana';
+    if (oracleUid === 'major-10') {
+      return card.isTrump
+        ? 'Rad des Schicksals · Trumpf ' + num + ', umgekehrte Rangfolge'
+        : 'Rad des Schicksals · Kleine Arkana vor Trumpf, niedriger Wert gewinnt (' + cardValue + ')';
+    }
+    if (card.isTrump) return 'Große Arkana · Trumpf ' + num +
+      (cancelled ? ' · Sonderwirkung annulliert' : '');
+    if (oracleUid === 'major-3' && card.suit === 'Kelche')
+      return 'Herrscherin · Kelche als niederer Trumpf (Wert ' + cardValue + ')';
+    return leadSuit && card.suit !== leadSuit
+      ? 'Fremdfarbe · kein Stichrecht (Wert ' + cardValue + ')'
+      : 'Farbkarte · Wert ' + cardValue + (leadSuit ? ' · ' + leadSuit + ' bedient' : '');
+  }
+
   /* ---------------------------------------------------------------- */
   /* Zulässige Züge                                                    */
   /* ---------------------------------------------------------------- */
@@ -310,7 +351,8 @@
 
     // Paarung der Liebenden: 0/1, 2/3, 4/5 – bei ungerader Zahl allein.
     const loversPartner = (() => {
-      if (cancelled || oracleUid !== 'major-6' || !won) return null;
+      // The Lovers are a round Oracle, not a trick card effect: Hierophant cannot cancel them.
+      if (oracleUid !== 'major-6' || !won) return null;
       const partner = winner.playerIdx % 2 === 0 ? winner.playerIdx + 1 : winner.playerIdx - 1;
       return partner >= 0 && partner < playerCount ? partner : null;
     })();
@@ -492,6 +534,7 @@
     deal,
     pickOracle,
     createRanker,
+    describeTrickCard,
     legalCardIndices,
     describeConstraint,
     resolveTrick,
