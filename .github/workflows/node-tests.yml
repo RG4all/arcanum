@@ -23,3 +23,20 @@ jobs:
       - run: npm test
       - run: |
           for f in js/*.js js/core/*.js; do node --check "$f"; done
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false playwright
+      - run: npx playwright install chromium
+      - name: Browser smoke (desktop and mobile viewport)
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/arcanum-server.log 2>&1 &
+          node tests/browser-smoke.cjs
