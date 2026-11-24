@@ -32,6 +32,11 @@
       round: state.round, maxRounds: state.maxRounds, phase: state.phase, sequence: state.sequence,
       activePlayerIdx: state.activePlayerIdx, leadSuit: state.leadSuit, oracleUid: state.oracleUid,
       currentTrick: state.currentTrick.map(item => item.hidden ? { playerIdx: item.playerIdx, hidden: true } : { ...item }),
+      // After resolution a Moon card is public and can be revealed in the replay.
+      lastTrick: state.lastTrick ? {
+        winnerIdx: state.lastTrick.winnerIdx, won: state.lastTrick.won,
+        cards: state.lastTrick.cards.map(item => ({ playerIdx: item.playerIdx, uid: item.uid }))
+      } : null,
       players: state.players.map(player => ({
         id: player.id, bid: player.bid, won: player.won, score: player.score,
         cardsRemaining: player.hand.length,
