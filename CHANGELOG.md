@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.0-beta.1 – 2026-11-24
+
+### Neu
+- **Private WebRTC-Lobby ohne eigenen Server** für 2–6 Menschen mit Host, mehrfachen Einladungen, manuellen Offer-/Answer-Codes, ICE-Kandidatenaustausch und Ready-Status.
+- **Online-Tisch:** Gebote, Handkarten, Stichansicht, Sonderauswahl Hohepriesterin, Wertung und Rundenwechsel; Turbo, Standard und RAW.
+- **Hostkoordinierte Zustände:** Validierung aller Remote-Züge über den vorhandenen DOM-freien Reducer. Jeder Gast erhält ausschließlich seinen eigenen Snapshot; fremde Hände und RNG-Interna werden nicht übertragen.
+- **Optionaler STUN-Dienst:** Für öffentliche Netzwerke zuschaltbar; kein eigener Signalisierungs-/TURN-Server als Voraussetzung des MVP.
+- **Tests:** Session-Unit-Tests sowie echter Zwei-Browser-WebRTC-Smoke-Test mit Offer-/Answer-Handschlag und vollständiger Spielrunde. GitHub Actions führt diese Tests aus.
+
+### Unverändert und offene Grenzen
+- Bestehender Offline-/Bot-Modus bleibt erhalten.
+- Kein Ranked, kein Host-Wechsel, kein Reconnect, keine persistenten Accounts, kein öffentlicher Raumfinder.
+- Ohne TURN können Netzwerk-/NAT-Kombinationen nicht verbunden werden. Host ist nicht vertrauenswürdig.
+- Rechteprüfung und Lizenzkonflikt GPL-2.0/ISC bleiben vor kommerzieller Veröffentlichung offen.
+- Regelwerksversion `0.6.0` bleibt, da keine Spielregeln geändert wurden.
+
+
 ## 0.6.0-beta.3 – 2026-11-24
 
 ### Hinzugefügt

@@ -31,6 +31,8 @@
       ruleset: state.ruleset, mode: state.mode,
       round: state.round, maxRounds: state.maxRounds, phase: state.phase, sequence: state.sequence,
       activePlayerIdx: state.activePlayerIdx, leadSuit: state.leadSuit, oracleUid: state.oracleUid,
+      trumpBan: state.trumpBan, forcedPlayer: state.forcedPlayer,
+      roundSummary: state.roundSummary.map(entry => ({ ...entry, breakdown: [...(entry.breakdown || [])] })),
       currentTrick: state.currentTrick.map(item => item.hidden ? { playerIdx: item.playerIdx, hidden: true } : { ...item }),
       // After resolution a Moon card is public and can be revealed in the replay.
       lastTrick: state.lastTrick ? {

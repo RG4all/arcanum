@@ -2,7 +2,7 @@
 <html lang="de" class="scroll-smooth" data-mode="turbo">
 <head>
     <meta charset="UTF-8">
-    <meta name="version" content="0.6.0-beta.3">
+    <meta name="version" content="0.7.0-beta.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b0710">
     <meta name="description" content="Arcanum – atmosphärisches Tarot-Stichspiel im Browser mit vollständigem 78-Karten-Deck, Karten-Kodex, drei Regelwerken (Turbo, Standard, RAW – Die Nackte Zahl), drei begehbaren 3D-Welten und zehn Ritualorten.">
@@ -92,6 +92,92 @@
                     <button id="game-start-btn" type="button" class="start-ritual-button" data-hint="start-ritual">Ritual starten</button>
                     <button id="game-restart-btn" type="button" class="ghost-button restart-button" data-hint="restart">Neu geben</button>
                 </div>
+
+                <!-- Private P2P multiplayer: independent of the offline bot arena -->
+                <section id="online-lobby" class="online-lobby" aria-labelledby="online-title">
+                    <div class="online-heading">
+                        <h2 id="online-title">Privater Online-Tisch · WebRTC</h2>
+                        <span class="online-unranked">Ungewertet · ohne eigenen Spielserver</span>
+                    </div>
+                    <p class="online-help">Einladung und Antwort werden manuell zwischen den Browsern ausgetauscht.
+                        Für jeden weiteren Gast eine neue Einladung erzeugen. HTTPS oder localhost erforderlich.
+                        Ohne TURN können Verbindungen zwischen manchen Netzen scheitern.</p>
+                    <div class="online-settings">
+                        <label for="online-name">Dein Name
+                            <input id="online-name" type="text" maxlength="24" value="Adept" autocomplete="nickname">
+                        </label>
+                        <label for="online-seats">Plätze
+                            <select id="online-seats">
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </label>
+                        <label for="online-mode">Regelwerk
+                            <select id="online-mode">
+                                <option value="raw" selected>RAW</option>
+                                <option value="turbo">Turbo</option>
+                                <option value="standard">Standard</option>
+                            </select>
+                        </label>
+                        <label class="online-check" for="online-stun">
+                            <input id="online-stun" type="checkbox" checked>
+                            Öffentlichen STUN-Dienst verwenden (Google; IP-Metadaten werden übertragen)
+                        </label>
+                    </div>
+                    <div class="online-actions">
+                        <button id="online-create" type="button" class="start-ritual-button">Raum erstellen (Host)</button>
+                        <button id="online-join" type="button" class="ghost-button">Einladung beitreten (Gast)</button>
+                        <button id="online-reset" type="button" class="ghost-button">Verbindung schließen</button>
+                    </div>
+                    <div class="online-signaling">
+                        <label for="online-output">Dein Signalcode (zum Weitergeben)</label>
+                        <textarea id="online-output" rows="4" readonly spellcheck="false" placeholder="Hier erscheint die Einladung oder Antwort"></textarea>
+                        <button id="online-copy" type="button" class="ghost-button">Signal kopieren</button>
+                        <label for="online-input">Empfangener Signalcode</label>
+                        <textarea id="online-input" rows="4" spellcheck="false" placeholder="Hier Einladung bzw. Antwort einfügen"></textarea>
+                    </div>
+                    <div id="online-host-actions" class="online-actions" hidden>
+                        <button id="online-invite" type="button" class="ghost-button">Neue Einladung erzeugen</button>
+                        <button id="online-accept" type="button" class="ghost-button">Antwort übernehmen</button>
+                        <button id="online-start" type="button" class="start-ritual-button" disabled>Partie starten</button>
+                    </div>
+                    <div id="online-guest-actions" class="online-actions" hidden>
+                        <button id="online-ready" type="button" class="start-ritual-button" disabled>Bereit</button>
+                    </div>
+                    <p id="online-connection" class="online-connection" role="status">Noch keine Verbindung</p>
+                    <p id="online-message" class="online-message" role="status" aria-live="polite"></p>
+                    <h3 class="online-subtitle">Spielerliste</h3>
+                    <ul id="online-roster" class="online-roster"></ul>
+                    <section id="online-table" class="online-table" aria-labelledby="online-round" hidden>
+                        <h3 id="online-round">Runde</h3>
+                        <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
+                        <ul id="online-players" class="online-players"></ul>
+                        <h4 id="online-trick-label" class="online-subtitle">Aktueller Stich</h4>
+                        <div id="online-trick" class="online-trick"></div>
+                        <div id="online-bid-panel" hidden>
+                            <h4 class="online-subtitle">Deine Vision wählen</h4>
+                            <div id="online-bids" class="online-bids"></div>
+                        </div>
+                        <div id="online-priestess" hidden>
+                            <h4 class="online-subtitle">Hohepriesterin: Gebot ändern</h4>
+                            <div class="online-actions">
+                                <button id="online-priestess-minus" class="ghost-button" type="button">−1</button>
+                                <button id="online-priestess-plus" class="ghost-button" type="button">+1</button>
+                            </div>
+                        </div>
+                        <h4 class="online-subtitle">Deine Hand</h4>
+                        <div id="online-hand" class="online-hand" role="group" aria-label="Deine Karten"></div>
+                        <div id="online-score-panel" hidden>
+                            <h4 class="online-subtitle">Rundenwertung</h4>
+                            <ul id="online-scores"></ul>
+                        </div>
+                        <button id="online-next" class="ghost-button" type="button" hidden>Nächste Runde</button>
+                    </section>
+                </section>
+
                 <p id="environment-description" class="environment-description">Ein stiller Gewölbehof aus dunklem Marmor, vergoldeten Säulen und einem sternverglasten Sanktuarium.</p>
             </div>
 
@@ -307,7 +393,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.6.0-beta.3</span> · Regelwerk <span id="footer-ruleset">0.6.0</span></p>
+        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.0-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.0</span></p>
         <p class="site-footer__note">Lokale Beta ohne Online-Multiplayer. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
     </footer>
 
@@ -365,6 +451,9 @@
     <script src="js/core/game-reducer.js" defer></script>
     <script src="js/engine.js" defer></script>
     <script src="js/core/legacy-adapter.js" defer></script>
+    <script src="js/net/webrtc.js" defer></script>
+    <script src="js/net/private-room.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/net/online-ui.js" defer></script>
 </body>
 </html>
