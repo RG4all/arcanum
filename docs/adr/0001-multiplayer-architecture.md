@@ -117,6 +117,7 @@ Die Datei `LICENSE` enthält GPL-2.0-Text, `package.json` gibt dagegen `ISC` an.
 - [x] Isolierte Unit-Tests für Determinismus, Datenschutz und Übergänge.
 - [x] Vollständiger Node-Spiel-/Regeltestkatalog in GitHub Actions geprüft (115/115 Tests, Lauf 45395085369 vom 2026-11-24).
 - [x] Browser-Engine und Bot-Adapter durch `js/core/legacy-adapter.js` auf den Reducer umgestellt.
-- [x] Deterministische Engine-Parität über Turbo, Standard und RAW sowie 2, 3, 6 Spieler und zwei Seeds per Integrationstest nachgewiesen; zusätzlich bestehende Sonderregeltests grün. Kombinationen aller Sonderereignisse und echte Browser-Smoke-Tests bleiben als weitergehende Qualitätssicherung offen.
-- [ ] Echte Browser-Smoke-Tests auf Mobilgeräten/Browsern (außerhalb Node-CI).
+- [x] Deterministische Engine-Parität über Turbo, Standard und RAW sowie 2, 3, 6 Spieler und 16 Seeds per Integrationstest nachgewiesen; zusätzlich bestehende Sonderregeltests grün. Kombinationen aller Sonderereignisse und echte Browser-Smoke-Tests bleiben als weitergehende Qualitätssicherung offen.
+- [x] Automatisierter Chromium-Smoke-Test auf Desktop- und Mobile-Viewport (GitHub Actions Lauf 45396010932).
+- [ ] Manuelle Abnahme auf echten Mobilgeräten einschließlich 3D-Rendering und Animation.
 - [ ] WebRTC-Lobby, Signalisierung, Reconnect (separate Issues).
