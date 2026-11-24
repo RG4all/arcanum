@@ -170,9 +170,17 @@
                     <h3 class="online-subtitle">Spielerliste</h3>
                     <ul id="online-roster" class="online-roster"></ul>
                     <section id="online-table" class="online-table" aria-labelledby="online-round" hidden>
-                        <h3 id="online-round">Runde</h3>
-                        <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
-                        <ul id="online-players" class="online-players"></ul>
+                        <header class="online-match-header">
+                            <div>
+                                <span class="online-section-kicker">Live · Spielstand</span>
+                                <h3 id="online-round">Runde</h3>
+                                <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
+                            </div>
+                            <p id="online-hud-oracle" class="online-hud-oracle">Weltgesetz: –</p>
+                        </header>
+                        <div class="online-hud-summary" aria-label="Wertung aller Spieler">
+                            <ul id="online-players" class="online-players online-player-hud"></ul>
+                        </div>
                         <h4 id="online-trick-label" class="online-subtitle">Aktueller Stich</h4>
                         <p id="online-trick-winner" class="online-trick-winner" role="status" aria-live="polite"></p>
                         <div id="online-trick" class="online-trick"></div>
@@ -194,6 +202,16 @@
                             <ul id="online-scores"></ul>
                         </div>
                         <button id="online-next" class="ghost-button" type="button" hidden>Nächste Runde</button>
+                        <section class="online-chronicle" aria-labelledby="online-log-title">
+                            <div class="online-chronicle-header">
+                                <div>
+                                    <span class="online-section-kicker">Zug für Zug</span>
+                                    <h4 id="online-log-title">Partie-Chronik</h4>
+                                </div>
+                                <p>Gebote · Karten · Effekte · Stichsieger · Karma</p>
+                            </div>
+                            <ol id="online-log" class="online-event-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Öffentliches Multiplayer-Spielprotokoll"></ol>
+                        </section>
                     </section>
                 </section>
 
@@ -485,6 +503,7 @@
     <script src="js/mode-hints.js" defer></script>
     <script src="js/workspace-tabs.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/net/match-presentation.js" defer></script>
     <script src="js/net/online-ui.js" defer></script>
 </body>
 </html>
