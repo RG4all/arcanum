@@ -104,15 +104,14 @@
         v: VERSION, kind: 'offer', roomId, slotId,
         description: { type: 'offer', sdp: pc.localDescription.sdp }
       });
-      return {
-        ...peer, offerCode,
+      return Object.assign(peer, { offerCode,
         async acceptAnswer(code) {
           const answer = signal(code, 'answer');
           if (answer.roomId !== roomId || answer.slotId !== slotId) throw new Error('Antwort gehört zu einer anderen Einladung');
           if (pc.remoteDescription) throw new Error('Antwort wurde bereits übernommen');
           await pc.setRemoteDescription(answer.description);
         }
-      };
+      });
     } catch (error) { peer.close(); throw error; }
   }
 
@@ -125,13 +124,12 @@
       await pc.setRemoteDescription(offer.description);
       await pc.setLocalDescription(await pc.createAnswer());
       await waitForIce(pc);
-      return {
-        ...peer, roomId: offer.roomId, slotId: offer.slotId,
+      return Object.assign(peer, { roomId: offer.roomId, slotId: offer.slotId,
         answerCode: JSON.stringify({
           v: VERSION, kind: 'answer', roomId: offer.roomId, slotId: offer.slotId,
           description: { type: 'answer', sdp: pc.localDescription.sdp }
         })
-      };
+      });
     } catch (error) { peer.close(); throw error; }
   }
 
