@@ -87,10 +87,14 @@
       const winningCard = resolved.cards.find(p => p.playerIdx === resolved.winnerIdx);
       const displayName = rosterName(view.players[resolved.winnerIdx].id);
       const card = winningCard && Cards.DECK_BY_UID[winningCard.uid];
+      const detail = resolved.destroyed ? 'Turm zerstört den Stich – keine Punkte'
+        : resolved.foolBeatWorld ? 'Narr entthront die Welt'
+        : resolved.cancelled ? 'Hierophant: Effekte aus, Kartenwert entscheidet'
+        : resolved.deathHalf ? 'Tod: halber Stich' : 'höchster gültiger Kartenrang';
       text('online-trick-winner', resolved.won === 0
-        ? 'Stich ohne Punktgewinn (Sonderregel). Rechnerisch stärkste Karte: ' + displayName
+        ? 'Kein Stichpunkt · ' + detail + ' · rechnerisch: ' + displayName
         : 'Stich gewonnen: ' + displayName + (card ? ' · ' + card.name : '') +
-          (resolved.won === 0.5 ? ' · halber Stich' : ''));
+          ' · ' + detail);
     } else text('online-trick-winner', 'Noch kein Stich entschieden.');
     clear('online-trick');
     trick.forEach(entry => {
@@ -103,6 +107,14 @@
       const caption = document.createElement('small');
       caption.textContent = rosterName(view.players[entry.playerIdx].id);
       block.appendChild(caption);
+      if (!view.currentTrick.length && resolved && resolved.ranks) {
+        const rank = resolved.ranks.find(p => p.playerIdx === entry.playerIdx);
+        if (rank) {
+          const label = document.createElement('small');
+          label.textContent = 'Stichrang: ' + rank.rank;
+          block.appendChild(label);
+        }
+      }
       const card = entry.uid ? Cards.DECK_BY_UID[entry.uid] : Cards.CONCEALED_CARD;
       if (card) {
         const artwork = document.createElement('div');
