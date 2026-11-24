@@ -16,7 +16,7 @@
   const CARDS = global.ArcanumCards;
 
   /** Version des Regelwerks – erhöhen, wenn sich Spielregeln ändern. */
-  const RULESET_VERSION = '0.6.0';
+  const RULESET_VERSION = '0.6.1';
   /** Version des serialisierbaren Spielstandformats. */
   const STATE_SCHEMA_VERSION = 1;
 
