@@ -51,7 +51,13 @@
       state.currentTrick.map(x => ({ playerIdx: x.playerIdx, card: cards.DECK_BY_UID[x.uid], hidden: x.hidden })),
       { leadSuit: state.leadSuit, oracleUid: state.oracleUid, mode: state.mode, playerCount: state.players.length }
     );
-    state.lastTrick = { winnerIdx: result.winnerIdx, won: result.won, cards: state.currentTrick.map(x => ({ ...x })) };
+    state.lastTrick = {
+      winnerIdx: result.winnerIdx, won: result.won,
+      cards: state.currentTrick.map(x => ({ ...x })),
+      ranks: result.ranks.map(x => ({ ...x })),
+      destroyed: result.destroyed, cancelled: result.cancelled,
+      deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld
+    };
     // The Hierophant cancels effects, NOT the winning trick itself.
     state.players[result.winnerIdx].won += result.won;
     if (!result.cancelled) {
