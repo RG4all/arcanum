@@ -25,7 +25,7 @@ function createBrowser(mode, seed) {
     createElement() { return { classList: { add() {}, remove() {} }, appendChild() {}, style: {} }; }
   };
   const context = {
-    document, console, Math, setTimeout, clearTimeout,
+    document, console, Math, setTimeout, clearTimeout, structuredClone,
     currentActiveMode: mode, confirm: () => true,
     performance: { now: () => Date.now() },
     matchMedia: () => ({ matches: false }),
