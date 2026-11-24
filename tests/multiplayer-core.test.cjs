@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createGame, snapshotFor, PHASE } = require('../js/core/game-state.js');
 const { apply, publicEvents } = require('../js/core/game-reducer.js');
-const { TYPES } = require('../js/core/game-commands.js');
+const { TYPES, PROTOCOL_VERSION, validateNetworkCommand } = require('../js/core/game-commands.js');
 
 // Small deterministic fixture for isolated reducer tests. Repository integration
 // must additionally run the actual js/cards.js + js/rules.js suite.
@@ -84,4 +84,21 @@ test('hidden Moon card UID is never public', () => {
   state.currentTrick = [{ playerIdx: 0, uid: 'card-18', hidden: true }];
   assert.equal(Object.hasOwn(snapshotFor(state, 'bob').currentTrick[0], 'uid'), false);
   assert.equal(Object.hasOwn(publicEvents([{ type: 'CardPlayed', uid: 'card-18', hidden: true, sequence: 9 }])[0], 'uid'), false);
+});
+
+test('network commands require the correct protocol version', () => {
+  assert.equal(PROTOCOL_VERSION, 1);
+  assert.throws(() => validateNetworkCommand({
+    type: TYPES.PLAY_CARD, sequence: 1, actorId: 'alice', cardUid: 'card-1'
+  }), /Protokollversion/);
+  assert.throws(() => validateNetworkCommand({
+    type: TYPES.PLAY_CARD, protocolVersion: 999,
+    sequence: 1, actorId: 'alice', cardUid: 'card-1'
+  }), /Protokollversion/);
+  assert.equal(validateNetworkCommand({
+    type: TYPES.PLAY_CARD, protocolVersion: 1,
+    sequence: 1, actorId: 'alice', cardUid: 'card-1'
+  }), true);
+  const view = snapshotFor(newMatch(), 'alice');
+  assert.equal(view.protocolVersion, PROTOCOL_VERSION);
 });
