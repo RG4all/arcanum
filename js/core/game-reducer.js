@@ -54,7 +54,7 @@
     state.lastTrick = {
       winnerIdx: result.winnerIdx, won: result.won,
       cards: state.currentTrick.map(x => ({ ...x })),
-      ranks: result.ranks.map(x => ({ ...x })),
+      ranks: (result.ranks || []).map(x => ({ ...x })),
       destroyed: result.destroyed, cancelled: result.cancelled,
       deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld
     };
