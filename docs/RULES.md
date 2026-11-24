@@ -33,6 +33,22 @@ Das Nachschlagewerk zur Partie. Für Architektur und Formeln siehe [ARCHITECTURE
 | **Der Turm (XVI)** | Zerstört den Stich: Niemand erhält ihn (`0` Stiche). |
 | **Der Tod (XIII)** | Der rechnerische Sieger erhält nur `0,5` Stiche. Der Turm hat Vorrang. |
 
+### Kartenwert versus technischer Vergleichsschlüssel
+
+Im Code ordnet `createRanker()` jedem ausgespielten Blatt einen **stichinternen Vergleichsschlüssel** zu. Diese Zahl ist **kein Karma, kein offizieller Kartengrundwert und kein überall gültiger Rang**.
+
+| Beispiel | Vergleichsschlüssel im Normalfall | Bedeutung |
+| --- | ---: | --- |
+| Vier der Kelche, Kelche angespielt | 4 | Farbkarte mit Wert 4 |
+| Sechs der Schwerter, Kelche angespielt | −494 | Fremdfarbe, zählt nicht für den Stich |
+| König der Stäbe, Stäbe angespielt | 14 | Farbkarte mit Wert 14 |
+| Hierophant (V) | 205 | Regulärer Trumpf V |
+| Kraft (XI) ohne Hierophant | 5000 | Sonderwirkung schlägt reguläre Karten |
+| Kraft (XI) **mit** Hierophant | 211 | Sonderwirkung aufgehoben, normaler Trumpf XI |
+| Teufel (XV) | 215 | Regulärer Trumpf XV |
+
+Mit dem Rad-Orakel wird die Vergleichsordnung umgekehrt; mit der Herrscherin erhalten Kelche einen anderen Vergleichsbereich. Die Anzeige erklärt die Bedeutung jetzt sprachlich statt die internen Schlüssel auszugeben.
+
 ## 4 · Bedienpflicht und Zugbeschränkungen
 
 - Wer eine Farbe anspielt, muss bedient werden, sofern möglich. Trumps dürfen **jederzeit** gelegt werden.
@@ -74,7 +90,7 @@ Die Oberfläche sperrt unzulässige Karten und nennt den Grund (`Bedienpflicht`,
 
 **Orakel** wirken nur im Standard und gelten für die gesamte Runde. Ein Orakel wird pro Runde zufällig aus den fünf Karten III, IV, VI, X und XVII gezogen.
 
-**Der Hierophant** schaltet beim Auswerten alle Karteneffekte ab – Narr, Turm, Tod, Kraft, Magier, Gerechtigkeit und Hohepriesterin. **Der Stich selbst bleibt gültig und wird nach der regulären Kartenrangfolge dem Sieger gutgeschrieben.** Orakel bleiben aktiv (inklusive Rad und Herrscherin). Der Teufel wirkt bereits beim Legen und kann deshalb nicht rückwirkend annulliert werden; liegt der Hierophant jedoch schon, wird der Zwang unterdrückt.
+**Der Hierophant** schaltet beim Auswerten alle Karteneffekte ab – Narr, Turm, Tod, Kraft, Magier, Gerechtigkeit und Hohepriesterin. **Der Stich selbst bleibt gültig und wird nach der regulären Kartenrangfolge dem Sieger gutgeschrieben.** Orakel bleiben aktiv (inklusive Rad, Herrscherin und Liebende: Der Partner erhält weiterhin seinen Anteil am Stich). Der Teufel wirkt bereits beim Legen und kann deshalb nicht rückwirkend annulliert werden; liegt der Hierophant jedoch schon, wird der Zwang unterdrückt.
 
 ## 6 · Hofkarten und Hofkarten-Segen
 
