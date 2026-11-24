@@ -16,7 +16,7 @@
     assert(new Set(playerIds).size === playerIds.length, 'Spieler-IDs nicht eindeutig');
     assert(Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff, '32-Bit-Seed erforderlich');
     const state = {
-      schema: VERSION, ruleset: rules.RULESET_VERSION, mode, seed, rngState: seed || 1,
+      schema: VERSION, protocolVersion: 1, ruleset: rules.RULESET_VERSION, mode, seed, rngState: seed || 1,
       round: 1, maxRounds: rules.maxRounds(mode), phase: PHASE.BIDDING, sequence: 0,
       players: playerIds.map(id => ({ id, hand: [], bid: null, won: 0, score: 0, courtKarma: 0, bonus: 0 })),
       activePlayerIdx: 0, currentTrick: [], leadSuit: null, oracleUid: null,
@@ -27,7 +27,8 @@
   /** A snapshot for one recipient; an opponent's hand is NEVER transmitted. */
   function snapshotFor(state, recipientId) {
     return {
-      schema: state.schema, ruleset: state.ruleset, mode: state.mode,
+      schema: state.schema, protocolVersion: state.protocolVersion,
+      ruleset: state.ruleset, mode: state.mode,
       round: state.round, maxRounds: state.maxRounds, phase: state.phase, sequence: state.sequence,
       activePlayerIdx: state.activePlayerIdx, leadSuit: state.leadSuit, oracleUid: state.oracleUid,
       currentTrick: state.currentTrick.map(item => item.hidden ? { playerIdx: item.playerIdx, hidden: true } : { ...item }),
