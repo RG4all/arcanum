@@ -34,7 +34,8 @@
   function copy(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }
 
   function createHost({ rules, cards, seats = 2, mode = 'raw', name = 'Host',
-    rtc = rtcDefault, useStun = true, idFactory = randomHex, onChange, onError } = {}) {
+    rtc = rtcDefault, useStun = true, stunUrls, turnUrl, turnUsername, turnCredential,
+    idFactory = randomHex, onChange, onError, onDiagnostic } = {}) {
     assert(rules && cards && rules.MODES && rules.MODES[mode], 'Ungültiger Spielmodus');
     assert(Number.isInteger(seats) && seats >= 2 && seats <= 6, 'Spielerzahl muss 2–6 sein');
     const roomId = idFactory(12);
@@ -143,7 +144,8 @@
         notify();
         try {
           peer.link = await rtc.createHostLink({
-            roomId, slotId, useStun,
+            roomId, slotId, useStun, stunUrls, turnUrl, turnUsername, turnCredential,
+            onDiagnostic: data => { if (onDiagnostic) onDiagnostic({ peerId: peer.id, ...data }); },
             onMessage: msg => incoming(peer, msg),
             onStatus: value => peerStatus(peer, value)
           });
@@ -201,7 +203,7 @@
   }
 
   async function join({ code, name = 'Gast', rules, cards, rtc = rtcDefault, useStun = true,
-    onChange, onError } = {}) {
+    onChange, onError, onDiagnostic, stunUrls, turnUrl, turnUsername, turnCredential } = {}) {
     assert(rules && cards, 'Regelwerk fehlt');
     let id = null, roomId = null, mode = null, seats = 0, matchId = null;
     let roster = [], view = null, requestNo = 0, ended = false, stopped = false;
@@ -256,7 +258,11 @@
         ended = true; report('Verbindung zum Host abgebrochen'); notify();
       } else if (value === 'bad-message') report('Beschädigte Netzwerknachricht verworfen');
     }
-    link = await rtc.joinOffer(code, { useStun, onMessage: incoming, onStatus: connectionStatus });
+    link = await rtc.joinOffer(code, {
+      useStun, stunUrls, turnUrl, turnUsername, turnCredential,
+      onDiagnostic: data => { if (onDiagnostic) onDiagnostic({ peerId: 'host', ...data }); },
+      onMessage: incoming, onStatus: connectionStatus
+    });
     roomId = link.roomId;
     notify();
     return {
