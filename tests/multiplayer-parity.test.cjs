@@ -72,7 +72,7 @@ function view(game) {
 
 for (const mode of ['turbo', 'standard', 'raw']) {
   for (const count of [2, 3, 6]) {
-    for (const seed of [7, 1024]) {
+    for (const seed of [7, 13, 17, 23, 31, 47, 53, 71, 97, 113, 127, 199, 257, 509, 1023, 1024]) {
       test(`legacy/core parity: ${mode}, ${count} seats, seed ${seed}`, () => {
         const legacy = build(mode, seed, false);
         const migrated = build(mode, seed, true);
