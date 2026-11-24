@@ -77,6 +77,7 @@
   function apply(state, command, { rules, cards }) {
     validateCommand(command);
     requireState(state && state.schema === stateApi.VERSION, 'Falsche Zustandsversion');
+    requireState(state.protocolVersion === commands.PROTOCOL_VERSION, 'Falsche State-Protokollversion');
     requireState(command.sequence === state.sequence + 1, 'Sequenz muss exakt nächste Nummer sein');
     requireState(rules.RULESET_VERSION === state.ruleset, 'Regelwerksversion abweichend');
     const next = structuredClone(state);
