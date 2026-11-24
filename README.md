@@ -1,8 +1,20 @@
 # Arcanum
 
-**Version 0.6.0-beta.2** · Browser-Beta
+**Version 0.6.0-beta.3** · Browser-Beta
 
 Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex, wähle zwischen den Regelwerken **Turbo**, **Standard** und **RAW – Die Nackte Zahl** und trete an einem von zehn Ritualorten an.
+
+## Multiplayer-Core (0.6.0-beta.3)
+
+Die Browser-Engine verwendet über `js/core/legacy-adapter.js` einen DOM-freien Reducer für Spielzustandsübergänge. Menschliche und Bot-Aktionen laufen über dieselbe Command-Validierung. Der bisherige Spielmodus gegen Bots bleibt erhalten; **es gibt noch keine Netzwerkverbindung, Lobby oder PWA-Installation**.
+
+- Entscheidungen: [ADR 0001](docs/adr/0001-multiplayer-architecture.md) (Hybrid-P2P) und [ADR 0002](docs/adr/0002-multiplayer-core-migration.md) (Core-Migration).
+- Kernmodule: `js/core/game-state.js`, `game-commands.js`, `game-reducer.js`.
+- Versionierter Spielstand, Seed-basierte Zufallsfolge und Empfänger-spezifische Snapshots.
+- Keine laufenden Serverkosten: der Spielkern läuft vollständig im Browser.
+- Tests: `npm test`, insbesondere `tests/multiplayer-integration.test.cjs`.
+
+**Lizenzhinweis:** `LICENSE` enthält GPL-2.0-Text, während das Paket ISC ausweist. Die kommerzielle Lizenz- und Asset-Rechteprüfung steht noch aus; keine kommerzielle Freigabe ist erteilt.
 
 ## Was diese Version bringt
 
