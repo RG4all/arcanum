@@ -31,6 +31,6 @@ WebRTC-Transport, Lobby, Accounts, Reconnect und PWA-Installation sind nicht Tei
 
 - Der DOM-freie Reducer ist über `js/core/legacy-adapter.js` in die bestehende Browser-Engine integriert; Bot- und menschliche Commands teilen sich dieselbe Validierung.
 - Die bisherigen 3 Spielmodi und 2/3/6 Spieler wurden mit realen Kartendaten und Regeln per Node-VM getestet.
-- Legacy/Core-Parität: identische Seeds und Zugfolgen in 18 Konfigurationen; vollständige Suite 115/115 grün (GitHub Actions Lauf [45395085369](https://github.com/RG4all/arcanum/actions/runs/45395085369)).
-- Echte Browser-/Endgeräte-Smoketests bleiben vor dem Merge empfohlen. Der neue Core stellt noch keinen Netzwerktransport dar.
+- Legacy/Core-Parität: identische Seeds und Zugfolgen in 144 Konfigurationen; vollständige Suite 115/115 grün (GitHub Actions Lauf [45395085369](https://github.com/RG4all/arcanum/actions/runs/45395085369)).
+- Automatisierter Chromium-Smoke-Test auf Desktop- und Mobile-Viewport grün (GitHub Actions Lauf [45396010932](https://github.com/RG4all/arcanum/actions/runs/45396010932)). Visuelle Tests auf echten Mobilgeräten bleiben vor dem Produktionsrelease empfohlen. Der neue Core stellt noch keinen Netzwerktransport dar.
 - Die Prüfung sämtlicher denkbarer Kombinationen von Sonderkarten ist durch deterministische Stichproben und vorhandene Regel-Unit-Tests gestützt, aber nicht mathematisch erschöpfend.
