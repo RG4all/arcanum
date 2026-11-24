@@ -82,13 +82,39 @@
       : view.lastTrick ? view.lastTrick.cards : [];
     text('online-trick-label', view.currentTrick.length ? 'Aktueller Stich'
       : view.lastTrick ? 'Letzter Stich (aufgedeckt)' : 'Noch keine Karte gespielt');
+    const resolved = view.lastTrick;
+    if (resolved) {
+      const winningCard = resolved.cards.find(p => p.playerIdx === resolved.winnerIdx);
+      const displayName = rosterName(view.players[resolved.winnerIdx].id);
+      const card = winningCard && Cards.DECK_BY_UID[winningCard.uid];
+      const detail = resolved.destroyed ? 'Turm zerstört den Stich – keine Punkte'
+        : resolved.foolBeatWorld ? 'Narr entthront die Welt'
+        : resolved.cancelled ? 'Hierophant: Effekte aus, Kartenwert entscheidet'
+        : resolved.deathHalf ? 'Tod: halber Stich' : 'höchster gültiger Kartenrang';
+      text('online-trick-winner', resolved.won === 0
+        ? 'Kein Stichpunkt · ' + detail + ' · rechnerisch: ' + displayName
+        : 'Stich gewonnen: ' + displayName + (card ? ' · ' + card.name : '') +
+          ' · ' + detail);
+    } else text('online-trick-winner', 'Noch kein Stich entschieden.');
     clear('online-trick');
     trick.forEach(entry => {
       const block = document.createElement('div');
       block.className = 'online-trick-card';
+      if (!view.currentTrick.length && resolved &&
+          resolved.won > 0 && entry.playerIdx === resolved.winnerIdx) {
+        block.classList.add('is-winner');
+      }
       const caption = document.createElement('small');
       caption.textContent = rosterName(view.players[entry.playerIdx].id);
       block.appendChild(caption);
+      if (!view.currentTrick.length && resolved && resolved.ranks) {
+        const rank = resolved.ranks.find(p => p.playerIdx === entry.playerIdx);
+        if (rank) {
+          const label = document.createElement('small');
+          label.textContent = 'Stichrang: ' + rank.rank;
+          block.appendChild(label);
+        }
+      }
       const card = entry.uid ? Cards.DECK_BY_UID[entry.uid] : Cards.CONCEALED_CARD;
       if (card) {
         const artwork = document.createElement('div');
@@ -170,9 +196,36 @@
   async function guarded(fn) {
     try { await fn(); } catch (error) { fault(error); }
   }
+  function iceDiagnostic(data) {
+    const counts = data.counts || {};
+    if (data.stage === 'gathered') {
+      const via = Number(counts.relay) ? 'TURN-Relay vorhanden'
+        : Number(counts.srflx) ? 'Öffentliche STUN-Adresse erkannt'
+        : 'Nur lokale Host-Adressen erkannt';
+      text('online-ice-diagnostics', via + ' · ICE: lokal ' + (counts.host || 0) +
+        ', STUN ' + (counts.srflx || 0) + ', TURN ' + (counts.relay || 0) +
+        (data.complete ? '' : '. Zeitlimit: Server ggf. nicht erreichbar.'));
+    } else if (data.stage === 'selected-pair') {
+      text('online-ice-diagnostics', 'P2P-Verbindung aktiv: lokal ' +
+        (data.local || 'unbekannt') + ', Gegenstelle ' + (data.remote || 'unbekannt') +
+        (data.protocol ? ' · ' + data.protocol.toUpperCase() : ''));
+    } else if (data.stage === 'stun-error') {
+      text('online-ice-diagnostics', 'ICE-Server meldet ein Problem (Code ' +
+        (data.code || '?') + '). Prüfe UDP/Firewall, STUN-Adressen oder einen optionalen TURN-Relay.');
+    } else if (data.stage === 'ice-state' && data.state === 'failed') {
+      text('online-ice-diagnostics', 'ICE fehlgeschlagen: STUN allein kann restriktive NATs nicht verbinden. Optional TURN konfigurieren.');
+    } else if (data.stage === 'connection-state' && data.state === 'failed') {
+      text('online-ice-diagnostics', 'Keine direkte Verbindung möglich. TURN-Relay oder Netzwerkkonfiguration erforderlich.');
+    }
+  }
   function options() {
     return { rules: Rules, cards: Cards, name: el('online-name').value,
-      useStun: el('online-stun').checked, onChange: changed, onError: fault };
+      useStun: el('online-stun').checked,
+      stunUrls: el('online-stun-urls').value,
+      turnUrl: el('online-turn-url').value.trim(),
+      turnUsername: el('online-turn-user').value,
+      turnCredential: el('online-turn-password').value,
+      onChange: changed, onError: fault, onDiagnostic: iceDiagnostic };
   }
   function act(command) {
     if (!session || !info || !info.view || info.ended || pending) return;
@@ -249,6 +302,7 @@
       session = null; info = null; pending = false; lastSequence = -1;
       el('online-output').value = '';
       el('online-input').value = '';
+      text('online-ice-diagnostics', 'ICE-Diagnose erscheint nach dem Verbindungstest.');
       message('Verbindung geschlossen.');
       render();
     });

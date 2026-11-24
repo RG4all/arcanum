@@ -336,7 +336,7 @@
    * `js/app.js` als Karte am Zeiger eingeblendet.
    */
   const HOVER_HINTS = {
-    'mode-turbo': { title: 'Regelwerk · Turbo', short: 'Fünf schnelle Runden, reine Zahlenhierarchie.', action: 'Schaltet auf Turbo und gibt ein frisches Ritual mit 5 Runden aus.' },
+    'mode-turbo': { title: 'Regelwerk · Turbo', short: 'Fünf Runden mit Zahlenrang, Narr/Welt und einzelnen Sonderstichen, ohne Orakel.', action: 'Schaltet auf Turbo und gibt ein frisches Ritual mit 5 Runden aus.' },
     'mode-standard': { title: 'Regelwerk · Standard', short: 'Sieben Runden mit Weltgesetzen und Hofkarten-Segen.', action: 'Schaltet auf Standard und gibt ein frisches Ritual mit 7 Runden aus.' },
     'mode-raw': { title: 'Regelwerk · RAW – Die Nackte Zahl', short: 'Komplettes 78-Karten-Deck ohne Sonderkarten – jede Große Arkana schlägt jede Kleine Arkana.', action: 'Schaltet auf RAW – Die Nackte Zahl und gibt ein frisches Ritual mit 5 Runden aus; Große Arkana dürfen jederzeit gelegt werden, sonst gilt die Bedienpflicht.' },
     'env-select': { title: 'Ort der Begegnung', short: 'Zehn Ritualorte, jeder mit eigener Architektur.', action: 'Wechselt die 3D-Bühne; Materialien, Licht und Atmosphäre folgen dem Ort.' },
@@ -364,7 +364,7 @@
     'codex-card': { title: 'Kartenkodex', short: 'Motiv, Symbolik und Effekt einer Karte.', action: 'Öffnet den Detaildialog; Escape schließt ihn wieder.' },
     'chart': { title: 'Stochastik', short: 'Chance auf Trümpfe nach Handkartenzahl.', action: 'Hypergeometrisch berechnet aus dem Deck des aktiven Modus.' },
     'calc': { title: 'Wertungsrechner', short: 'Karma aus Vision und Stichen.', action: 'Nutzt dieselbe Formel wie die Partie, inklusive Orakel und Hofkarten.' },
-    'nav': { title: 'Navigation', short: 'Sprungmarken der Seite.', action: 'Springt weich zum gewählten Abschnitt.' }
+    'nav': { title: 'Navigation', short: 'Lokal/Bots, Multiplayer, Kodex & Stochastik und Wertung.', action: 'Wählt einen der vier Bereiche ohne die Partie zu unterbrechen.' }
   };
 
   /**

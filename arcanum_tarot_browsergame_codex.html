@@ -2,7 +2,7 @@
 <html lang="de" class="scroll-smooth" data-mode="turbo">
 <head>
     <meta charset="UTF-8">
-    <meta name="version" content="0.7.0-beta.1">
+    <meta name="version" content="0.7.1-beta.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b0710">
     <meta name="description" content="Arcanum – atmosphärisches Tarot-Stichspiel im Browser mit vollständigem 78-Karten-Deck, Karten-Kodex, drei Regelwerken (Turbo, Standard, RAW – Die Nackte Zahl), drei begehbaren 3D-Welten und zehn Ritualorten.">
@@ -36,17 +36,18 @@
             <button id="mobile-nav-toggle" class="mobile-nav-toggle md:hidden" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Navigation öffnen">
                 <span></span><span></span><span></span>
             </button>
-            <nav id="primary-nav" class="primary-nav" aria-label="Hauptnavigation">
-                <a href="#play-game" data-hint="nav">Arena</a>
-                <a href="#rules-view" data-hint="nav">Regelwerk</a>
-                <a href="#kodex" data-hint="nav">Karten-Kodex</a>
-                <a href="#math" data-hint="nav">Stochastik</a>
-                <a href="#calculator" data-hint="nav">Wertung</a>
+            <nav id="primary-nav" class="primary-nav workspace-tabs" aria-label="Bereiche" role="tablist">
+                <button id="tab-nav-bot" class="workspace-tab is-active" type="button" data-workspace-tab="bot" role="tab" aria-controls="tab-bot" aria-selected="true" tabindex="0">Lokal / Bots</button>
+                <button id="tab-nav-multiplayer" class="workspace-tab" type="button" data-workspace-tab="multiplayer" role="tab" aria-controls="tab-multiplayer" aria-selected="false" tabindex="-1">Multiplayer</button>
+                <button id="tab-nav-codex" class="workspace-tab" type="button" data-workspace-tab="codex" role="tab" aria-controls="tab-codex" aria-selected="false" tabindex="-1">Kodex &amp; Stochastik</button>
+                <button id="tab-nav-scoring" class="workspace-tab" type="button" data-workspace-tab="scoring" role="tab" aria-controls="tab-scoring" aria-selected="false" tabindex="-1">Wertung</button>
             </nav>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main id="workspace-main" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <section class="workspace-panel" id="tab-bot" role="tabpanel" aria-labelledby="tab-nav-bot">
+          <div class="workspace-intro"><span class="workspace-eyebrow">01 · Solo-Arena</span><p>Training gegen Bots – alle drei Regelwerke und zehn Ritualorte.</p></div>
 
         <!-- ================= ARENA ================= -->
         <section id="play-game" aria-labelledby="arena-title">
@@ -124,8 +125,24 @@
                         </label>
                         <label class="online-check" for="online-stun">
                             <input id="online-stun" type="checkbox" checked>
-                            Öffentlichen STUN-Dienst verwenden (Google; IP-Metadaten werden übertragen)
+                            STUN zur Adressermittlung aktivieren (externe IP-Metadaten)
                         </label>
+                        <details class="online-ice-settings">
+                            <summary>Verbindungsoptionen und Diagnose (STUN / optional TURN)</summary>
+                            <p>STUN allein garantiert keine Verbindung über restriktive NATs. Für solche Fälle kannst du einen eigenen oder extern angebotenen TURN-Relay eintragen. Ohne Angaben fallen keine TURN-Kosten an. Beide Teilnehmer benötigen erreichbare ICE-Server.</p>
+                            <label for="online-stun-urls">STUN-Server (durch Komma getrennt)
+                                <input id="online-stun-urls" type="text" value="stun:stun.l.google.com:19302, stun:stun1.l.google.com:19302" spellcheck="false" autocomplete="off">
+                            </label>
+                            <label for="online-turn-url">Optionaler TURN-Server
+                                <input id="online-turn-url" type="text" placeholder="turn:dein-server:3478" spellcheck="false" autocomplete="off">
+                            </label>
+                            <label for="online-turn-user">TURN-Benutzer
+                                <input id="online-turn-user" type="text" autocomplete="off" spellcheck="false">
+                            </label>
+                            <label for="online-turn-password">TURN-Passwort (nur im Arbeitsspeicher)
+                                <input id="online-turn-password" type="password" autocomplete="off">
+                            </label>
+                        </details>
                     </div>
                     <div class="online-actions">
                         <button id="online-create" type="button" class="start-ritual-button">Raum erstellen (Host)</button>
@@ -149,6 +166,7 @@
                     </div>
                     <p id="online-connection" class="online-connection" role="status">Noch keine Verbindung</p>
                     <p id="online-message" class="online-message" role="status" aria-live="polite"></p>
+                    <p id="online-ice-diagnostics" class="online-ice-diagnostics" role="status" aria-live="polite">ICE-Diagnose erscheint nach dem Verbindungstest.</p>
                     <h3 class="online-subtitle">Spielerliste</h3>
                     <ul id="online-roster" class="online-roster"></ul>
                     <section id="online-table" class="online-table" aria-labelledby="online-round" hidden>
@@ -156,6 +174,7 @@
                         <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
                         <ul id="online-players" class="online-players"></ul>
                         <h4 id="online-trick-label" class="online-subtitle">Aktueller Stich</h4>
+                        <p id="online-trick-winner" class="online-trick-winner" role="status" aria-live="polite"></p>
                         <div id="online-trick" class="online-trick"></div>
                         <div id="online-bid-panel" hidden>
                             <h4 class="online-subtitle">Deine Vision wählen</h4>
@@ -197,7 +216,7 @@
                     <div class="hud-tile hud-tile--mode" id="hud-mode-tile" data-hint="mode-tile" tabindex="0">
                         <span class="hud-tile__label">Regelwerk</span>
                         <span class="hud-tile__value hud-tile__value--text" id="hud-mode-name">Turbo</span>
-                        <span class="hud-tile__detail" id="hud-mode-detail">5 Runden · reine Zahlenhierarchie</span>
+                        <span class="hud-tile__detail" id="hud-mode-detail">5 Runden · Trumpf &amp; Sonderkarten</span>
                     </div>
                 </div>
 
@@ -300,6 +319,12 @@
             </div>
         </section>
 
+        </section>
+        <section class="workspace-panel" id="tab-multiplayer" role="tabpanel" aria-labelledby="tab-nav-multiplayer" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">02 · Private Tische</span><p>Ungewertete Online-Partien mit 2–6 Spielern, ohne eigenen Spielserver.</p></div>
+        </section>
+        <section class="workspace-panel workspace-panel--reference" id="tab-codex" role="tabpanel" aria-labelledby="tab-nav-codex" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">03 · Wissen</span><p>Regelwerk, alle 78 Karten und Wahrscheinlichkeiten auf einen Blick.</p></div>
         <!-- ================= REGELWERK ================= -->
         <section id="rules-view" aria-labelledby="rules-title"></section>
 
@@ -363,6 +388,9 @@
             </div>
         </section>
 
+        </section>
+        <section class="workspace-panel workspace-panel--scoring" id="tab-scoring" role="tabpanel" aria-labelledby="tab-nav-scoring" hidden>
+          <div class="workspace-intro"><span class="workspace-eyebrow">04 · Analyse</span><p>Stichgebote, Karma und detaillierte Rundenwertung berechnen.</p></div>
         <!-- ================= RECHNER ================= -->
         <section id="calculator" aria-labelledby="calc-title">
             <div class="section-head">
@@ -390,11 +418,12 @@
                 <ul id="calc-breakdown" class="calc-breakdown"></ul>
             </div>
         </section>
+        </section>
     </main>
 
     <footer class="site-footer">
-        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.0-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.0</span></p>
-        <p class="site-footer__note">Lokale Beta ohne Online-Multiplayer. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
+        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.1-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.1</span></p>
+        <p class="site-footer__note">Offline-Botmodus und private P2P-Partien verfügbar. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
     </footer>
 
     <!-- ================= PODIUM ================= -->
@@ -453,6 +482,8 @@
     <script src="js/core/legacy-adapter.js" defer></script>
     <script src="js/net/webrtc.js" defer></script>
     <script src="js/net/private-room.js" defer></script>
+    <script src="js/mode-hints.js" defer></script>
+    <script src="js/workspace-tabs.js" defer></script>
     <script src="js/app.js" defer></script>
     <script src="js/net/online-ui.js" defer></script>
 </body>

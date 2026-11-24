@@ -54,7 +54,7 @@
 
   // RAW – Die Nackte Zahl: komplettes Deck, Große Arkana schlägt jede Kleine Arkana, keine Sonderkarten.
   const MODE_META = Object.freeze({
-    turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie` },
+    turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · Trumpf & Sonderkarten` },
     standard: { badge: '📜 Standard Edition', name: 'Standard', detail: () => `${RULES.maxRounds('standard')} Runden · Orakel & Schicksal` },
     raw: { badge: '✧ RAW – Die Nackte Zahl', name: 'RAW', detail: () => `${RULES.maxRounds('raw')} Runden · 78 Karten · keine Sonderkarten` }
   });
@@ -96,6 +96,7 @@
   function switchRulesetMode(mode) {
     if (app.mode === mode) return;
     applyMode(mode);
+    if (typeof hideHint === 'function') hideHint(true);
     // Ein Moduswechsel startet ein frisches Ritual mit gültigen Rundenzahlen.
     global.GameEngine.initGame(Number(document.getElementById('game-player-count')?.value) || 3);
   }
@@ -160,8 +161,11 @@
             <li>Es gibt keine Sonderkarten und keine Kartenfunktionen.</li>`
               : `<li>Höchster Trumpf gewinnt, sonst höchste Karte der angespielten Farbe.</li>
             <li>Ass zählt <b>14,5</b> und schlägt den König; Hofkarten bleiben Bube 11 bis König 14.</li>
-            <li>Der Narr (0) verliert immer – außer er fällt direkt nach der Welt (XXI).</li>
-            <li>Der Turm (XVI) vernichtet den Stich; der Tod (XIII) halbiert ihn.</li>`}
+            <li>Der Narr (0) verliert normalerweise – außer er fällt direkt nach der Welt (XXI), solange keine Kraft gewinnt.</li>
+            ${standard
+              ? `<li>Die Kraft (XI) ist normalerweise der stärkste Trumpf. Der Turm (XVI) zerstört, der Tod (XIII) halbiert den Stich.</li>
+              <li>Der Hierophant (V) unterdrückt Karteneffekte, <b>nicht den Stichgewinn</b>. Das aktive Orakel gilt weiterhin.</li>`
+              : `<li>Turbo: Die Kraft (XI) hat Sonderrang und der Turm (XVI) zerstört den Stich. Tod und Hohepriesterin haben hier keine Zusatzwirkung.</li>`}`}
           </ol>
         </article>
         <article class="rules-card">
@@ -172,7 +176,7 @@
               <li>Es gibt <b>keine Orakel und keine Sonderkarten</b> – keine Kartenfunktion verändert den Stich.</li>
               <li>Bedienpflicht wie im Turbo: Die angespielte Farbe muss bedient werden, sofern möglich; eine Große Arkana darf <b>jederzeit</b> gelegt werden.</li>` : standard ? `
               <li>Fünf Orakel verändern das Weltgesetz einer Runde: Kelche als Trümpfe, freie Wahl, Partnerstiche, das Rad oder der Stern.</li>
-              <li>Schicksalskarten wirken beim Auswerten eines Stichs – der Hierophant annulliert sie alle.</li>
+              <li>Schicksalskarten wirken beim Auswerten eines Stichs – der Hierophant annulliert diese Effekte, aber nicht den Stichgewinn.</li>
               <li>Jede gewonnene Hofkarte zahlt zusätzlich Karma (Hofkarten-Segen).</li>` : `
               <li>Die Welt (XXI) ist der höchste Trumpf des Spiels.</li>
               <li>Der Narr (0) verliert gegen alles.</li>
@@ -184,7 +188,7 @@
           <table class="rules-table"><tbody>${table}</tbody></table>
           <p class="rules-note">${raw
             ? 'RAW kennt keine halben Stiche, keine Sonderkarten und keinen Hofkarten-Segen; eine Abweichung zählt −10 je Stich, ganzzahlig.'
-            : 'Halbe Stiche (Tod) sind zulässig; eine Abweichung wird auf ganze Stiche aufgerundet, damit alle Punktzahlen ganzzahlig bleiben.'}</p>
+            : 'Halbe Stiche (Tod) sind zulässig; eine Abweichung wird auf ganze Stiche gerundet, damit alle Punktzahlen ganzzahlig bleiben.'}</p>
         </article>
       </div>`;
 
@@ -541,6 +545,18 @@
   function hintContent(target) {
     const worlds = global.ArcanumWorlds;
     const key = target.getAttribute('data-hint');
+    const workspace = global.ArcanumWorkspace && global.ArcanumWorkspace.current();
+    const online = global.ArcanumOnline && global.ArcanumOnline.getInfo();
+    const mode = workspace === 'multiplayer'
+      ? (online && online.mode || document.getElementById('online-mode')?.value || app.mode)
+      : app.mode;
+    const cardUid = target.getAttribute('data-uid');
+    const card = cardUid && global.ArcanumCards && global.ArcanumCards.DECK_BY_UID[cardUid];
+    const effect = card && card.effectUid && global.ArcanumCards.EFFECTS[card.effectUid];
+    if (key && global.ArcanumModeHints) {
+      const dynamic = global.ArcanumModeHints.describe(key, mode, card, effect);
+      if (dynamic) return dynamic;
+    }
     if (key && worlds) {
       // Karten tragen `data-hint="card"` plus `data-uid`.
       if (key === 'card' && worlds.cardHint) {

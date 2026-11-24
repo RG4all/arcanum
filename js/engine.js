@@ -334,7 +334,9 @@
       this.lastTrick = { ...result, cards: this.currentTrick.slice() };
 
       this.announceTrick(result);
-      if (!result.cancelled) this.applyTrickEffects(result);
+      // The Hierophant suppresses effects, but the strongest card still takes the trick.
+      // resolveTrick already returns cleared side-effect fields in this case.
+      this.applyTrickEffects(result);
 
       this.currentTrick = [];
       this.leadSuit = null;

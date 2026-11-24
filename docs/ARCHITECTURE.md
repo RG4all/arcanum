@@ -355,3 +355,12 @@ Die Online-Anwendung nutzt `js/net/webrtc.js` (RTCPeerConnection + geordneter Da
 **Verbindungsaufbau:** Host generiert je Gast ein vollständiges Offer (inklusive ICE-Kandidaten) → Gast importiert Offer und erzeugt Answer → Host importiert Answer → DataChannel öffnet → HELLO/Versionstest → WELCOME → ROSTER/READY → Host startet bei vollständig besetzter Lobby. Keine öffentliche Server-Registrierung. ICE benötigt für manche Netze STUN und/oder TURN; das MVP verwendet optional einen öffentlichen STUN-Dienst, keinen TURN-Relay. Abbruch des Host-/Peer-Kanals beendet die laufende Partie (kein Reconnect), ungewertetes Spiel ist nicht betrugssicher.
 
 **Teststand:** `tests/private-room.test.cjs` und `tests/p2p-browser-smoke.cjs` ergänzen die bestehende Node-/Chromium-CI. Siehe README für den manuellen Signaling-Ablauf. Weitere Schritte sind Reconnect, Host-Failover und erst später serverautoritative Ranked-Partien.
+
+
+## 0.7.1-beta.1: Vier Bereiche, Standard-Stichkorrektur und ICE-Diagnose
+
+Die Anwendung besitzt vier zugängliche Panels unter `js/workspace-tabs.js`: **Lokal/Bots**, **Multiplayer**, **Kodex & Stochastik** (inkl. Regelwerk) und **Wertung**. Die bestehende `online-lobby` wird nach DOM-Initialisierung in das Multiplayer-Panel verschoben; der Offline-GameEngine-Zustand bleibt getrennt. Tab-Steuerung unterstützt Pfeiltasten, Home/End, Hash-Deep-Links und Mobile-Navigation. `js/mode-hints.js` erzeugt kontextbezogene Hovertexte; das Regelwerk bestimmt, ob Spezialeffekte gelten.
+
+**Regelkorrektur 0.6.1:** `ArcanumRules.resolveTrick` wertet beim Hierophanten den regulären Kartensieger weiterhin aus. Oracle-Rangwirkungen bleiben aktiv; nur Stich-Karteneffekte werden ausgeschaltet. `GameEngine` und `ArcanumGameReducer` schreiben auch dann den gewonnenen Stich gut. Das letzte öffentliche Stich-Snapshot enthält Sieger, gewonnene Stiche und die Rangwerte aller gespielten Karten.
+
+**ICE-Diagnostik:** `js/net/webrtc.js` zählt host/srflx/relay/prflx ICE-Kandidaten, meldet Gathering- und Connection-Zustände und unterstützt benutzerkonfigurierten STUN sowie optional TURN mit eigenen Zugangsdaten. Diese Daten werden nicht im SDP-Signaling übertragen oder gespeichert. TURN verursacht nur Kosten, wenn jemand einen Relay-Dienst betreibt/benutzt; es bleibt freiwillig und ist nicht im Projekt enthalten.

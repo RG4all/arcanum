@@ -32,6 +32,13 @@ async function run() {
       guest.goto(URL, { waitUntil: 'domcontentloaded' })]);
     await Promise.all([host.waitForFunction(() => window.ArcanumOnline && window.GameEngine),
       guest.waitForFunction(() => window.ArcanumOnline && window.GameEngine)]);
+    await host.locator('#tab-nav-multiplayer').click();
+    await guest.locator('#mobile-nav-toggle').click();
+    await guest.locator('#tab-nav-multiplayer').click();
+    await Promise.all([
+      host.locator('#tab-multiplayer').waitFor({ state: 'visible' }),
+      guest.locator('#tab-multiplayer').waitFor({ state: 'visible' })
+    ]);
     await host.locator('#online-stun').uncheck();
     await guest.locator('#online-stun').uncheck();
     await host.locator('#online-name').fill('Host');

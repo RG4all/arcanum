@@ -74,7 +74,7 @@ Die Oberfläche sperrt unzulässige Karten und nennt den Grund (`Bedienpflicht`,
 
 **Orakel** wirken nur im Standard und gelten für die gesamte Runde. Ein Orakel wird pro Runde zufällig aus den fünf Karten III, IV, VI, X und XVII gezogen.
 
-**Der Hierophant** schaltet beim Auswerten alle Karteneffekte ab – Narr, Turm, Tod, Kraft, Magier, Gerechtigkeit und Hohepriesterin. Orakel bleiben aktiv. Der Teufel wirkt bereits beim Legen und kann deshalb nicht rückwirkend annulliert werden; liegt der Hierophant schon, wird der Zwang unterdrückt.
+**Der Hierophant** schaltet beim Auswerten alle Karteneffekte ab – Narr, Turm, Tod, Kraft, Magier, Gerechtigkeit und Hohepriesterin. **Der Stich selbst bleibt gültig und wird nach der regulären Kartenrangfolge dem Sieger gutgeschrieben.** Orakel bleiben aktiv (inklusive Rad und Herrscherin). Der Teufel wirkt bereits beim Legen und kann deshalb nicht rückwirkend annulliert werden; liegt der Hierophant jedoch schon, wird der Zwang unterdrückt.
 
 ## 6 · Hofkarten und Hofkarten-Segen
 

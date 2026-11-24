@@ -60,3 +60,10 @@ Diese Fälle sind **nicht** durch den lokalen Chromium-Test vollständig bewiese
 ## Spätere Schritte
 
 Komfortable Einladung über optionalen Serverless-Signalisierungsdienst, Reconnect mit begrenzt gespeicherten Sitzungsinformationen, später serverautoritative Ranked-Partien. Lizenz-/Asset-Freigabe bleibt Voraussetzung vor kommerziellem Shop.
+
+
+## ICE-Verbindungsdiagnose (0.7.1-beta.1)
+
+Die Lobby zeigt beim Generieren/Importieren des Offer/Answer-Codes die ermittelten ICE-Kandidaten nach **host** (LAN), **srflx** (mittels STUN ermittelte öffentliche Adresse) und **relay** (TURN-Relay) sowie die Connection-/ICE-Zustände. Eine fehlende srflx-Adresse weist auf STUN-/Firewallprobleme hin; auch bei erfolgreichem STUN sind symmetrische NATs ohne TURN ggf. nicht erreichbar. Die Eingabemaske akzeptiert bis zu vier benutzerdefinierte STUN-URLs und optional einen TURN-Server mit Benutzername/Passwort. Die TURN-Eingaben bleiben lokal im Speicher, werden nicht im Signalcode oder im Repository hinterlegt.
+
+**Prüfgrenze:** CI verifiziert Konfiguration, Diagnoseformat und direkte WebRTC-Verbindungen im lokalen Chromium. Öffentliche Verbindungen über unterschiedliche reale Provider/NATs können nicht durch den CI-Test garantiert werden; gegebenenfalls ist ein nutzerbetriebener TURN-Relay notwendig.
