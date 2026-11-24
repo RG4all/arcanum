@@ -125,8 +125,24 @@
                         </label>
                         <label class="online-check" for="online-stun">
                             <input id="online-stun" type="checkbox" checked>
-                            Öffentlichen STUN-Dienst verwenden (Google; IP-Metadaten werden übertragen)
+                            STUN zur Adressermittlung aktivieren (externe IP-Metadaten)
                         </label>
+                        <details class="online-ice-settings">
+                            <summary>Verbindungsoptionen und Diagnose (STUN / optional TURN)</summary>
+                            <p>STUN allein garantiert keine Verbindung über restriktive NATs. Für solche Fälle kannst du einen eigenen oder extern angebotenen TURN-Relay eintragen. Ohne Angaben fallen keine TURN-Kosten an. Beide Teilnehmer benötigen erreichbare ICE-Server.</p>
+                            <label for="online-stun-urls">STUN-Server (durch Komma getrennt)
+                                <input id="online-stun-urls" type="text" value="stun:stun.l.google.com:19302, stun:stun1.l.google.com:19302" spellcheck="false" autocomplete="off">
+                            </label>
+                            <label for="online-turn-url">Optionaler TURN-Server
+                                <input id="online-turn-url" type="text" placeholder="turn:dein-server:3478" spellcheck="false" autocomplete="off">
+                            </label>
+                            <label for="online-turn-user">TURN-Benutzer
+                                <input id="online-turn-user" type="text" autocomplete="off" spellcheck="false">
+                            </label>
+                            <label for="online-turn-password">TURN-Passwort (nur im Arbeitsspeicher)
+                                <input id="online-turn-password" type="password" autocomplete="off">
+                            </label>
+                        </details>
                     </div>
                     <div class="online-actions">
                         <button id="online-create" type="button" class="start-ritual-button">Raum erstellen (Host)</button>
@@ -150,6 +166,7 @@
                     </div>
                     <p id="online-connection" class="online-connection" role="status">Noch keine Verbindung</p>
                     <p id="online-message" class="online-message" role="status" aria-live="polite"></p>
+                    <p id="online-ice-diagnostics" class="online-ice-diagnostics" role="status" aria-live="polite">ICE-Diagnose erscheint nach dem Verbindungstest.</p>
                     <h3 class="online-subtitle">Spielerliste</h3>
                     <ul id="online-roster" class="online-roster"></ul>
                     <section id="online-table" class="online-table" aria-labelledby="online-round" hidden>
@@ -157,6 +174,7 @@
                         <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
                         <ul id="online-players" class="online-players"></ul>
                         <h4 id="online-trick-label" class="online-subtitle">Aktueller Stich</h4>
+                        <p id="online-trick-winner" class="online-trick-winner" role="status" aria-live="polite"></p>
                         <div id="online-trick" class="online-trick"></div>
                         <div id="online-bid-panel" hidden>
                             <h4 class="online-subtitle">Deine Vision wählen</h4>
