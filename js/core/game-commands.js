@@ -5,10 +5,12 @@
   root.ArcanumGameCommands = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  const PROTOCOL_VERSION = 1;
   const TYPES = Object.freeze({ START_ROUND: 'START_ROUND', SUBMIT_BID: 'SUBMIT_BID', PLAY_CARD: 'PLAY_CARD', CHOOSE_PRIESTESS: 'CHOOSE_PRIESTESS', NEXT_ROUND: 'NEXT_ROUND' });
   function validateCommand(command) {
     if (!command || typeof command !== 'object' || Array.isArray(command)) throw new Error('Command muss Objekt sein');
     if (!Object.values(TYPES).includes(command.type)) throw new Error('Unbekannter Command');
+    if (command.protocolVersion != null && command.protocolVersion !== PROTOCOL_VERSION) throw new Error('Falsche Protokollversion');
     if (!Number.isSafeInteger(command.sequence) || command.sequence < 1) throw new Error('Ungültige Sequenz');
     if (command.type !== TYPES.START_ROUND && command.type !== TYPES.NEXT_ROUND &&
         (typeof command.actorId !== 'string' || !command.actorId)) throw new Error('actorId fehlt');
@@ -17,5 +19,10 @@
     if (command.type === TYPES.CHOOSE_PRIESTESS && ![-1, 1].includes(command.delta)) throw new Error('Ungültige Korrektur');
     return true;
   }
-  return Object.freeze({ TYPES, validateCommand });
+  function validateNetworkCommand(command) {
+    validateCommand(command);
+    if (command.protocolVersion !== PROTOCOL_VERSION) throw new Error('Protokollversion fehlt oder ist ungültig');
+    return true;
+  }
+  return Object.freeze({ PROTOCOL_VERSION, TYPES, validateCommand, validateNetworkCommand });
 });
