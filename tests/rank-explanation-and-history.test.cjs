@@ -118,3 +118,38 @@ test('public event formatting includes bid, round score, actor and secret-safe c
     /Adept: \+40 Karma.*Gast: -15 Karma/);
   assert.equal(Presenter.formatEvent({type:'Bogus'},ctx),null);
 });
+
+
+test('Lovers: each player earns karma for their own court cards, not the trick winner', () => {
+  const cardsInTrick = [
+    { playerIdx: 0, card: card('minor-Stäbe-14') },  // King: +4
+    { playerIdx: 1, card: card('minor-Kelche-13') }  // Queen: +3
+  ];
+  const result = Rules.resolveTrick(cardsInTrick, {
+    mode: 'standard', oracleUid: 'major-6', leadSuit: 'Stäbe', playerCount: 2
+  });
+  assert.equal(result.winnerIdx, 0);
+  assert.equal(result.loversPartner, 1);
+  assert.equal(result.courtKarma, 4, 'winner receives own King bonus');
+  assert.equal(result.partnerCourtKarma, 3, 'partner receives own Queen bonus');
+
+  let state = createGame({ rules: Rules, cards: Cards, mode: 'standard',
+    playerIds: ['a', 'b'], seed: 777 });
+  state = apply(state, { type: TYPES.START_ROUND, sequence: 1 }, {
+    rules: Rules, cards: Cards
+  }).state;
+  state.phase = 'playing'; state.oracleUid = 'major-6'; state.activePlayerIdx = 0;
+  state.players[0].hand = ['minor-Stäbe-14'];
+  state.players[1].hand = ['minor-Kelche-13'];
+  state.players[0].bid = state.players[1].bid = 1;
+  for (let i = 0; i < 2; i++) {
+    const player = state.players[state.activePlayerIdx];
+    state = apply(state, { type: TYPES.PLAY_CARD, actorId: player.id,
+      cardUid: player.hand[0], sequence: state.sequence + 1 },
+    { rules: Rules, cards: Cards }).state;
+  }
+  assert.equal(state.lastTrick.winnerIdx, 0);
+  assert.deepEqual(state.players.map(p => p.won), [1,1]);
+  assert.deepEqual(state.players.map(p => p.courtKarma), [4,3]);
+  assert.deepEqual(state.players.map(p => p.score), [34,33]);
+});
