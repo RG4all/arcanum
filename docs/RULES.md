@@ -98,7 +98,7 @@ Die vier Hofkarten jeder Farbe – **Bube (11), Ritter (12), Königin (13), Kön
 
 > Wer eine Hofkarte über den Stich gewinnt, erhält **+1 (Bube), +2 (Ritter), +3 (Königin) oder +4 (König) Karma**.
 
-Der Segen zählt nur im Standard, nur für den Stichsieger und nur bei gewonnenen Stichen (nicht bei zerstörten oder halben Stichen des Turms). Bei den Liebenden erhält auch die Partnerin bzw. der Partner den Segen seiner eigenen Hofkarten.
+Der Segen zählt nur im Standard, nur für den Stichsieger und nur bei gewonnenen Stichen (nicht bei zerstörten oder halben Stichen des Turms). Bei den Liebenden erhält auch die Partnerin bzw. der Partner den Segen seiner **eigenen** Hofkarten; diese Karma-Zuschläge werden beiden getrennt gutgeschrieben. Der Hierophant annulliert Hofkarten-Sondereffekte, nicht aber die Liebende-Orakel-Teilung des Stichs.
 
 ## 7 · Wertung
 
