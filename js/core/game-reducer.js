@@ -54,14 +54,16 @@
     state.lastTrick = {
       winnerIdx: result.winnerIdx, won: result.won,
       cards: state.currentTrick.map(x => ({ ...x })),
+      leadSuit: state.leadSuit,
       ranks: (result.ranks || []).map(x => ({ ...x })),
       destroyed: result.destroyed, cancelled: result.cancelled,
       deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld
     };
     // The Hierophant cancels effects, NOT the winning trick itself.
     state.players[result.winnerIdx].won += result.won;
+    // Lovers is a round Oracle, unaffected by Hierophant's suppression of trick effects.
+    if (result.loversPartner != null) state.players[result.loversPartner].won += result.won;
     if (!result.cancelled) {
-      if (result.loversPartner != null) state.players[result.loversPartner].won += result.won;
       for (const idx of result.justiceTargets) { state.players[idx].score += 5; state.players[idx].bonus += 5; }
       state.players[result.winnerIdx].courtKarma += result.courtKarma;
       if (result.strengthPlayer != null) state.trumpBan = result.strengthPlayer;
@@ -72,6 +74,7 @@
     events.push({ type: 'TrickResolved', winnerIdx: result.winnerIdx, won: result.won,
       destroyed: result.destroyed, cancelled: result.cancelled,
       deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld,
+      loversPartner: result.loversPartner,
       moonRevealed: result.moonRevealed,
       // Complete tricks are public; Moon is revealed only after resolution.
       cards: state.lastTrick.cards.map(item => ({ playerIdx: item.playerIdx, uid: item.uid })) });
