@@ -62,7 +62,10 @@
     // Existing engine does not credit destroyed trick points, and retains that behavior.
     state.activePlayerIdx = result.winnerIdx;
     state.currentTrick = []; state.leadSuit = null; state.forcedPlayer = null;
-    events.push({ type: 'TrickResolved', winnerIdx: result.winnerIdx, won: result.won, destroyed: result.destroyed, cancelled: result.cancelled });
+    events.push({ type: 'TrickResolved', winnerIdx: result.winnerIdx, won: result.won,
+      destroyed: result.destroyed, cancelled: result.cancelled,
+      deathHalf: result.deathHalf, foolBeatWorld: result.foolBeatWorld,
+      moonRevealed: result.moonRevealed });
     if (!result.cancelled && result.priestess) {
       state.phase = PHASE.PRIESTESS;
       state.pendingPriestess = { playerIdx: result.winnerIdx };
