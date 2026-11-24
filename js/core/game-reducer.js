@@ -52,8 +52,9 @@
       { leadSuit: state.leadSuit, oracleUid: state.oracleUid, mode: state.mode, playerCount: state.players.length }
     );
     state.lastTrick = { winnerIdx: result.winnerIdx, won: result.won, cards: state.currentTrick.map(x => ({ ...x })) };
+    // The Hierophant cancels effects, NOT the winning trick itself.
+    state.players[result.winnerIdx].won += result.won;
     if (!result.cancelled) {
-      state.players[result.winnerIdx].won += result.won;
       if (result.loversPartner != null) state.players[result.loversPartner].won += result.won;
       for (const idx of result.justiceTargets) { state.players[idx].score += 5; state.players[idx].bonus += 5; }
       state.players[result.winnerIdx].courtKarma += result.courtKarma;
