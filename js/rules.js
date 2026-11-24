@@ -378,7 +378,10 @@
       justiceTargets,
       strengthPlayer,
       priestess,
-      courtKarma: !cancelled && won ? courtKarmaOf(trick, winner.playerIdx, mode, loversPartner) : 0,
+      // Under Lovers, each partner keeps the karma of their OWN court cards.
+      courtKarma: !cancelled && won ? courtKarmaOf(trick, winner.playerIdx, mode, null) : 0,
+      partnerCourtKarma: !cancelled && won && loversPartner != null
+        ? courtKarmaOf(trick, loversPartner, mode, null) : 0,
       ranks: trick.map(item => ({ playerIdx: item.playerIdx, rank: rank(item.card) }))
     };
   }
