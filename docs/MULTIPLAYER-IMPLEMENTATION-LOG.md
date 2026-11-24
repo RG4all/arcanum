@@ -25,10 +25,11 @@
 - Unveränderte Node-Spiel-/Regeltests für Karten, Wertung, Sonderregeln, 3D-Daten, HTML-/CSS-Integrität.
 - Isolierte Unit-Tests für deterministischen Reducer, Sequenzen, Zugrecht, Snapshot-Vertraulichkeit, Mond-Aufdeckung und Protokollversion.
 - Node-VM-Browserintegration für 2, 3 und 6 Sitze in Turbo, Standard und RAW.
-- Deterministische Vergleichstests Legacy/Core mit identischen Seeds, Händen, Geboten, Zugfolgen und Rundenscores für dieselben 9 Modus-/Sitzkombinationen mit je zwei Seeds.
+- Deterministische Vergleichstests Legacy/Core mit identischen Seeds, Händen, Geboten, Zugfolgen und Rundenscores für dieselben 9 Modus-/Sitzkombinationen mit je 16 Seeds (144 Szenarien).
 - JavaScript-Syntaxcheck aller `js/*.js` und `js/core/*.js`.
+- GitHub Actions: **243/243 Node-Tests erfolgreich** und **Chromium-Smoke-Test erfolgreich** auf Desktop (1280×800) und Mobile-Viewport (390×844): jeweils eine RAW-Runde, neun Spielzüge, Zustand `roundOver`, gerenderte Hand/HUD, keine ungefangenen Browserfehler.
 
-**Verifizierungsnachweis:** GitHub Actions [CI-Verlauf](https://github.com/RG4all/arcanum/actions/workflows/node-tests.yml). Ein grüner Workflow ist notwendige, aber nicht hinreichende Bedingung für Browser-/Produktionsfreigabe.
+**Verifizierungsnachweis:** GitHub Actions [CI-Verlauf](https://github.com/RG4all/arcanum/actions/workflows/node-tests.yml). Nachweis: [Node- und Chromium-CI-Lauf](https://github.com/RG4all/arcanum/actions/runs/45396010932) (beide Jobs grün). Ein grüner Workflow ersetzt keine manuelle Prüfung auf realen Mobilgeräten.
 
 ## Fehlersuche und Korrekturen
 
@@ -55,6 +56,7 @@
 - [x] Legacy-/Core-Parität durch automatisierte Tests
 - [x] Version und Changelog aktualisiert
 - [x] CI mit kompletter Node-Suite und Syntaxcheck
-- [ ] Manueller Browser-/Mobil-Smoke-Test einschließlich 3D und Animation
+- [x] Automatisierter Desktop-/Mobile-Viewport-Smoke-Test im echten Chromium
+- [ ] Manuelle visuelle Abnahme von 3D, Animation und echten Mobilgeräten
 - [ ] Menschliches PR-Review und Merge nach `main`
 - [ ] Lizenz-/Asset-Rechtefreigabe **vor kommerzieller Veröffentlichung**
