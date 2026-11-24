@@ -161,8 +161,8 @@
     const oracleUid = ctx.oracleUid || null;
     const cancelled = Boolean(ctx.cancelled);
     const maxMinor = Number.isFinite(ctx.maxMinor) ? ctx.maxMinor : 0;
-    const wheel = oracleUid === 'major-10' && !cancelled;
-    const empress = oracleUid === 'major-3' && !cancelled;
+    const wheel = oracleUid === 'major-10'; // Orakel bleiben auch beim Hierophanten aktiv.
+    const empress = oracleUid === 'major-3';
     const raw = Boolean(ctx.raw) || ctx.mode === 'raw';
 
     return function rank(card) {
@@ -336,7 +336,7 @@
       justiceTargets,
       strengthPlayer,
       priestess,
-      courtKarma: won ? courtKarmaOf(trick, winner.playerIdx, mode, loversPartner) : 0,
+      courtKarma: !cancelled && won ? courtKarmaOf(trick, winner.playerIdx, mode, loversPartner) : 0,
       ranks: trick.map(item => ({ playerIdx: item.playerIdx, rank: rank(item.card) }))
     };
   }
