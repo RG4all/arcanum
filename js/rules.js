@@ -236,7 +236,7 @@
     if (!cancelled && card.isTrump && card.trumpNum === 0)
       return 'Narr · verliert regulär; Welt-Sonderfall möglich';
     if (!cancelled && card.isTrump && card.trumpNum === 11)
-      return 'Kraft · Sonderregel: höchster Stichrang';
+      return 'Kraft · Sonderregel: schlägt andere Karten (sofern nicht annulliert)';
     if (!cancelled && card.isTrump && card.trumpNum === 1)
       return 'Magier · 0,5 über der höchsten Kleinen Arkana';
     if (oracleUid === 'major-10') {
