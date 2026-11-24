@@ -16,6 +16,26 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (stateApi, commands, reducer, rtcDefault, root) {
   'use strict';
 
+  const HISTORY_LIMIT = 180;
+  const ALLOWED_PUBLIC_EVENTS = new Set([
+    'RoundStarted', 'BidSubmitted', 'PlayingStarted', 'CardPlayed',
+    'TrickResolved', 'PriestessChoiceRequired', 'PriestessChoiceApplied', 'RoundScored'
+  ]);
+  function appendHistory(history, events) {
+    if (!Array.isArray(events) || events.length > 10) throw new Error('Ungültiges Ereignisprotokoll');
+    const entries = events.map(event => {
+      assert(event && ALLOWED_PUBLIC_EVENTS.has(event.type) &&
+        Number.isSafeInteger(event.sequence) && event.sequence >= 1 &&
+        Number.isSafeInteger(event.eventIndex) && event.eventIndex >= 0 &&
+        event.eventIndex < 10, 'Ungültiges Protokollereignis');
+      if (event.type === 'CardPlayed' && event.hidden && Object.prototype.hasOwnProperty.call(event, 'uid'))
+        throw new Error('Verdeckte Mondkarte darf im Protokoll nicht offengelegt werden');
+      return copy(event);
+    });
+    history.push(...entries);
+    if (history.length > HISTORY_LIMIT) history.splice(0, history.length - HISTORY_LIMIT);
+  }
+
   const ACTIONS = Object.freeze([
     commands.TYPES.SUBMIT_BID, commands.TYPES.PLAY_CARD, commands.TYPES.CHOOSE_PRIESTESS
   ]);
@@ -45,6 +65,7 @@
     let matchId = null;
     let stopped = false;
     let ended = false;
+    const history = [];
 
     function report(reason) { if (onError) onError(String(reason)); }
     function roster() {
@@ -56,7 +77,7 @@
     function status() {
       return { role: 'host', roomId, playerId: 'host', mode, seats,
         roster: roster(), started: Boolean(game), ended,
-        view: game ? stateApi.snapshotFor(game, 'host') : null };
+        history: copy(history), view: game ? stateApi.snapshotFor(game, 'host') : null };
     }
     function notify() { if (onChange) onChange(status()); }
     function send(peer, data) {
@@ -68,11 +89,11 @@
       peers.forEach(p => { if (p.connected) send(p, msg); });
       notify();
     }
-    function broadcastState() {
+    function broadcastState(events) {
       if (!game) return;
       peers.forEach(p => {
         if (p.connected) send(p, {
-          type: 'state', matchId,
+          type: 'state', matchId, events,
           view: stateApi.snapshotFor(game, p.id)
         });
       });
@@ -88,7 +109,9 @@
       commands.validateNetworkCommand(candidate);
       const result = reducer.apply(game, candidate, { rules, cards });
       game = result.state;
-      broadcastState();
+      const publicBatch = reducer.publicEvents(result.events);
+      appendHistory(history, publicBatch);
+      broadcastState(publicBatch);
       return result.events;
     }
     function incoming(peer, msg) {
@@ -207,11 +230,13 @@
     assert(rules && cards, 'Regelwerk fehlt');
     let id = null, roomId = null, mode = null, seats = 0, matchId = null;
     let roster = [], view = null, requestNo = 0, ended = false, stopped = false;
+    const history = [];
     let link = null;
     function report(error) { if (onError) onError(String(error)); }
     function info() {
       return { role: 'guest', roomId, playerId: id, mode, seats,
-        roster: copy(roster), view: copy(view), started: Boolean(matchId), ended };
+        roster: copy(roster), view: copy(view), started: Boolean(matchId), ended,
+        history: copy(history) };
     }
     function notify() { if (onChange) onChange(info()); }
     function incoming(msg) {
@@ -243,6 +268,10 @@
             !Object.prototype.hasOwnProperty.call(next, 'rngState'), 'Ungültiger oder unsicherer Snapshot');
           assert(!matchId || matchId === msg.matchId, 'Partie-ID hat sich geändert');
           assert(Number.isSafeInteger(next.sequence) && (!view || next.sequence > view.sequence), 'Snapshot-Sequenz veraltet');
+          const batch = msg.events;
+          assert(Array.isArray(batch) && batch.length <= 10 &&
+            batch.every(e => e && e.sequence === next.sequence), 'Ereignisse/State nicht synchron');
+          appendHistory(history, batch);
           matchId = msg.matchId; view = copy(next);
         } else if (msg.type === 'error') report(String(msg.message).slice(0,160));
         else if (msg.type === 'end') { ended = true; report('Host hat die Partie beendet'); }
