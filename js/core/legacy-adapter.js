@@ -105,7 +105,7 @@
       return;
     }
     if (events.some(event => event.type === 'TrickResolved')) {
-      engineInstance.emit('trick-won', engineInstance.lastTrick || {});
+      engineInstance.emit('trick-won', events.find(event => event.type === 'TrickResolved'));
       if (engineInstance.phase === stateApi.PHASE.PLAYING &&
           engineInstance.players[engineInstance.activePlayerIdx]?.isBot) {
         engineInstance.schedule(() => engineInstance.playBotTurn(), 620);
