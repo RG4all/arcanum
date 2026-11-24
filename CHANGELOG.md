@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.6.0-beta.3 – 2026-11-24
+
+### Hinzugefügt
+- **Multiplayer-Architekturentscheidung:** ADR 0001 für Hybrid-P2P, private ungewertete WebRTC-Partien und spätere Serverautorität; ADR 0002 für die Migration der Legacy-Engine.
+- **DOM-freier Multiplayer-Spielkern:** versioniertes Game-State-Modell, validierte Commands, deterministischer Reducer und empfänger-spezifische Snapshots unter `js/core/`.
+- **Browser-Integration:** `legacy-adapter.js` routet Menschen- und Botaktionen über denselben Core; die bestehende UI- und Rendering-Schnittstelle bleibt erhalten.
+- **Tests:** isolierte Core-Tests und Integrations-/Paritätstests mit echtem Regelwerk für Turbo, Standard und RAW sowie 2, 3 und 6 Spieler.
+- **Sicherheitsabgrenzung:** private Karten und RNG-Interna werden nicht als öffentlicher Snapshot verschickt; P2P-Host ist nicht vertrauenswürdig.
+
+### Geändert
+- Browser lädt den neuen Core vor der Legacy-Engine-Adapterinitialisierung.
+- Version in HTML, README, `package.json` und Lockfile auf `0.6.0-beta.3` erhöht; Regelwerksversion bleibt `0.6.0`, da keine Spielregeländerung beabsichtigt ist.
+- Dokumentation ergänzt; unveränderte Anforderungen an kostenfreien Start.
+
+### Offen
+- WebRTC, Lobby, Reconnect, PWA-Installation und serverautoritatives Ranked-Backend sind **nicht** implementiert.
+- Die Kollision `LICENSE` (GPL-2.0) und `package.json` (ISC) sowie Asset-Rechte erfordern einen separaten Audit vor kommerzieller Verwertung.
+- CI-Ergebnis und Parität aller Sonderkarten müssen vor Freigabe des PR überprüft werden.
+
+
 Alle nennenswerten Änderungen werden hier dokumentiert. Die Beta-Versionslinie beginnt auf ausdrücklichen Wunsch wieder bei `0.x.x`; ältere 1.x-Einträge bleiben als Historie erhalten.
 
 ## 0.6.0-beta.2 – 2026-11-21
