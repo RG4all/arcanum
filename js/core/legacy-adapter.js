@@ -81,6 +81,7 @@
   function dispatch(engineInstance, command) {
     const result = reducer.apply(engineInstance.coreState, {
       ...command,
+      protocolVersion: commands.PROTOCOL_VERSION,
       sequence: engineInstance.coreState.sequence + 1
     }, env);
     engineInstance.coreState = result.state;
