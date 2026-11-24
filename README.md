@@ -1,10 +1,19 @@
 # Arcanum
 
-**Version 0.7.1-beta.1** · Browser-Beta
+**Version 0.7.2-beta.1** · Browser-Beta
+
+## Verbesserter Standard-Modus und Multiplayer-HUD (0.7.2-beta.1)
+
+- **Klar verständliche Stichbewertung:** Die bisherigen Zahlen `4`, `−494`, `205` und `5000` sind interne Sortierschlüssel, keine Kartenpunkte. Im Online-Tisch stehen nun Kartenwert und **wirksame Stichregel** (Trumpf, Fremdfarbe, Kraft, Orakel, Hierophant) statt dieser künstlichen Rangzahlen. Der tatsächliche Stichsieger wird weiterhin vom gemeinsamen Regelkern berechnet.
+- **Regelwerk 0.6.2:** Das Orakel **Die Liebenden** teilt Stiche auch dann zwischen den verbundenen Sitzen, wenn der Hierophant im Stich liegt. Er annulliert nur Karten-Sondereffekte, nicht Orakel. Dasselbe gilt für die bereits korrigierten Rad-/Herrscherin-Orakel.
+- **Neues Multiplayer-HUD:** Pro Person eigene Karte mit Name, aktuellem Zug, angesagter Vision, gewonnenen Stichen, Karma, Restkarten und Fortschritt. Responsive von 2 bis 6 Teilnehmenden.
+- **Öffentliche Partie-Chronik:** Host und Gäste sehen identische sequenzierte Ereignisse (Runde, Gebote, ausgespielte Karten, Stichgewinn, Effekte, Hohepriesterin, Rundenwertung). Verdeckt ausgespielte Mondkarte bleibt bis zur Stichauflösung verborgen. Maximal 180 Einträge pro laufender Sitzung, rein im Arbeitsspeicher.
+- **Tests:** vollständige Standardrunden mit 2, 3 und 6 Sitzen über simulierte DataChannels; Unit-Tests für Rangauslegung, Orakel und Protokollprivatsphäre sowie Chromium-End-to-End mit HUD/Chronik.
+- **Fahrplan:** [docs/ROADMAP-ONLINE.md](docs/ROADMAP-ONLINE.md) mit kostenlosen MVP-Meilensteinen, technischen Gates und späterer Monetarisierung.
 
 **Neue Oberfläche (0.7.1-beta.1):** Vier klar getrennte Bereiche in der Hauptnavigation: Lokal/Bots, Multiplayer, Kodex & Stochastik, Wertung. Desktop, Tablet und Smartphone besitzen eine responsive Navigation. Hinweiskarten berücksichtigen den aktiven Spielmodus.
 
-**Standard-Regelkorrektur (Regelversion 0.6.1):** Der Hierophant schaltet Sonderkarteneffekte aus, **nicht** den Stichgewinn. Die stärkste reguläre Karte erhält weiterhin den Stich; die Rundenorakel bleiben aktiv. Der Online-Tisch zeigt Gewinner, Gewinnkarte und berechnete Rangwerte, damit die Reihenfolge nachprüfbar ist.
+**Standard-Regelkorrektur (Regelversion 0.6.1):** Der Hierophant schaltet Sonderkarteneffekte aus, **nicht** den Stichgewinn. Die stärkste reguläre Karte erhält weiterhin den Stich; die Rundenorakel bleiben aktiv. Der Online-Tisch erklärt Gewinner, Gewinnkarte und das wirksame Vergleichsverfahren; interne Sortierschlüssel sind nicht mehr als Kartenrang ausgewiesen.
 
 **Öffentliche WebRTC-Verbindungen:** STUN stellt nur erreichbare Adressen bereit; es ist kein Relay. Die neue ICE-Diagnose zeigt lokale/STUN-/TURN-Kandidaten und Verbindungsfehler. Als optionaler Fallback können die Teilnehmer eigene TURN-Zugangsdaten eingeben; die Anwendung stellt keinen kostenpflichtigen Server und speichert diese Daten nicht. Bei restriktiven NATs kann ein TURN-Relay notwendig sein.
 
