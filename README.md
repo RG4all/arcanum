@@ -1,10 +1,37 @@
 # Arcanum
 
-**Version 0.6.0-beta.3** · Browser-Beta
+**Version 0.7.0-beta.1** · Browser-Beta
 
 Ein atmosphärisches Tarot-Stichspiel im Browser: Biete auf deine Stiche, spiele gegen Bots, erkunde alle **78 Karten** im Kodex, wähle zwischen den Regelwerken **Turbo**, **Standard** und **RAW – Die Nackte Zahl** und trete an einem von zehn Ritualorten an.
 
-## Multiplayer-Core (0.6.0-beta.3)
+## Privater WebRTC-Multiplayer (0.7.0-beta.1)
+
+**Neu:** Eigenständige private Online-Lobby mit direkter Browser-zu-Browser-Verbindung und vollständig spielbarem Online-Kartentisch für **2–6 Menschen**. Bestehender Offline-/Bot-Modus bleibt erhalten.
+
+### Private Partie ohne eigenen Server starten
+
+Voraussetzungen: aktuelle Desktop-/Mobile-Browser mit WebRTC und `https://` oder `http://localhost`. Die HTML-Anwendung kann lokal mit `python3 -m http.server 8000` bereitgestellt werden; zum Test auf zwei Geräten benötigt jedes Gerät Zugriff auf eine HTTPS-Adresse der statischen Anwendung (z. B. GitHub Pages).
+
+1. **Host:** Im Abschnitt „Privater Online-Tisch“ Namen, 2–6 Plätze und Modus wählen; „Raum erstellen“, danach „Neue Einladung erzeugen“.
+2. **Gast:** Einladungs-Code vom Host erhalten, im Feld „Empfangener Signalcode“ einfügen und auf „Einladung beitreten“ klicken. Den neu erzeugten **Antwort-Code** zurücksenden.
+3. **Host:** Antwort ins Eingabefeld übernehmen und „Antwort übernehmen“ wählen. Auf die Verbindung warten.
+4. Für jeden weiteren Gast wiederholt der Host Schritt 1 **„Neue Einladung erzeugen“**; eine Einladung gehört genau zu einem Verbindungsplatz.
+5. Alle Gäste wählen „Bereit“, dann startet der Host bei vollständig besetzter Lobby die Partie.
+6. Gebote und Karten werden im eigenen Online-Tisch gespielt. Der Host bestätigt die Züge; jeder Gast sieht nur seine eigene Hand. Nach jeder Runde schaltet der Host weiter.
+
+**Signaling:** Die Texte enthalten SDP und ICE-Kandidaten, einschließlich möglicher IP-Adressen. Sie sind nur für eingeladene Personen bestimmt. Der optional aktivierte öffentliche STUN-Dienst (`stun.l.google.com:19302`) ist ein Fremddienst und kann Verbindungsmetadaten sehen. Ohne STUN funktionieren Verbindungen typischerweise nur bei passenden lokalen Netzwerkbedingungen. **Kein TURN und kein eigener Server:** Einige NAT-/Firewall-Kombinationen sind nicht erreichbar. TURN-/Signalisierungsserver, Accounts, Reconnect, Chat, Ranked und Host-Wechsel sind bewusst noch nicht enthalten.
+
+Die private P2P-Partie ist **ungewertet**: Der Host besitzt alle Karten und kann theoretisch manipulieren. Für faire Ranglisten benötigen wir später einen serverautoritativen Dienst.
+
+### Technische Dateien
+
+- `js/net/webrtc.js`: WebRTC-DataChannel, vollständig gesammelte ICE-Kandidaten und manuelles Offer/Answer-Signaling.
+- `js/net/private-room.js`: Host-Lobby, Ready-Status, Zugsynchronisation, Client-Identitätsbindung pro DataChannel und private Snapshots.
+- `js/net/online-ui.js`: eigenständige responsive Online-Oberfläche neben der bisherigen Offline-Arena.
+- `tests/private-room.test.cjs`: 2-/6-Spieler-Test, Nachrichtenvalidierung und Zustandsvertraulichkeit.
+- `tests/p2p-browser-smoke.cjs`: reale Chromium-Peer-Verbindung mit vollständig gespielter RAW-Runde auf Desktop- und Mobile-Viewport.
+
+## Multiplayer-Core (0.7.0-beta.1)
 
 Die Browser-Engine verwendet über `js/core/legacy-adapter.js` einen DOM-freien Reducer für Spielzustandsübergänge. Menschliche und Bot-Aktionen laufen über dieselbe Command-Validierung. Der bisherige Spielmodus gegen Bots bleibt erhalten; **es gibt noch keine Netzwerkverbindung, Lobby oder PWA-Installation**.
 
