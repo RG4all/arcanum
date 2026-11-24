@@ -41,7 +41,7 @@
       p.score += result.points;
       p.roundPoints = result.points;
       return { playerId: p.id, points: result.points, score: p.score, exact: result.exact,
-        breakdown: [...result.breakdown], deviation: result.deviation };
+        breakdown: [...(result.breakdown || [])], deviation: result.deviation == null ? Math.abs(p.bid - p.won) : result.deviation };
     });
     state.phase = state.round === state.maxRounds ? PHASE.GAME_OVER : PHASE.ROUND_OVER;
     return { type: 'RoundScored', round: state.round, summary: state.roundSummary.map(x => ({ ...x })) };
