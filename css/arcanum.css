@@ -2831,3 +2831,170 @@ main::before { z-index: 0; }
     .online-hand-card { width: min(92px, 23vw); }
     .online-trick-card { width: min(92px, 23vw); }
 }
+
+
+/* =================================================================
+   0.7.1 · Workspace UI: Bot · Multiplayer · Kodex · Wertung
+   Design: calm ink surfaces, clear hierarchy, mobile-first controls
+   ================================================================= */
+#workspace-main {
+    display: block;
+    width: min(100%, 1640px);
+    max-width: 1640px;
+    padding: clamp(12px, 2vw, 28px) clamp(12px, 2.4vw, 38px) clamp(24px, 4vw, 54px);
+}
+.workspace-panel { display: grid; gap: clamp(14px, 2vw, 25px); min-width: 0; }
+.workspace-panel[hidden] { display: none !important; }
+.workspace-intro {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    padding: 14px clamp(16px, 2vw, 24px);
+    background: linear-gradient(110deg, rgb(40 28 51 / 87%), rgb(15 12 22 / 98%));
+    border: 1px solid rgb(216 189 120 / 28%);
+    border-radius: 16px;
+}
+.workspace-intro p { font-size: .85rem; line-height: 1.5; color: #d2c8d9; }
+.workspace-eyebrow {
+    font-size: .75rem; font-weight: 800; letter-spacing: .12em;
+    color: #f1d78f; text-transform: uppercase; white-space: nowrap;
+}
+.workspace-tabs {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px; border: 1px solid rgb(220 182 117 / 25%);
+    border-radius: 15px; background: rgb(10 8 16 / 85%);
+}
+.workspace-tab {
+    min-height: 45px; display: inline-flex; align-items: center;
+    justify-content: center; padding: 8px clamp(10px, 1.1vw, 17px);
+    border: 1px solid transparent; border-radius: 11px;
+    color: #d5c6dc; font-size: clamp(11px, .84vw, 13px);
+    font-weight: 750; line-height: 1.35;
+    background: transparent; transition: background .2s ease, color .2s ease;
+    cursor: pointer; white-space: nowrap;
+}
+.workspace-tab:hover { background: rgb(215 186 122 / 12%); color: #f5e4c3; }
+.workspace-tab.is-active, .workspace-tab[aria-selected="true"] {
+    color: #1f170e; background: linear-gradient(140deg, #f4dea3, #d7b36d);
+    box-shadow: 0 3px 16px rgb(0 0 0 / 32%);
+}
+.workspace-tab:focus-visible { outline: 3px solid #ffe9ae; outline-offset: 3px; }
+#workspace-main .workspace-panel > #play-game,
+#workspace-main .workspace-panel > #online-lobby,
+#workspace-main .workspace-panel > #kodex,
+#workspace-main .workspace-panel > #rules-view,
+#workspace-main .workspace-panel > #math,
+#workspace-main .workspace-panel > #calculator {
+    margin: 0; width: 100%; max-width: none; min-width: 0;
+}
+#tab-bot #play-game { padding: clamp(14px, 2vw, 30px); }
+#tab-bot .arena-toolbar { gap: clamp(10px, 1.5vw, 17px); }
+#tab-bot .hud-main { grid-template-columns: minmax(235px, .9fr) minmax(0, 1.45fr); }
+#tab-bot .hud-side { min-width: 0; }
+#tab-multiplayer #online-lobby {
+    padding: clamp(16px, 2.7vw, 34px);
+    box-shadow: 0 20px 70px rgb(0 0 0 / 24%);
+    border-radius: 24px;
+}
+#tab-multiplayer .online-settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+#tab-multiplayer .online-settings .online-check,
+#tab-multiplayer .online-settings .online-ice-settings { grid-column: 1 / -1; }
+#tab-multiplayer .online-settings input:not([type="checkbox"]) { max-width: none; }
+#tab-multiplayer .online-actions { gap: 10px; margin-block: 12px; }
+#tab-multiplayer .online-actions button { min-height: 44px; }
+#tab-multiplayer .online-signaling {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start;
+    gap: 12px;
+}
+#tab-multiplayer .online-signaling > label { grid-column: span 1; }
+#tab-multiplayer .online-signaling > textarea { grid-row: span 2; min-height: 150px; }
+#tab-multiplayer .online-signaling #online-copy { grid-column: 1; }
+.online-ice-settings {
+    padding: 13px 15px; border: 1px solid rgb(190 166 215 / 32%);
+    background: rgb(11 9 19 / 54%); border-radius: 13px;
+}
+.online-ice-settings summary {
+    font-size: .91rem; font-weight: 750; color: #f1d79e; cursor: pointer;
+    min-height: 28px;
+}
+.online-ice-settings > p { font-size: .82rem; line-height: 1.6; color: #c8bdd2; margin: .7rem 0; }
+.online-ice-settings > label { display: grid; gap: .35rem; margin-top: .75rem; font-size: .82rem; }
+.online-ice-settings input {
+    width: 100%; min-width: 0; padding: 10px 12px;
+    border: 1px solid rgb(169 145 192 / 58%);
+    border-radius: 9px; background: #100d19; color: #f5eef9;
+    font: inherit;
+}
+.online-ice-diagnostics {
+    padding: 12px 14px; margin: 12px 0;
+    border-left: 3px solid #cbb47d;
+    border-radius: 0 10px 10px 0;
+    background: rgb(167 135 200 / 9%);
+    color: #d9d1e4; font-size: .85rem;
+}
+.online-trick-winner {
+    margin: .55rem 0 1rem; padding: 10px 14px;
+    border-radius: 12px; border: 1px solid rgb(216 189 120 / 32%);
+    color: #ffebbe; background: rgb(216 189 120 / 10%);
+    font-weight: 650;
+}
+.online-trick-card.is-winner {
+    outline: 2px solid #f3d38d; outline-offset: 4px;
+    border-radius: 8px;
+}
+#tab-codex #rules-view,
+#tab-codex #kodex,
+#tab-codex #math { box-shadow: none; }
+#tab-codex .codex-controls { position: relative; }
+#tab-scoring #calculator { min-height: 380px; }
+#tab-scoring .calc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 960px; }
+#tab-scoring .calc-result { grid-column: 1 / -1; }
+#tab-scoring #calc-breakdown { grid-column: 1 / -1; }
+#tab-scoring .calc-check { grid-column: 1 / -1; }
+
+/* Tablet layouts: maintain generous touch targets and clear panel hierarchy. */
+@media (max-width: 1160px) {
+    .brand-subtitle { display: none; }
+    .header-mode-badge { display: none; }
+    .workspace-tab { white-space: normal; text-align: center; }
+}
+@media (max-width: 900px) {
+    .workspace-tabs {
+        position: absolute; z-index: 120;
+        top: calc(100% + 7px); right: 0; left: 0;
+        flex-direction: column; align-items: stretch; display: none;
+        background: #120d1b; border: 1px solid rgb(216 189 120 / 45%);
+        box-shadow: 0 25px 65px rgb(0 0 0 / 55%); padding: 10px;
+    }
+    .workspace-tabs.is-open { display: flex; }
+    .workspace-tab { min-height: 52px; width: 100%; justify-content: flex-start; text-align: left; padding-inline: 18px; font-size: 14px; }
+    #tab-bot .hud-main { grid-template-columns: 1fr; }
+    #tab-multiplayer .online-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+    #workspace-main { padding: 12px 10px 32px; }
+    .workspace-intro { padding: 12px 14px; gap: 6px; }
+    .workspace-intro p { width: 100%; font-size: .8rem; }
+    #tab-bot #play-game { padding: 12px; }
+    #tab-bot .arena-controls { grid-template-columns: 1fr 1fr; }
+    #tab-bot .control-field--environment { grid-column: 1 / -1; }
+    #tab-multiplayer #online-lobby { padding: 13px; border-radius: 17px; }
+    #tab-multiplayer .online-settings,
+    #tab-multiplayer .online-signaling { grid-template-columns: 1fr; }
+    #tab-multiplayer .online-signaling > label,
+    #tab-multiplayer .online-signaling #online-copy { grid-column: 1; }
+    #tab-multiplayer .online-signaling > textarea { grid-row: auto; }
+    #tab-multiplayer .online-actions button { flex: 1 1 140px; }
+    #tab-multiplayer .online-ice-settings { min-width: 0; }
+    #tab-scoring .calc-grid { grid-template-columns: 1fr; }
+    #tab-codex .chart-frame { height: 300px; }
+}
+@media (max-width: 420px) {
+    .site-header-inner { gap: 7px; }
+    .brand-mark { font-size: 23px; }
+    .brand-title { font-size: 19px; letter-spacing: .13em; }
+    #tab-bot .arena-controls { grid-template-columns: 1fr; }
+    #tab-bot .control-field--environment { grid-column: auto; }
+    #tab-bot .mode-switcher { width: 100%; justify-content: space-between; }
+    #tab-bot .mode-switcher button { flex: 1 1 0; }
+    #tab-bot .hud-bar { grid-template-columns: 1fr; }
+    .online-hand-card { width: min(96px, 26vw); }
+}
