@@ -384,6 +384,11 @@
         winner.courtKarma = (winner.courtKarma || 0) + result.courtKarma;
         this.log(`👑 Hofkarten-Segen: +${result.courtKarma} Karma für ${winner.name}.`);
       }
+      if (result.loversPartner != null && result.partnerCourtKarma) {
+        const partner = this.players[result.loversPartner];
+        partner.courtKarma = (partner.courtKarma || 0) + result.partnerCourtKarma;
+        this.log(`👑 Hofkarten-Segen: +${result.partnerCourtKarma} Karma für ${partner.name} (Liebende).`);
+      }
 
       if (result.priestess) this.resolvePriestess(winner);
       if (result.strengthPlayer != null) {
