@@ -60,6 +60,16 @@
         if (event.foolBeatWorld) detail += ' · Narr entthront die Welt';
         if (event.deathHalf) detail += ' · Tod halbiert den Stich';
         if (Number.isInteger(event.loversPartner)) detail += ' · Liebende teilen mit ' + nameAt(event.loversPartner);
+        if (event.courtKarma) detail += ' · Hofkarten-Segen: ' + nameAt(event.winnerIdx) + ' +' + number(event.courtKarma) + ' Karma';
+        if (event.partnerCourtKarma && Number.isInteger(event.loversPartner)) {
+          detail += ' · ' + nameAt(event.loversPartner) + ' +' + number(event.partnerCourtKarma) + ' Hofkarten-Karma';
+        }
+        if (Array.isArray(event.justiceTargets) && event.justiceTargets.length) {
+          detail += ' · Gerechtigkeit: +5 Karma für ' + event.justiceTargets.map(nameAt).join(', ');
+        }
+        if (Number.isInteger(event.strengthPlayer)) {
+          detail += ' · Kraft: ' + nameAt(event.strengthPlayer) + ' darf beim nächsten Zug keinen Trumpf legen';
+        }
         if (event.moonRevealed) detail += ' · Mond aufgedeckt';
         return { tone: event.destroyed ? 'effect' : 'trick',
           title: event.destroyed ? 'Stich zerstört' : nameAt(event.winnerIdx) +
