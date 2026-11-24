@@ -51,6 +51,12 @@ function build(mode, seed, migrated) {
   return game;
 }
 
+function equivalent(actual, expected, message) {
+  // Different vm contexts have different Array prototypes.
+  assert.deepEqual(JSON.parse(JSON.stringify(actual)),
+    JSON.parse(JSON.stringify(expected)), message);
+}
+
 function view(game) {
   return {
     phase: game.phase, active: game.activePlayerIdx,
@@ -72,13 +78,13 @@ for (const mode of ['turbo', 'standard', 'raw']) {
         const migrated = build(mode, seed, true);
         legacy.initGame(count);
         migrated.initGame(count);
-        assert.deepEqual(view(migrated).players.map(p => p.hand),
+        equivalent(view(migrated).players.map(p => p.hand),
           view(legacy).players.map(p => p.hand), 'dealt hands must match');
         assert.equal(migrated.activeOracle?.uid || null,
           legacy.activeOracle?.uid || null, 'oracle must match');
         legacy.submitHumanBid(1);
         migrated.submitHumanBid(1);
-        assert.deepEqual(view(migrated), view(legacy), 'bids and opening must match');
+        equivalent(view(migrated), view(legacy), 'bids and opening must match');
         let turns = 0;
         while (legacy.phase === 'playing' && turns < 120) {
           const idx = legacy.activePlayerIdx;
@@ -92,13 +98,13 @@ for (const mode of ['turbo', 'standard', 'raw']) {
           if (legacy.currentTrick.length === legacy.players.length) {
             legacy.evaluateTrick();
           }
-          assert.deepEqual(view(migrated), view(legacy), `divergence at turn ${turns}`);
+          equivalent(view(migrated), view(legacy), `divergence at turn ${turns}`);
           turns++;
         }
         assert.ok(turns > 0 && turns < 120);
         assert.equal(migrated.phase, legacy.phase);
         assert.equal(migrated.phase, 'roundOver');
-        assert.deepEqual(migrated.players.map(p => p.score), legacy.players.map(p => p.score));
+        equivalent(migrated.players.map(p => p.score), legacy.players.map(p => p.score));
       });
     }
   }
