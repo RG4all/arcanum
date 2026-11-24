@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.7.1-beta.1 – 2026-11-24
+
+### Behoben
+- **Standard-Stichentscheid (Regelwerk 0.6.1):** Der Hierophant annulliert nur Stich-Sondereffekte; der reguläre Stich geht weiterhin an die stärkste Karte. Oracle-Rangmodifikatoren bleiben bei Hierophant aktiv. Betroffen waren die Legacy-Engine und der DOM-freie Multiplayer-Reducer.
+- **Stichdarstellung:** Sieger, Siegerkarte, tatsächlicher Rang und wirksame Sonderregel werden im Online-Tisch explizit angezeigt.
+- **WebRTC ICE/STUN:** Verbindungsgathering diagnostizierbar, verschiedene Kandidatentypen unterscheidbar, Fehler bei nicht erreichbaren ICE-Servern sichtbar. Externe STUN-Adressen konfigurierbar; optional eigene TURN-Relay-Zugangsdaten für NATs, die keine direkte Verbindung erlauben. Kein verpflichtender Backend-/TURN-Dienst.
+
+### Oberfläche
+- Vollständig neu gegliederte, per Tastatur bedienbare vierteilige Workspace-Navigation: Lokal/Bots, Multiplayer, Kodex mit Stochastik, Wertung.
+- Layout, Typografie, Bereiche, Signal-Formular und Responsive-Breakpoints überarbeitet; mobile Navigation und fokussierbare Tabs.
+- Hinweiskarten dynamisch nach dem aktiven RAW-/Turbo-/Standard-Regelwerk; Karten mit inaktiven Effekten werden nicht mehr als wirksam beschrieben.
+- Diagramm wird beim Öffnen des Kodex-Tabs neu skaliert.
+
+### Tests
+- Regressionstests für Standard-Kartenrang, Hierophant-Stichvergabe und Orakel-Hierarchie.
+- Tests der ICE-Konfiguration, Kandidatentypen und regelabhängigen Hilfetexte.
+- Erweiterter Chromium-Check für die vier Bereiche, mobile Navigation und P2P-Smoke.
+
+### Grenzen
+- STUN garantiert keine öffentliche Erreichbarkeit, TURN ist optional und benötigt einen vom Nutzer bereitgestellten Relay-Dienst.
+- Kein Echtgeld, kein Ranked, kein Hostwechsel oder Reconnect.
+- GPL-2.0-/ISC-Lizenzkonflikt und Asset-Rechte-Audit unverändert als kommerzielles Freigabe-Gate offen.
+
+
 ## 0.7.0-beta.1 – 2026-11-24
 
 ### Neu
