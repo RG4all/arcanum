@@ -2,7 +2,7 @@
 <html lang="de" class="scroll-smooth" data-mode="turbo">
 <head>
     <meta charset="UTF-8">
-    <meta name="version" content="0.7.1-beta.1">
+    <meta name="version" content="0.7.2-beta.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b0710">
     <meta name="description" content="Arcanum – atmosphärisches Tarot-Stichspiel im Browser mit vollständigem 78-Karten-Deck, Karten-Kodex, drei Regelwerken (Turbo, Standard, RAW – Die Nackte Zahl), drei begehbaren 3D-Welten und zehn Ritualorten.">
@@ -170,9 +170,17 @@
                     <h3 class="online-subtitle">Spielerliste</h3>
                     <ul id="online-roster" class="online-roster"></ul>
                     <section id="online-table" class="online-table" aria-labelledby="online-round" hidden>
-                        <h3 id="online-round">Runde</h3>
-                        <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
-                        <ul id="online-players" class="online-players"></ul>
+                        <header class="online-match-header">
+                            <div>
+                                <span class="online-section-kicker">Live · Spielstand</span>
+                                <h3 id="online-round">Runde</h3>
+                                <p id="online-turn" class="online-turn" role="status" aria-live="polite"></p>
+                            </div>
+                            <p id="online-hud-oracle" class="online-hud-oracle">Weltgesetz: –</p>
+                        </header>
+                        <div class="online-hud-summary" aria-label="Wertung aller Spieler">
+                            <ul id="online-players" class="online-players online-player-hud"></ul>
+                        </div>
                         <h4 id="online-trick-label" class="online-subtitle">Aktueller Stich</h4>
                         <p id="online-trick-winner" class="online-trick-winner" role="status" aria-live="polite"></p>
                         <div id="online-trick" class="online-trick"></div>
@@ -194,6 +202,16 @@
                             <ul id="online-scores"></ul>
                         </div>
                         <button id="online-next" class="ghost-button" type="button" hidden>Nächste Runde</button>
+                        <section class="online-chronicle" aria-labelledby="online-log-title">
+                            <div class="online-chronicle-header">
+                                <div>
+                                    <span class="online-section-kicker">Zug für Zug</span>
+                                    <h4 id="online-log-title">Partie-Chronik</h4>
+                                </div>
+                                <p>Gebote · Karten · Effekte · Stichsieger · Karma</p>
+                            </div>
+                            <ol id="online-log" class="online-event-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Öffentliches Multiplayer-Spielprotokoll"></ol>
+                        </section>
                     </section>
                 </section>
 
@@ -422,7 +440,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.1-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.1</span></p>
+        <p>Arcanum · Browser-Beta · Version <span id="footer-version">0.7.2-beta.1</span> · Regelwerk <span id="footer-ruleset">0.6.2</span></p>
         <p class="site-footer__note">Offline-Botmodus und private P2P-Partien verfügbar. Kartenmotive und Avatar-Porträts werden prozedural als SVG erzeugt; alle Bibliotheken liegen lokal im Projekt.</p>
     </footer>
 
@@ -485,6 +503,7 @@
     <script src="js/mode-hints.js" defer></script>
     <script src="js/workspace-tabs.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/net/match-presentation.js" defer></script>
     <script src="js/net/online-ui.js" defer></script>
 </body>
 </html>

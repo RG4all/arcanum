@@ -183,3 +183,78 @@ test('guest cannot impersonate host or play out of turn', async () => {
   host.close();
   guest.close();
 });
+
+
+test('Standard 2/3/6-seat rounds synchronize scores, public history and private cards', async () => {
+  for (const seats of [2, 3, 6]) {
+    const { rtc, transmitted } = mockNetwork();
+    const host = Room.createHost({ rules, cards, mode: 'standard', seats,
+      rtc, idFactory: ids(), name: 'Host' });
+    const guests = [];
+    for (let i = 1; i < seats; i++) {
+      const offer = await host.invite();
+      const guest = await Room.join({
+        code: offer, name: 'Guest ' + i, rules, cards, rtc
+      });
+      guests.push(guest);
+      await host.acceptAnswer(guest.answerCode);
+      await tick();
+      guest.ready(true);
+      await tick();
+    }
+    host.start();
+    await tick();
+    let turns = 0;
+    while (host.getInfo().view.phase !== 'roundOver' &&
+           host.getInfo().view.phase !== 'gameOver' && turns < 115) {
+      const view = host.getInfo().view;
+      const playerIdx = view.phase === 'priestess'
+        ? view.players.findIndex(p => p.id === view.pendingPriestess.playerId)
+        : view.activePlayerIdx;
+      const player = view.players[playerIdx];
+      const session = playerIdx === 0 ? host : guests[playerIdx - 1];
+      const myView = session.getInfo().view;
+      const mine = myView.players[playerIdx];
+      let command;
+      if (view.phase === 'bidding') {
+        command = { type: 'SUBMIT_BID', bid: 0 };
+      } else if (view.phase === 'priestess') {
+        const max = rules.cardsPerPlayer(view.mode, view.round, seats);
+        command = { type: 'CHOOSE_PRIESTESS', delta: mine.bid < max ? 1 : -1 };
+      } else {
+        const hand = mine.hand.map(uid => cards.DECK_BY_UID[uid]);
+        const indices = rules.legalCardIndices(hand, {
+          mode: view.mode, leadSuit: view.leadSuit,
+          freeLead: view.oracleUid === 'major-4',
+          trumpBan: view.trumpBan === playerIdx,
+          mustPlayHighest: view.forcedPlayer === playerIdx
+        });
+        assert.ok(indices.length, 'no legal move in Standard for ' + seats + ' players');
+        command = { type: 'PLAY_CARD', cardUid: mine.hand[indices[0]] };
+      }
+      session.action(command);
+      await tick();
+      turns++;
+    }
+    assert.equal(host.getInfo().view.phase, 'roundOver', 'round must finish: seats=' + seats);
+    const hostInfo = host.getInfo();
+    assert.ok(hostInfo.history.length > seats, 'host event history was recorded');
+    assert.ok(hostInfo.history.some(e => e.type === 'RoundScored'));
+    assert.ok(hostInfo.history.some(e => e.type === 'TrickResolved'));
+    for (let i = 0; i < guests.length; i++) {
+      const guestInfo = guests[i].getInfo();
+      assert.deepEqual(guestInfo.history, hostInfo.history, 'same history for all participants');
+      assert.deepEqual(guestInfo.view.roundSummary, hostInfo.view.roundSummary);
+      assert.equal(guestInfo.view.players.filter(p => Object.hasOwn(p, 'hand')).length, 1);
+      assert.equal(guestInfo.view.players[i + 1].hand.length, 0, 'guest finished own hand');
+    }
+    for (const packet of transmitted.filter(x => x.direction === 'host-to-guest' && x.value.type === 'state')) {
+      assert.ok(Array.isArray(packet.value.events));
+      assert.ok(packet.value.events.every(e => e.sequence === packet.value.view.sequence));
+      assert.ok(packet.value.events.every(e => !(e.type === 'CardPlayed' && e.hidden && Object.hasOwn(e,'uid'))),
+        'Moon identity must not leak via public event');
+    }
+    host.close();
+    guests.forEach(g => g.close());
+  }
+});

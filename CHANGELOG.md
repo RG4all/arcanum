@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.7.2-beta.1 – 2026-11-24
+
+### Regelwerk und Erklärung (RULESET_VERSION 0.6.2)
+- Die internen Compare-Keys (`−500 + value`, `200 + Trumpfnummer`, Sonderrang `5000`) werden **nicht mehr als „Stichrang“** im Multiplayer ausgegeben. Stattdessen werden Grundwert, Bedienfarbe, Trumpfkategorie sowie Sonder- und Orakelwirkung beschrieben. Der bestehende Vergleichsalgorithmus bleibt dort unverändert, wo er korrekt war.
+- **Standard-Bugfix:** Orakel **Die Liebenden** bleibt auch bei einem Hierophanten-Stich wirksam. Karteneffekte werden weiterhin unterdrückt; der reguläre Stich wird korrekt vergeben. Stich-Anspielfarbe wird im Ergebnis-Snapshot gespeichert.
+- **Hofkarten-Segen mit Liebenden:** Jeder Partner erhält jetzt das Karma seiner **eigenen** gewonnenen Hofkarten; bislang landete der gemeinsame Bonus unzutreffend allein beim Stichgewinner. Gilt für Bot- und Multiplayer-Engine.
+- Tests für Kraft gegen Hierophant, Trumpf gegen Farbe, off-suit Wert, Orakel-Liebende, verdeckten Mond und Sieger bei unterschiedlichen Sitzplätzen.
+
+### Multiplayer-Oberfläche
+- Neues responsives Live-HUD: pro Sitzplatz eigener übersichtlicher Spielerblock mit Vision, gewonnenen Stichen, Karma, Restkarten, Zugmarkierung und Fortschrittsanzeige.
+- Vollständige gemeinsame **Partie-Chronik** aus öffentlichen, sequenzierten Reducer-Ereignissen. Gebote, Karten, Stichsieger, Orakel/Sonderereignisse und Rundenabrechnung für Host und Gäste.
+- Maximal 180 Ereignisse im lokalen Speicher. Keine Serverpersistenz, keine fremden Handkarten; verdeckte Mondkarten werden erst nach Stichauflösung benannt.
+- Zugängliche Live-Ansicht mit klaren Spielzustands- und Chronikbeschriftungen, responsiven Karten- und HUD-Rastern.
+
+### Tests und Freigabegrenzen
+- Unit- und Simulationstests für Standard-Partien mit 2/3/6 Sitzen, vollständige Wertungs-/Chronik-Synchronität und Datenschutz.
+- Chromium-End-to-End erweitert um öffentlichen Eventlog, HUD und den Ausschluss technischer Rangzahlen.
+- STUN funktioniert laut Nutzerbericht; Cross-NAT- und physische Endgerätetests sind weiterhin ein separates Abnahme-Gate. Optionales TURN bleibt freiwillig.
+- Lizenz-/Asset-Audit (GPL-2.0/ISC) und Rechtssicherheit vor kosmetischer Monetarisierung weiter offen.
+
+
 ## 0.7.1-beta.1 – 2026-11-24
 
 ### Behoben

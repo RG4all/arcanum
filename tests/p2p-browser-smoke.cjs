@@ -94,6 +94,27 @@ async function run() {
     assert.equal(endedHost.sequence, endedGuest.sequence);
     assert.equal(endedHost.phase, 'roundOver');
     assert.ok(steps >= 8);
+    // The online HUD and public event log must agree across both peers.
+    const hostHistory = (await info(host)).history;
+    const guestHistory = (await info(guest)).history;
+    assert.deepEqual(guestHistory, hostHistory, 'Host/guest public event log is identical');
+    assert.ok(hostHistory.some(e => e.type === 'RoundStarted'));
+    assert.ok(hostHistory.some(e => e.type === 'BidSubmitted'));
+    assert.ok(hostHistory.some(e => e.type === 'CardPlayed'));
+    assert.ok(hostHistory.some(e => e.type === 'TrickResolved'));
+    assert.ok(hostHistory.some(e => e.type === 'RoundScored'));
+    assert.equal(await host.locator('#online-players .online-scorecard').count(), 2);
+    assert.equal(await guest.locator('#online-players .online-scorecard').count(), 2);
+    assert.equal(await host.locator('#online-log .online-log-entry').count(), hostHistory.length);
+    assert.equal(await guest.locator('#online-log .online-log-entry').count(), guestHistory.length);
+    for (const page of [host, guest]) {
+      const hud = await page.locator('#online-players').innerText();
+      assert.match(hud, /Vision/);
+      assert.match(hud, /Stiche/);
+      assert.match(hud, /Karma/);
+      assert.doesNotMatch(await page.locator('#online-trick').innerText(), /Stichrang:\s*[-\d]/);
+      assert.ok(await page.locator('#online-trick .online-trick-explanation').count() > 0);
+    }
     assert.deepEqual(errors, []);
     console.log('P2P Chromium 1280x800 ↔ 390x844: ' + steps + ' actions, private RAW round completed');
   } finally {

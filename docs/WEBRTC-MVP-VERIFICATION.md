@@ -67,3 +67,10 @@ Komfortable Einladung über optionalen Serverless-Signalisierungsdienst, Reconne
 Die Lobby zeigt beim Generieren/Importieren des Offer/Answer-Codes die ermittelten ICE-Kandidaten nach **host** (LAN), **srflx** (mittels STUN ermittelte öffentliche Adresse) und **relay** (TURN-Relay) sowie die Connection-/ICE-Zustände. Eine fehlende srflx-Adresse weist auf STUN-/Firewallprobleme hin; auch bei erfolgreichem STUN sind symmetrische NATs ohne TURN ggf. nicht erreichbar. Die Eingabemaske akzeptiert bis zu vier benutzerdefinierte STUN-URLs und optional einen TURN-Server mit Benutzername/Passwort. Die TURN-Eingaben bleiben lokal im Speicher, werden nicht im Signalcode oder im Repository hinterlegt.
 
 **Prüfgrenze:** CI verifiziert Konfiguration, Diagnoseformat und direkte WebRTC-Verbindungen im lokalen Chromium. Öffentliche Verbindungen über unterschiedliche reale Provider/NATs können nicht durch den CI-Test garantiert werden; gegebenenfalls ist ein nutzerbetriebener TURN-Relay notwendig.
+
+
+## Multiplayer-Chronik und HUD (0.7.2-beta.1)
+
+Bei jeder gültigen Reducer-Transaktion sendet der Host den **empfängerspezifischen State-Snapshot** zusammen mit den zugehörigen öffentlichen, sequenzierten Events. Host und Gäste führen ein auf 180 Einträge begrenztes Protokoll nur im Speicher; neue Mitglieder können während einer laufenden Partie nicht beitreten. Bei `CardPlayed.hidden` enthält das Ereignis keine Karten-UID; erst `TrickResolved` darf nach Stichabschluss die Mondkarte öffentlich zeigen. Zustand, Event-Sequenz und die angezeigten Karma-/Stichzahlen werden in den Tests abgeglichen.
+
+Das HUD zeigt pro Spieler Name, Zugstatus, Vision, Stiche, Karma und verbleibende Karten. Die bewusste Grenze bleibt: **kein serverautoritatives Ranked-Spiel**. Ohne TURN kann ein Cross-NAT-Spiel trotz erfolgreicher STUN-Ermittlung scheitern.

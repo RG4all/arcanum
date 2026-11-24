@@ -8,11 +8,14 @@
   const Cards = root.ArcanumCards;
   const Rules = root.ArcanumRules;
   const Core = root.ArcanumGameCommands;
+  const Presentation = root.ArcanumMatchPresentation;
   const Game = root.GameEngine;
   let session = null;
   let info = null;
   let pending = false;
   let lastSequence = -1;
+  let lastLogRoom = null;
+  const renderedEvents = new Set();
 
   const el = id => document.getElementById(id);
   function show(id, value) { if (el(id)) el(id).hidden = !value; }
@@ -70,13 +73,55 @@
       : view.phase === 'playing' ? 'Am Zug: ' + rosterName(view.players[view.activePlayerIdx].id)
       : view.phase === 'priestess' ? 'Hohepriesterin: ' + rosterName(view.pendingPriestess.playerId)
       : view.phase === 'roundOver' ? 'Runde abgeschlossen' : 'Partie beendet');
+    const oracle = view.oracleUid && Cards.DECK_BY_UID[view.oracleUid];
+    text('online-hud-oracle', oracle ? 'Weltgesetz: ' + oracle.name : 'Ohne Orakel');
     clear('online-players');
-    view.players.forEach((p, index) => item('online-players',
-      (p.id === info.playerId ? 'Du (' + rosterName(p.id) + ')' : rosterName(p.id)) +
-      (index === view.activePlayerIdx && (view.phase === 'playing' || view.phase === 'bidding') ? ' ◀' : '') +
-      ' · Vision ' + (p.bid == null ? '–' : p.bid) +
-      ' · Stiche ' + p.won + ' · Karma ' + p.score + ' · Karten ' + p.cardsRemaining
-    ));
+    view.players.forEach((p, index) => {
+      const li = document.createElement('li');
+      li.className = 'online-scorecard';
+      if (p.id === info.playerId) li.classList.add('is-self');
+      const onTurn = (view.phase === 'playing' || view.phase === 'bidding') && index === view.activePlayerIdx;
+      if (onTurn) li.classList.add('is-active');
+      const header = document.createElement('div');
+      header.className = 'online-scorecard-heading';
+      const playerName = document.createElement('strong');
+      playerName.textContent = rosterName(p.id);
+      const tag = document.createElement('span');
+      tag.className = 'online-scorecard-tag';
+      tag.textContent = p.id === info.playerId ? 'Du' : onTurn ? 'Am Zug' : 'Mitspieler';
+      header.append(playerName, tag);
+      const stats = document.createElement('dl');
+      stats.className = 'online-scorecard-stats';
+      for (const [label, value, highlight] of [
+        ['Stiche', Presentation.number(p.won), true],
+        ['Vision', p.bid == null ? '–' : Presentation.number(p.bid), false],
+        ['Karma', Presentation.number(p.score), true],
+        ['Karten', Presentation.number(p.cardsRemaining), false]
+      ]) {
+        const metric = document.createElement('div');
+        if (highlight) metric.classList.add('is-highlight');
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = value;
+        metric.append(dt, dd);
+        stats.appendChild(metric);
+      }
+      const progress = document.createElement('div');
+      progress.className = 'online-scorecard-progress';
+      const meter = document.createElement('span');
+      meter.className = 'online-scorecard-progress-fill';
+      const ratio = p.bid > 0 ? Math.min(1, p.won / p.bid) : 0;
+      meter.style.width = Math.max(0, ratio * 100) + '%';
+      progress.appendChild(meter);
+      const explanation = document.createElement('p');
+      explanation.className = 'online-scorecard-context';
+      explanation.textContent = p.bid == null ? 'Vision noch offen'
+        : p.bid === 0 ? (p.won === 0 ? 'Null-Ansage bisher gehalten' : 'Null-Ansage verfehlt')
+        : 'Stiche / Vision: ' + Presentation.number(p.won) + ' / ' + Presentation.number(p.bid);
+      li.append(header, stats, progress, explanation);
+      el('online-players').appendChild(li);
+    });
     const trick = view.currentTrick.length
       ? view.currentTrick
       : view.lastTrick ? view.lastTrick.cards : [];
@@ -91,10 +136,11 @@
         : resolved.foolBeatWorld ? 'Narr entthront die Welt'
         : resolved.cancelled ? 'Hierophant: Effekte aus, Kartenwert entscheidet'
         : resolved.deathHalf ? 'Tod: halber Stich' : 'höchster gültiger Kartenrang';
-      text('online-trick-winner', resolved.won === 0
+      const prefix = view.currentTrick.length ? 'Vorheriger Stich: ' : '';
+      text('online-trick-winner', prefix + (resolved.won === 0
         ? 'Kein Stichpunkt · ' + detail + ' · rechnerisch: ' + displayName
         : 'Stich gewonnen: ' + displayName + (card ? ' · ' + card.name : '') +
-          ' · ' + detail);
+          ' · ' + detail));
     } else text('online-trick-winner', 'Noch kein Stich entschieden.');
     clear('online-trick');
     trick.forEach(entry => {
@@ -107,15 +153,16 @@
       const caption = document.createElement('small');
       caption.textContent = rosterName(view.players[entry.playerIdx].id);
       block.appendChild(caption);
-      if (!view.currentTrick.length && resolved && resolved.ranks) {
-        const rank = resolved.ranks.find(p => p.playerIdx === entry.playerIdx);
-        if (rank) {
-          const label = document.createElement('small');
-          label.textContent = 'Stichrang: ' + rank.rank;
-          block.appendChild(label);
-        }
-      }
       const card = entry.uid ? Cards.DECK_BY_UID[entry.uid] : Cards.CONCEALED_CARD;
+      if (!view.currentTrick.length && resolved && entry.uid && Rules.describeTrickCard && card) {
+        const explanation = document.createElement('small');
+        explanation.className = 'online-trick-explanation';
+        explanation.textContent = Rules.describeTrickCard(card, {
+          mode: view.mode, oracleUid: view.oracleUid,
+          leadSuit: resolved.leadSuit, cancelled: resolved.cancelled
+        });
+        block.appendChild(explanation);
+      }
       if (card) {
         const artwork = document.createElement('div');
         artwork.innerHTML = Game.cardMarkup(card);
@@ -161,6 +208,41 @@
       ' · Gesamt ' + p.score));
     show('online-score-panel', view.phase === 'roundOver' || view.phase === 'gameOver');
     show('online-next', info.role === 'host' && view.phase === 'roundOver' && !info.ended);
+    renderLog();
+  }
+  function renderLog() {
+    const container = el('online-log');
+    if (!container || !Presentation || !info) return;
+    const history = Array.isArray(info.history) ? info.history : [];
+    const room = info.roomId || 'unknown';
+    if (room !== lastLogRoom || (history.length === 0 && renderedEvents.size > 0)) {
+      lastLogRoom = room;
+      renderedEvents.clear();
+      container.replaceChildren();
+    }
+    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+    for (const event of history) {
+      const key = event.sequence + ':' + event.eventIndex;
+      if (renderedEvents.has(key)) continue;
+      const line = Presentation.formatEvent(event, { roster: info.roster, view: info.view, cards: Cards });
+      if (!line) continue;
+      renderedEvents.add(key);
+      const li = document.createElement('li');
+      li.className = 'online-log-entry online-log-' + line.tone;
+      const seq = document.createElement('span');
+      seq.className = 'online-log-sequence';
+      seq.textContent = '#' + event.sequence;
+      const body = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = line.title;
+      const description = document.createElement('span');
+      description.textContent = line.detail || '';
+      body.append(title, description);
+      li.append(seq, body);
+      container.appendChild(li);
+    }
+    while (container.children.length > 180) container.firstElementChild.remove();
+    if (wasAtBottom) container.scrollTop = container.scrollHeight;
   }
   function render() {
     const isHost = info && info.role === 'host';
