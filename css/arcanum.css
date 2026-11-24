@@ -2740,3 +2740,94 @@ main::before { z-index: 0; }
     .ambient-veil::after { opacity: .1; }
     .hand-card.is-playable:hover .arc-card__frame { transform: translateY(-4px); }
 }
+
+
+/* ================================================================
+   Private WebRTC lobby (0.7.0-beta.1) · isolated from offline HUD
+   ================================================================ */
+.online-lobby {
+    margin: 1.5rem 0;
+    padding: clamp(1rem, 2.2vw, 1.8rem);
+    border: 1px solid rgba(221, 184, 107, .36);
+    border-radius: 1rem;
+    background: linear-gradient(155deg, #191327, #0d0b16);
+    color: #f4f0e7;
+}
+.online-lobby [hidden] { display: none !important; }
+.online-heading, .online-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    align-items: center;
+}
+.online-heading { justify-content: space-between; }
+.online-heading h2 { font-size: clamp(1.25rem, 2.5vw, 1.8rem); font-weight: 700; }
+.online-unranked {
+    border: 1px solid rgba(221, 184, 107, .45);
+    border-radius: 2rem;
+    font-size: .8rem;
+    padding: .3rem .75rem;
+    color: #e5cb98;
+}
+.online-help, .online-message { color: #c8c2d5; margin: .8rem 0; line-height: 1.5; }
+.online-settings {
+    display: flex; flex-wrap: wrap; align-items: flex-end;
+    gap: .9rem; margin: 1rem 0;
+}
+.online-settings > label { display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; }
+.online-settings .online-check { flex-direction: row; align-items: center; max-width: 100%; }
+.online-settings input:not([type="checkbox"]), .online-settings select,
+.online-signaling textarea {
+    width: 100%; min-width: 0; padding: .65rem;
+    background: #0d0a17; border: 1px solid #716082; border-radius: .45rem;
+    color: #fff; color-scheme: dark;
+}
+.online-settings input:not([type="checkbox"]) { max-width: 14rem; }
+.online-signaling {
+    display: grid; gap: .6rem;
+    margin: 1rem 0;
+}
+.online-signaling textarea {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: .78rem; resize: vertical; overflow-wrap: anywhere; min-height: 5.5rem;
+}
+.online-signaling label, .online-subtitle { font-weight: 600; color: #e5cc9b; }
+.online-signaling #online-copy { justify-self: start; }
+.online-connection { margin: 1rem 0 .3rem; font-weight: 700; }
+.online-roster, .online-players, #online-scores {
+    display: grid; gap: .4rem; margin: .5rem 0 1rem;
+    padding-left: 1.25rem;
+}
+.online-table {
+    margin-top: 1.4rem; padding-top: 1rem;
+    border-top: 1px solid rgba(221, 184, 107, .28);
+}
+.online-table h3 { font-size: 1.25rem; font-weight: 700; }
+.online-turn { margin: .5rem 0; font-weight: 600; }
+.online-trick, .online-hand {
+    display: flex; align-items: flex-start; flex-wrap: wrap;
+    gap: .7rem; margin: .75rem 0 1rem;
+}
+.online-hand-card { width: min(116px, 24vw); }
+.online-trick-card { width: min(112px, 23vw); }
+.online-hand-card .arc-card, .online-trick-card .arc-card {
+    width: 100%; max-width: 100%; height: auto; aspect-ratio: 3 / 5;
+}
+.online-trick-card small { display: block; margin-bottom: .3rem; }
+.online-bids { display: flex; flex-wrap: wrap; gap: .55rem; margin: .7rem 0 1.1rem; }
+.online-bids button { min-width: 2.7rem; }
+.online-lobby button:disabled { cursor: not-allowed; opacity: .48; }
+.online-lobby button:focus-visible,
+.online-lobby input:focus-visible,
+.online-lobby textarea:focus-visible,
+.online-lobby select:focus-visible {
+    outline: 3px solid #f0cc7b; outline-offset: 3px;
+}
+@media (max-width: 600px) {
+    .online-lobby { margin: 1rem 0; }
+    .online-actions > button { flex: 1 1 auto; }
+    .online-settings { gap: .7rem; }
+    .online-trick, .online-hand { gap: .3rem; }
+    .online-hand-card { width: min(92px, 23vw); }
+    .online-trick-card { width: min(92px, 23vw); }
+}
