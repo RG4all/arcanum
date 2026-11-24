@@ -120,6 +120,24 @@ test('public event formatting includes bid, round score, actor and secret-safe c
 });
 
 
+test('public completed trick event documents Lovers, court karma and winner safely', () => {
+  const ctx = {
+    cards: Cards, roster: [{id:'a',name:'Adept'},{id:'b',name:'Gast'}],
+    view: {players:[{id:'a'},{id:'b'}]}
+  };
+  const event = {
+    type:'TrickResolved', winnerIdx:0, won:1, cancelled:false,
+    cards:[{playerIdx:0,uid:'minor-Stäbe-14'},{playerIdx:1,uid:'minor-Kelche-13'}],
+    loversPartner:1, courtKarma:4, partnerCourtKarma:3,
+    justiceTargets:[], strengthPlayer:null
+  };
+  const line = Presenter.formatEvent(event,ctx);
+  assert.match(line.title,/Adept gewinnt/);
+  assert.match(line.detail,/Liebende teilen mit Gast/);
+  assert.match(line.detail,/Adept \+4 Karma/);
+  assert.match(line.detail,/Gast \+3 Hofkarten-Karma/);
+});
+
 test('Lovers: each player earns karma for their own court cards, not the trick winner', () => {
   const cardsInTrick = [
     { playerIdx: 0, card: card('minor-Stäbe-14') },  // King: +4
