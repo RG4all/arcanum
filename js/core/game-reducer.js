@@ -39,7 +39,9 @@
     state.roundSummary = state.players.map(p => {
       const result = rules.scoreRound({ mode: state.mode, bid: p.bid, won: p.won, oracleUid: state.oracleUid, courtKarma: p.courtKarma });
       p.score += result.points;
-      return { playerId: p.id, points: result.points, score: p.score, exact: result.exact };
+      p.roundPoints = result.points;
+      return { playerId: p.id, points: result.points, score: p.score, exact: result.exact,
+        breakdown: [...result.breakdown], deviation: result.deviation };
     });
     state.phase = state.round === state.maxRounds ? PHASE.GAME_OVER : PHASE.ROUND_OVER;
     return { type: 'RoundScored', round: state.round, summary: state.roundSummary.map(x => ({ ...x })) };
