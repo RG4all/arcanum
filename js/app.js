@@ -54,7 +54,7 @@
 
   // RAW – Die Nackte Zahl: komplettes Deck, Große Arkana schlägt jede Kleine Arkana, keine Sonderkarten.
   const MODE_META = Object.freeze({
-    turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · reine Zahlenhierarchie` },
+    turbo: { badge: '⚡ Turbo Edition', name: 'Turbo', detail: () => `${RULES.maxRounds('turbo')} Runden · Trumpf & Sonderkarten` },
     standard: { badge: '📜 Standard Edition', name: 'Standard', detail: () => `${RULES.maxRounds('standard')} Runden · Orakel & Schicksal` },
     raw: { badge: '✧ RAW – Die Nackte Zahl', name: 'RAW', detail: () => `${RULES.maxRounds('raw')} Runden · 78 Karten · keine Sonderkarten` }
   });
@@ -96,6 +96,7 @@
   function switchRulesetMode(mode) {
     if (app.mode === mode) return;
     applyMode(mode);
+    if (typeof hideHint === 'function') hideHint(true);
     // Ein Moduswechsel startet ein frisches Ritual mit gültigen Rundenzahlen.
     global.GameEngine.initGame(Number(document.getElementById('game-player-count')?.value) || 3);
   }
@@ -541,6 +542,18 @@
   function hintContent(target) {
     const worlds = global.ArcanumWorlds;
     const key = target.getAttribute('data-hint');
+    const workspace = global.ArcanumWorkspace && global.ArcanumWorkspace.current();
+    const online = global.ArcanumOnline && global.ArcanumOnline.getInfo();
+    const mode = workspace === 'multiplayer'
+      ? (online && online.mode || document.getElementById('online-mode')?.value || app.mode)
+      : app.mode;
+    const cardUid = target.getAttribute('data-uid');
+    const card = cardUid && global.ArcanumCards && global.ArcanumCards.DECK_BY_UID[cardUid];
+    const effect = card && card.effectUid && global.ArcanumCards.EFFECTS[card.effectUid];
+    if (key && global.ArcanumModeHints) {
+      const dynamic = global.ArcanumModeHints.describe(key, mode, card, effect);
+      if (dynamic) return dynamic;
+    }
     if (key && worlds) {
       // Karten tragen `data-hint="card"` plus `data-uid`.
       if (key === 'card' && worlds.cardHint) {
