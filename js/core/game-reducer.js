@@ -66,6 +66,8 @@
     if (!result.cancelled) {
       for (const idx of result.justiceTargets) { state.players[idx].score += 5; state.players[idx].bonus += 5; }
       state.players[result.winnerIdx].courtKarma += result.courtKarma;
+      if (result.loversPartner != null && result.partnerCourtKarma)
+        state.players[result.loversPartner].courtKarma += result.partnerCourtKarma;
       if (result.strengthPlayer != null) state.trumpBan = result.strengthPlayer;
     }
     // Existing engine does not credit destroyed trick points, and retains that behavior.
